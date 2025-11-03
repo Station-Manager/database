@@ -4,14 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"github.com/Station-Manager/errors"
-	types "github.com/Station-Manager/types/database"
+	dbtypes "github.com/Station-Manager/types/database"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"sync"
 	"sync/atomic"
 )
 
 type Service struct {
-	config *types.Config
+	config *dbtypes.Config
 	handle *sql.DB
 
 	mu            sync.Mutex

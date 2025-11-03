@@ -1,6 +1,8 @@
 package database
 
-import "fmt"
+import (
+	"fmt"
+)
 
 func (s *Service) getDsn() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
