@@ -10,5 +10,6 @@ func TestConfigValidation(t *testing.T) {
 		svc, err := New(nil)
 		assert.Error(t, err)
 		assert.Nil(t, svc)
+		assert.Equal(t, "Config parameter is nil.", err.Error())
 	})
 }
