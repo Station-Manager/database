@@ -1,6 +1,9 @@
 package database
 
 import (
+	"fmt"
+	"github.com/Station-Manager/errors"
+	types "github.com/Station-Manager/types/database"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -11,5 +14,16 @@ func TestConfigValidation(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, svc)
 		assert.Equal(t, "Config parameter is nil.", err.Error())
+	})
+	t.Run("valid config", func(t *testing.T) {
+		cfg := &types.Config{}
+		svc, err := New(cfg)
+		assert.Error(t, err)
+		assert.Nil(t, svc)
+		assert.Equal(t, "Database configuration is invalid.", err.Error())
+		dErr, ok := errors.AsDetailedError(err)
+		assert.True(t, ok)
+		assert.NotNil(t, dErr)
+		fmt.Println(dErr.Cause())
 	})
 }

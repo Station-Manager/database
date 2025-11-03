@@ -7,6 +7,7 @@ import (
 )
 
 type Service struct {
+	config *types.Config
 	db     *sql.DB
 	driver string
 }
@@ -15,7 +16,7 @@ func New(cfg *types.Config) (*Service, error) {
 	if err := validateConfig(cfg); err != nil {
 		return nil, err
 	}
-	return nil, nil
+	return &Service{config: cfg}, nil
 }
 
 func (s *Service) Initialize() error {
