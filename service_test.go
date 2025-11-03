@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"github.com/Station-Manager/errors"
 	types "github.com/Station-Manager/types/database"
 	"github.com/stretchr/testify/assert"
@@ -21,10 +20,6 @@ func TestConfigValidation(t *testing.T) {
 		err := svc.Initialize()
 		assert.Error(t, err)
 		assert.Equal(t, errMsgConfigInvalid, err.Error())
-		dErr, ok := errors.AsDetailedError(err)
-		assert.True(t, ok)
-		assert.NotNil(t, dErr)
-		fmt.Println(dErr.Cause())
 	})
 	t.Run("valid config", func(t *testing.T) {
 		cfg := &types.Config{
@@ -42,5 +37,27 @@ func TestConfigValidation(t *testing.T) {
 		svc := &Service{config: cfg}
 		err := svc.Initialize()
 		assert.NoError(t, err)
+	})
+	t.Run("invalid driver", func(t *testing.T) {
+		cfg := &types.Config{
+			Driver:          "invalid",
+			Host:            "localhost",
+			Port:            5432,
+			Database:        "station_manager",
+			User:            "smuser",
+			Password:        "password",
+			SSLMode:         "disable",
+			MaxOpenConns:    2,
+			MaxIdleConns:    2,
+			ConnMaxLifetime: 10,
+		}
+		svc := &Service{config: cfg}
+		err := svc.Initialize()
+		assert.Error(t, err)
+		assert.Equal(t, errMsgConfigInvalid, err.Error())
+		dErr, ok := errors.AsDetailedError(err)
+		assert.True(t, ok)
+		assert.NotNil(t, dErr)
+		assert.Contains(t, dErr.Cause().Error(), "Config.Driver")
 	})
 }
