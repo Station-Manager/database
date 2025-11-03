@@ -10,17 +10,17 @@ import (
 
 func TestConfigValidation(t *testing.T) {
 	t.Run("nil config", func(t *testing.T) {
-		svc, err := New(nil)
+		svc := &Service{}
+		err := svc.Initialize()
 		assert.Error(t, err)
-		assert.Nil(t, svc)
-		assert.Equal(t, "Config parameter is nil.", err.Error())
+		assert.Equal(t, errMsgNilConfig, err.Error())
 	})
 	t.Run("invalid config", func(t *testing.T) {
 		cfg := &types.Config{}
-		svc, err := New(cfg)
+		svc := &Service{config: cfg}
+		err := svc.Initialize()
 		assert.Error(t, err)
-		assert.Nil(t, svc)
-		assert.Equal(t, "Database configuration is invalid.", err.Error())
+		assert.Equal(t, errMsgConfigInvalid, err.Error())
 		dErr, ok := errors.AsDetailedError(err)
 		assert.True(t, ok)
 		assert.NotNil(t, dErr)
@@ -28,16 +28,19 @@ func TestConfigValidation(t *testing.T) {
 	})
 	t.Run("valid config", func(t *testing.T) {
 		cfg := &types.Config{
-			Driver: "postgres",
-			DSN:    "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
+			Driver:          "postgres",
+			Host:            "localhost",
+			Port:            5432,
+			Database:        "station_manager",
+			User:            "smuser",
+			Password:        "password",
+			SSLMode:         "disable",
+			MaxOpenConns:    2,
+			MaxIdleConns:    2,
+			ConnMaxLifetime: 10,
 		}
-		svc, err := New(cfg)
-		assert.Error(t, err)
-		assert.Nil(t, svc)
-		assert.Equal(t, "Database configuration is invalid.", err.Error())
-		dErr, ok := errors.AsDetailedError(err)
-		assert.True(t, ok)
-		assert.NotNil(t, dErr)
-		fmt.Println(dErr.Cause())
+		svc := &Service{config: cfg}
+		err := svc.Initialize()
+		assert.NoError(t, err)
 	})
 }
