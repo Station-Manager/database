@@ -10,5 +10,5 @@ type Database interface {
 	Close() error
 	Ping() error
 	Migrate() error
-	BeginTxContext(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, context.CancelFunc, error)
+	BeginTxContext(context.Context) (*sql.Tx, context.CancelFunc, error)
 }

@@ -172,7 +172,7 @@ func (s *Service) Migrate() error {
 }
 
 // BeginTxContext starts a new transaction.
-func (s *Service) BeginTxContext(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, context.CancelFunc, error) {
+func (s *Service) BeginTxContext(ctx context.Context) (*sql.Tx, context.CancelFunc, error) {
 	const op errors.Op = "database.Service.BeginTxContext"
 	if s == nil {
 		return nil, nil, errors.New(op).Msg(errMsgNilService)
