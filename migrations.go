@@ -50,5 +50,4 @@ func (s *Service) doMigrations() error {
 	}
 
 	return err
-
 }

@@ -3,11 +3,13 @@ package database
 import (
 	"context"
 	"fmt"
+	"github.com/Station-Manager/errors"
 	"net/url"
 	"time"
 )
 
-func (s *Service) getDsn() string {
+func (s *Service) getDsn() (string, error) {
+	const op errors.Op = "database.Service.getDsn"
 	switch s.config.Driver {
 	case PostgresDriver:
 		userInfo := url.UserPassword(s.config.User, s.config.Password)
@@ -18,23 +20,32 @@ func (s *Service) getDsn() string {
 			Path:     "/" + s.config.Database,
 			RawQuery: url.Values{"sslmode": {s.config.SSLMode}}.Encode(),
 		}
-		return u.String()
+		return u.String(), nil
 	case SqliteDriver:
 		path := s.config.Path
+		if path == "" {
+			return "", errors.New(op).Msg(errMsgEmptyPath)
+		}
+
 		opts := s.config.Options
-		if opts == "" {
-			opts = "_busy_timeout=5000&_journal_mode=WAL&_foreign_keys=on&_txlock=immediate"
-		} else if opts[0] == '?' {
+
+		// Normalize: strip leading '?' if present
+		if len(opts) > 0 && opts[0] == '?' {
 			opts = opts[1:]
 		}
+
+		if opts == "" {
+			opts = "_busy_timeout=5000&_journal_mode=WAL&_foreign_keys=on&_txlock=immediate"
+		}
+
 		u := &url.URL{
 			Scheme:   "file",
 			Path:     path,
 			RawQuery: opts,
 		}
-		return u.String()
+		return u.String(), nil
 	default:
-		return ""
+		return "", errors.New(op).Errorf("Unsupported database driver: %s (expected %q or %q)", s.config.Driver, PostgresDriver, SqliteDriver)
 	}
 }
 

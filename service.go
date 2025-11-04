@@ -61,7 +61,10 @@ func (s *Service) Open() error {
 	}
 
 	// Outside the mutex as its config is read-only
-	dsn := s.getDsn()
+	dsn, err := s.getDsn()
+	if err != nil {
+		return errors.New(op).Err(err).Msg(errMsgDsnBuildError)
+	}
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -115,7 +118,7 @@ func (s *Service) Close() error {
 	}
 
 	if err := s.handle.Close(); err != nil {
-		return errors.New(op).Err(err).Msg("Failed to close database connection.")
+		return errors.New(op).Err(err).Msg(errMsgFailedClose)
 	}
 
 	s.handle = nil
@@ -158,9 +161,6 @@ func (s *Service) Migrate() error {
 		return errors.New(op).Msg(errMsgNilService)
 	}
 
-	// Should this be Lock() to prevent Open() or Close() from being called?
-	//s.mu.RLock()
-	//defer s.mu.RUnlock()
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -170,7 +170,7 @@ func (s *Service) Migrate() error {
 
 	err := s.doMigrations()
 	if err != nil {
-		return errors.New(op).Err(err).Msg("Failed to run migrations.")
+		return errors.New(op).Err(err).Msg(errMsgMigrateFailed)
 	}
 
 	return nil
@@ -224,9 +224,10 @@ func (s *Service) ExecContext(ctx context.Context, query string, args ...interfa
 	// the lock, release the lock, then call ExecContext so long-running ops don’t hold the lock.
 	s.mu.RLock()
 	h := s.handle
+	isOpen := s.isOpen.Load()
 	s.mu.RUnlock()
 
-	if h == nil || !s.isOpen.Load() {
+	if h == nil || !isOpen {
 		return nil, errors.New(op).Msg(errMsgNotOpen)
 	}
 
@@ -234,8 +235,10 @@ func (s *Service) ExecContext(ctx context.Context, query string, args ...interfa
 	_, ok := ctx.Deadline()
 	if !ok {
 		ctx, cancel = s.withDefaultTimeout(ctx)
-		defer cancel()
+	} else {
+		cancel = func() {} // No-op
 	}
+	defer cancel()
 
 	res, err := h.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -256,9 +259,10 @@ func (s *Service) QueryContext(ctx context.Context, query string, args ...interf
 	// the lock, release the lock, then call ExecContext so long-running ops don’t hold the lock.
 	s.mu.RLock()
 	h := s.handle
+	isOpen := s.isOpen.Load()
 	s.mu.RUnlock()
 
-	if h == nil || !s.isOpen.Load() {
+	if h == nil || !isOpen {
 		return nil, errors.New(op).Msg(errMsgNotOpen)
 	}
 
@@ -266,8 +270,10 @@ func (s *Service) QueryContext(ctx context.Context, query string, args ...interf
 	_, ok := ctx.Deadline()
 	if !ok {
 		ctx, cancel = s.withDefaultTimeout(ctx)
-		defer cancel()
+	} else {
+		cancel = func() {} // No op
 	}
+	defer cancel()
 
 	res, err := h.QueryContext(ctx, query, args...)
 	if err != nil {

@@ -10,6 +10,10 @@ const (
 	errMsgNilHandle      = "Database handle is nil."
 	errMsgPingFailed     = "Failed to ping database."
 	errMsgConnFailed     = "Database connection failed."
+	errMsgFailedClose    = "Failed to close database connection."
+	errMsgMigrateFailed  = "Failed to run database migrations."
+	errMsgEmptyPath      = "SQLite path cannot be empty."
+	errMsgDsnBuildError  = "Failed to build DSN."
 )
 
 const (
