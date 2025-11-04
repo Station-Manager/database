@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	stderr "errors"
 	"github.com/Station-Manager/database/postgres"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
@@ -91,6 +92,7 @@ func (s *Service) Open() error {
 	return nil
 }
 
+// Close closes the database connection.
 func (s *Service) Close() error {
 	const op errors.Op = "database.Service.Close"
 	if s == nil {
@@ -120,6 +122,7 @@ func (s *Service) Close() error {
 	return nil
 }
 
+// Ping pings the database connection.
 func (s *Service) Ping() error {
 	const op errors.Op = "database.Service.Ping"
 	if s == nil {
@@ -146,6 +149,7 @@ func (s *Service) Ping() error {
 	return nil
 }
 
+// Migrate runs the database migrations.
 func (s *Service) Migrate() error {
 	const op errors.Op = "database.Service.Migrate"
 	if s == nil {
@@ -165,6 +169,43 @@ func (s *Service) Migrate() error {
 	default:
 		return errors.New(op).Msg("Driver not supported.")
 	}
+}
+
+// BeginTxContext starts a new transaction.
+func (s *Service) BeginTxContext(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, context.CancelFunc, error) {
+	const op errors.Op = "database.Service.BeginTxContext"
+	if s == nil {
+		return nil, nil, errors.New(op).Msg(errMsgNilService)
+	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.handle == nil || !s.isOpen.Load() {
+		return nil, nil, errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	_, hasDeadline := ctx.Deadline()
+	var txCtx context.Context
+	var cancel context.CancelFunc
+
+	if !hasDeadline {
+		txCtx, cancel = context.WithTimeout(ctx, time.Duration(s.config.TransactionContextTimeout)*time.Second)
+	} else {
+		txCtx = ctx
+		cancel = func() {} // No-op cancel
+	}
+
+	tx, err := s.handle.BeginTx(txCtx, nil)
+	if err != nil {
+		cancel()
+		if stderr.Is(err, context.DeadlineExceeded) {
+			return nil, nil, errors.New(op).Err(err).Msg("Transaction context timed out.")
+		}
+		return nil, nil, errors.New(op).Errorf("creating new transaction: %w", err)
+	}
+
+	return tx, cancel, nil
 }
 
 func (s *Service) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
