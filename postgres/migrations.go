@@ -36,7 +36,6 @@ func Migrations(handle *sql.DB) error {
 	}
 	defer func(m *migrate.Migrate) {
 		if closeErr, _ := m.Close(); closeErr != nil {
-			// s.LoggerService.ErrorWith().Err(closeErr).Msg("closing migrations")
 			// If the Close() fails, we don't want to return the error, so we ignore it
 		}
 	}(m)
