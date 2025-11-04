@@ -23,7 +23,7 @@ func (s *Service) getDsn() string {
 		path := s.config.Path
 		opts := s.config.Options
 		if opts == "" {
-			opts = "_busy_timeout=5000&_journal_mode=WAL&_foreign_keys=on&cache=shared&_txlock=immediate"
+			opts = "_busy_timeout=5000&_journal_mode=WAL&_foreign_keys=on&_txlock=immediate"
 		} else if opts[0] == '?' {
 			opts = opts[1:]
 		}
