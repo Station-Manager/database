@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/Station-Manager/errors"
+	"github.com/Station-Manager/utils"
 	"net/url"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -63,5 +66,27 @@ func (s *Service) checkDatabaseFile(dbFilePath string) error {
 	if len(dbFilePath) == 0 {
 		return errors.New(op).Msg(errMsgEmptyPath)
 	}
+
+	exists, err := utils.PathExists(dbFilePath)
+	if err != nil {
+		return errors.New(op).Errorf("utils.PathExists: %w", err)
+	}
+	if exists {
+		return nil
+	}
+
+	dbDir := filepath.Dir(dbFilePath)
+	if err = os.MkdirAll(dbDir, 0755); err != nil {
+		return errors.New(op).Errorf("os.MkdirAll: %w", err)
+	}
+
+	var f *os.File
+	if f, err = os.OpenFile(dbFilePath, os.O_RDWR|os.O_CREATE, 0644); err != nil {
+		return errors.New(op).Errorf("os.OpenFile: %w", err)
+	}
+	if err = f.Close(); err != nil {
+		return errors.New(op).Errorf("f.Close: %w", err)
+	}
+
 	return nil
 }
