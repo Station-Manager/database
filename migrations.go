@@ -1,14 +1,13 @@
 package database
 
 import (
-	"embed"
 	stderr "errors"
 	"github.com/Station-Manager/database/postgres"
 	"github.com/Station-Manager/database/sqlite"
 	"github.com/Station-Manager/errors"
 	"github.com/golang-migrate/migrate/v4"
-	pg "github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/source/iofs"
+	"github.com/golang-migrate/migrate/v4/database"
+	"github.com/golang-migrate/migrate/v4/source"
 )
 
 func (s *Service) doMigrations() error {
@@ -17,33 +16,20 @@ func (s *Service) doMigrations() error {
 		return errors.New(op).Msg(errMsgNilService)
 	}
 
-	// Hold the lock for the duration of the migration so that Open() or Close() cannot be called.
-	//s.mu.Lock()
-	//defer s.mu.Unlock()
-	// The call should do this
+	var srcDriver source.Driver
+	var dbDriver database.Driver
+	var err error
 
-	var fs embed.FS
 	switch s.config.Driver {
 	case PostgresDriver:
-		fs = postgres.MigrationFiles
+		srcDriver, dbDriver, err = postgres.GetMigrationDrivers(s.handle)
 	case SqliteDriver:
-		fs = sqlite.MigrationFiles
+		srcDriver, dbDriver, err = sqlite.GetMigrationDrivers(s.handle)
 	default:
 		return errors.New(op).Msg("Driver not supported.")
 	}
 
-	// Prepare iofs source from embedded files
-	sourceDriver, err := iofs.New(fs, "migrations")
-	if err != nil {
-		return errors.New(op).Errorf("iofs.New: %w", err)
-	}
-
-	dbDriver, err := pg.WithInstance(s.handle, &pg.Config{})
-	if err != nil {
-		return errors.New(op).Errorf("pg.WithInstance: %w", err)
-	}
-
-	m, err := migrate.NewWithInstance("iofs", sourceDriver, "postgres", dbDriver)
+	m, err := migrate.NewWithInstance("iofs", srcDriver, s.config.Driver, dbDriver)
 	if err != nil {
 		return errors.New(op).Errorf("migrate.NewWithInstance: %w", err)
 	}

@@ -226,7 +226,11 @@ func (s *Service) ExecContext(ctx context.Context, query string, args ...interfa
 		return nil, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	return s.handle.ExecContext(ctx, query, args...)
+	res, err := s.handle.ExecContext(ctx, query, args...)
+	if err != nil {
+		return nil, errors.New(op).Errorf("s.handle.ExecContext: %w", err)
+	}
+	return res, nil
 }
 
 func (s *Service) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
@@ -242,7 +246,11 @@ func (s *Service) QueryContext(ctx context.Context, query string, args ...interf
 		return nil, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	return s.handle.QueryContext(ctx, query, args...)
+	res, err := s.handle.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, errors.New(op).Errorf("s.handle.QueryContext: %w", err)
+	}
+	return res, nil
 }
 
 func (s *Service) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {

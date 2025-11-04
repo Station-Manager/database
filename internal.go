@@ -10,13 +10,29 @@ import (
 func (s *Service) getDsn() string {
 	switch s.config.Driver {
 	case PostgresDriver:
-		user := url.QueryEscape(s.config.User)
-		pass := url.QueryEscape(s.config.Password)
-		host := s.config.Host
-		return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
-			user, pass, host, s.config.Port, s.config.Database, s.config.SSLMode)
+		userInfo := url.UserPassword(s.config.User, s.config.Password)
+		u := &url.URL{
+			Scheme:   "postgres",
+			User:     userInfo,
+			Host:     fmt.Sprintf("%s:%d", s.config.Host, s.config.Port),
+			Path:     "/" + s.config.Database,
+			RawQuery: url.Values{"sslmode": {s.config.SSLMode}}.Encode(),
+		}
+		return u.String()
 	case SqliteDriver:
-		return "Implement me"
+		path := s.config.Path
+		opts := s.config.Options
+		if opts == "" {
+			opts = "_busy_timeout=5000&_journal_mode=WAL&_foreign_keys=on&cache=shared&_txlock=immediate"
+		} else if opts[0] == '?' {
+			opts = opts[1:]
+		}
+		u := &url.URL{
+			Scheme:   "file",
+			Path:     path,
+			RawQuery: opts,
+		}
+		return u.String()
 	default:
 		return ""
 	}
