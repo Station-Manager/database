@@ -7,6 +7,7 @@ require (
 	github.com/Station-Manager/types v0.0.0-20251104004227-1e4683da7422
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/lib/pq v1.10.9
+	github.com/mattn/go-sqlite3 v1.14.32
 	github.com/stretchr/testify v1.11.1
 )
 

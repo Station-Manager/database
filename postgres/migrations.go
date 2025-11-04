@@ -1,7 +1,13 @@
 package postgres
 
-import "database/sql"
+import (
+	"database/sql"
+	"embed"
+)
 
-func migrations(handle *sql.DB) error {
+//go:embed migrations/*.sql
+var schema embed.FS
+
+func Migrations(handle *sql.DB) error {
 	return nil
 }

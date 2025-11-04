@@ -3,9 +3,11 @@ package database
 import (
 	"context"
 	"database/sql"
+	"github.com/Station-Manager/database/postgres"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -149,7 +151,20 @@ func (s *Service) Migrate() error {
 	if s == nil {
 		return errors.New(op).Msg("Service is nil.")
 	}
-	return nil
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.handle == nil || !s.isOpen.Load() {
+		return errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	switch s.config.Driver {
+	case "postgres":
+		return postgres.Migrations(s.handle)
+	default:
+		return errors.New(op).Msg("Driver not supported.")
+	}
 }
 
 func (s *Service) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
