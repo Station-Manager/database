@@ -15,6 +15,8 @@ func (s *Service) getDsn() string {
 		host := s.config.Host
 		return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 			user, pass, host, s.config.Port, s.config.Database, s.config.SSLMode)
+	case SqliteDriver:
+		return "Implement me"
 	default:
 		return ""
 	}

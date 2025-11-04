@@ -1,4 +1,4 @@
-package postgres
+package sqlite
 
 import "embed"
 

@@ -4,11 +4,9 @@
 package models
 
 var TableNames = struct {
-	APIKeys          string
-	Qso              string
-	SchemaMigrations string
+	APIKeys string
+	Qso     string
 }{
-	APIKeys:          "api_keys",
-	Qso:              "qso",
-	SchemaMigrations: "schema_migrations",
+	APIKeys: "api_keys",
+	Qso:     "qso",
 }

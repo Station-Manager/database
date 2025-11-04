@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	stderr "errors"
-	"github.com/Station-Manager/database/postgres"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	_ "github.com/lib/pq"
@@ -159,19 +158,22 @@ func (s *Service) Migrate() error {
 		return errors.New(op).Msg(errMsgNilService)
 	}
 
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+	// Should this be Lock() to prevent Open() or Close() from being called?
+	//s.mu.RLock()
+	//defer s.mu.RUnlock()
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	if s.handle == nil || !s.isOpen.Load() {
 		return errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	switch s.config.Driver {
-	case PostgresDriver:
-		return postgres.Migrations(s.handle)
-	default:
-		return errors.New(op).Msg("Driver not supported.")
+	err := s.doMigrations()
+	if err != nil {
+		return errors.New(op).Err(err).Msg("Failed to run migrations.")
 	}
+
+	return nil
 }
 
 // BeginTxContext starts a new transaction.

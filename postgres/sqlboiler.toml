@@ -10,6 +10,7 @@ user = "smuser"
 dbname = "station_manager"
 host = "localhost"
 sslmode = "disable"
+blacklist = ["schema_migrations"]
 
 [aliases.tables.qso.columns]
 rst_rcvd = "RstRcvd"
