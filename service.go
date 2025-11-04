@@ -60,6 +60,9 @@ func (s *Service) Open() error {
 		return errors.New(op).Msg(errMsgAlreadyOpen)
 	}
 
+	// Outside the mutex as its config is read-only
+	dsn := s.getDsn()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -68,10 +71,9 @@ func (s *Service) Open() error {
 		return errors.New(op).Msg(errMsgAlreadyOpen)
 	}
 
-	dsn := s.getDsn()
 	db, err := sql.Open(s.config.Driver, dsn)
 	if err != nil {
-		return errors.New(op).Err(err).Msg("Database connection failed.")
+		return errors.New(op).Err(err).Msg(errMsgConnFailed)
 	}
 
 	db.SetMaxOpenConns(s.config.MaxOpenConns)

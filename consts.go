@@ -9,6 +9,7 @@ const (
 	errMsgConfigInvalid  = "Database configuration is invalid."
 	errMsgNilHandle      = "Database handle is nil."
 	errMsgPingFailed     = "Failed to ping database."
+	errMsgConnFailed     = "Database connection failed."
 )
 
 const (

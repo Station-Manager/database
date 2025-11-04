@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	github.com/Station-Manager/errors v0.0.1
-	github.com/Station-Manager/types v0.0.0-20251104004227-1e4683da7422
+	github.com/Station-Manager/types v0.0.0-20251104045738-6cd1316f9635
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
 	github.com/aarondl/strmangle v0.0.9
