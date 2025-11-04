@@ -275,23 +275,3 @@ func (s *Service) QueryContext(ctx context.Context, query string, args ...interf
 	}
 	return res, nil
 }
-
-func (s *Service) QueryRowContext(ctx context.Context, query string, args ...interface{}) (*sql.Row, error) {
-	const op errors.Op = "database.Service.QueryRowContext"
-	if s == nil {
-		return nil, errors.New(op).Msg(errMsgNilService)
-	}
-
-	// Holding s.mu.RLock() while performing s.handle.ExecContext(...) means the read lock is held for the duration
-	// of the exec. This can block Close()/Migrate(), which need the write lock. So, we copy the *sql.DB handle under
-	// the lock, release the lock, then call ExecContext so long-running ops don’t hold the lock.
-	s.mu.RLock()
-	h := s.handle
-	s.mu.RUnlock()
-
-	if h == nil || !s.isOpen.Load() {
-		return nil, errors.New(op).Msg(errMsgNotOpen)
-	}
-
-	return h.QueryRowContext(ctx, query, args...), nil
-}

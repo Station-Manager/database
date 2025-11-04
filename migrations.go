@@ -45,7 +45,10 @@ func (s *Service) doMigrations() error {
 		return errors.New(op).Errorf("m.Up: %w", err)
 	}
 
-	// Returns err (which could be set by deferred close)
+	if stderr.Is(err, migrate.ErrNoChange) {
+		return nil
+	}
+
 	return err
 
 }
