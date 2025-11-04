@@ -8,4 +8,5 @@ const (
 	errMsgAlreadyOpen    = "Database service is already open."
 	errMsgConfigInvalid  = "Database configuration is invalid."
 	errMsgNilHandle      = "Database handle is nil."
+	errMsgPingFailed     = "Failed to ping database."
 )

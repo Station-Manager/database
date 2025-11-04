@@ -66,11 +66,24 @@ func (s *Service) Open() error {
 	}
 
 	dsn := s.getDsn()
-	var err error
-	if s.handle, err = sql.Open(s.config.Driver, dsn); err != nil {
+	db, err := sql.Open(s.config.Driver, dsn)
+	if err != nil {
 		return errors.New(op).Err(err).Msg("Database connection failed.")
 	}
 
+	db.SetMaxOpenConns(s.config.MaxOpenConns)
+	db.SetMaxIdleConns(s.config.MaxIdleConns)
+	db.SetConnMaxLifetime(time.Duration(s.config.ConnMaxLifetime) * time.Minute)
+	db.SetConnMaxIdleTime(time.Duration(s.config.ConnMaxIdleTime) * time.Minute)
+
+	ctx, cancel := s.withDefaultTimeout(context.Background())
+	defer cancel()
+	if err = db.PingContext(ctx); err != nil {
+		_ = db.Close()
+		return errors.New(op).Err(err).Msg(errMsgPingFailed)
+	}
+
+	s.handle = db
 	s.isOpen.Store(true)
 
 	return nil
@@ -90,7 +103,7 @@ func (s *Service) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Re-check under lock
+	// Re-check under lock - TOCTOU
 	if !s.isOpen.Load() {
 		return errors.New(op).Msg(errMsgNotOpen)
 	}
@@ -122,11 +135,10 @@ func (s *Service) Ping() error {
 		return errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	cPing, cancelPing := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelPing()
-
-	if err := s.handle.PingContext(cPing); err != nil {
-		return errors.New(op).Err(err).Msg("Failed to ping database.")
+	ctx, cancel := s.withDefaultTimeout(context.Background())
+	defer cancel()
+	if err := s.handle.PingContext(ctx); err != nil {
+		return errors.New(op).Err(err).Msg(errMsgPingFailed)
 	}
 
 	return nil
