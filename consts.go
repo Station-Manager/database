@@ -18,5 +18,5 @@ const (
 
 const (
 	PostgresDriver = "postgres"
-	SqliteDriver   = "sqlite3"
+	SqliteDriver   = "sqlite"
 )

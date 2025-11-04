@@ -37,16 +37,8 @@ func (s *Service) getDsn() (string, error) {
 			opts = opts[1:]
 		}
 
-		if opts == "" {
-			opts = "_busy_timeout=5000&_journal_mode=WAL&_foreign_keys=on&_txlock=immediate"
-		}
-
-		u := &url.URL{
-			Scheme:   "file",
-			Path:     path,
-			RawQuery: opts,
-		}
-		return u.String(), nil
+		dsn := fmt.Sprintf("file:%s?mode=rwc&_foreign_keys=on&_journal_mode=WAL&_busy_timeout=5000", path)
+		return dsn, nil
 	default:
 		return "", errors.New(op).Errorf("Unsupported database driver: %s (expected %q or %q)", s.config.Driver, PostgresDriver, SqliteDriver)
 	}
@@ -59,9 +51,8 @@ func (s *Service) withDefaultTimeout(ctx context.Context) (context.Context, cont
 	return context.WithTimeout(ctx, time.Duration(s.config.ContextTimeout)*time.Second)
 }
 
-// checkDatabaseFile ensures the database file exists; if not, it creates the necessary directory and file structure.
-// Returns an error if any issue occurs during file validation, directory creation, or file creation.
-func (s *Service) checkDatabaseFile(dbFilePath string) error {
+// checkDatabaseDir checks if the database directory exists, and if not, creates it.
+func (s *Service) checkDatabaseDir(dbFilePath string) error {
 	const op errors.Op = "database.Service.checkDatabaseFile"
 	if len(dbFilePath) == 0 {
 		return errors.New(op).Msg(errMsgEmptyPath)
@@ -80,13 +71,14 @@ func (s *Service) checkDatabaseFile(dbFilePath string) error {
 		return errors.New(op).Errorf("os.MkdirAll: %w", err)
 	}
 
-	var f *os.File
-	if f, err = os.OpenFile(dbFilePath, os.O_RDWR|os.O_CREATE, 0644); err != nil {
-		return errors.New(op).Errorf("os.OpenFile: %w", err)
-	}
-	if err = f.Close(); err != nil {
-		return errors.New(op).Errorf("f.Close: %w", err)
-	}
+	// Replaced by mode=rwc in DSN
+	//var f *os.File
+	//if f, err = os.OpenFile(dbFilePath, os.O_RDWR|os.O_CREATE, 0644); err != nil {
+	//	return errors.New(op).Errorf("os.OpenFile: %w", err)
+	//}
+	//if err = f.Close(); err != nil {
+	//	return errors.New(op).Errorf("f.Close: %w", err)
+	//}
 
 	return nil
 }

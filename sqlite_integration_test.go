@@ -2,18 +2,26 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-// getSqliteMemoryConfig returns a config that works without validation issues
-func getSqliteMemoryConfig() *types.DatastoreConfig {
+// getSqliteFileConfig returns a config that works without validation issues
+func getSqliteFileConfig(t *testing.T) *types.DatastoreConfig {
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "test.db")
+	t.Cleanup(func() {
+		os.Remove(dbPath)
+	})
 	return &types.DatastoreConfig{
 		Driver:                    SqliteDriver,
-		Path:                      ":memory:",
-		Options:                   "cache=shared",
+		Path:                      dbPath,
+		Options:                   "",
 		Host:                      "127.0.0.1",
 		Port:                      5432,
 		User:                      "testuser",
@@ -36,7 +44,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	}
 
 	t.Run("full lifecycle with SQLite", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 
 		// Initialize
@@ -47,6 +55,8 @@ func TestSQLiteIntegration(t *testing.T) {
 		err = svc.Open()
 		require.NoError(t, err)
 		defer svc.Close()
+
+		fmt.Println(err)
 
 		// Ping
 		err = svc.Ping()
@@ -97,7 +107,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("transaction rollback", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -136,7 +146,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("close and reopen", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 
@@ -158,7 +168,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("query context timeout", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		cfg.ContextTimeout = 1 // 1 second
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
@@ -173,7 +183,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("exec context timeout", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		cfg.ContextTimeout = 1 // 1 second
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
@@ -187,7 +197,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("transaction with custom context", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -211,7 +221,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("multiple inserts", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -239,7 +249,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("query multiple rows", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -270,7 +280,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("exec with no rows affected", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -290,7 +300,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("query with no results", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -309,7 +319,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("update operations", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -341,7 +351,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("delete operations", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -382,7 +392,7 @@ func TestSQLiteMigrations(t *testing.T) {
 	}
 
 	t.Run("run migrations", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -403,7 +413,7 @@ func TestErrorPaths(t *testing.T) {
 	}
 
 	t.Run("ping closed database", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -415,7 +425,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("exec on closed database", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -427,7 +437,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("query on closed database", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -439,7 +449,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("begin transaction on closed database", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -452,7 +462,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("invalid SQL in exec", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -463,7 +473,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("invalid SQL in query", func(t *testing.T) {
-		cfg := getSqliteMemoryConfig()
+		cfg := getSqliteFileConfig(t)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())

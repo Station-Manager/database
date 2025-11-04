@@ -23,18 +23,22 @@ func TestConfigValidation(t *testing.T) {
 	})
 	t.Run("valid config", func(t *testing.T) {
 		cfg := &types.DatastoreConfig{
-			Driver:          "postgres",
-			Host:            "localhost",
-			Port:            5432,
-			Database:        "station_manager",
-			User:            "smuser",
-			Password:        "password",
-			SSLMode:         "disable",
-			MaxOpenConns:    2,
-			MaxIdleConns:    2,
-			ConnMaxLifetime: 10,
-			ConnMaxIdleTime: 5,
-			ContextTimeout:  5,
+			Driver:                    "postgres",
+			Host:                      "localhost",
+			Port:                      5432,
+			Database:                  "station_manager",
+			User:                      "smuser",
+			Password:                  "password",
+			SSLMode:                   "disable",
+			MaxOpenConns:              2,
+			MaxIdleConns:              2,
+			ConnMaxLifetime:           10,
+			ConnMaxIdleTime:           5,
+			ContextTimeout:            5,
+			TransactionContextTimeout: 5,
+			Params: map[string]string{
+				"application_name": "station-manager",
+			},
 		}
 		svc := &Service{config: cfg}
 		err := svc.Initialize()
