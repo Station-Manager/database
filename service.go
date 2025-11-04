@@ -30,6 +30,10 @@ func (s *Service) Initialize() error {
 		return errors.New(op).Msg(errMsgNilService)
 	}
 
+	if s.isInitialized.Load() {
+		return nil // Exit gracefully
+	}
+
 	if s.config == nil {
 		return errors.New(op).Msg(errMsgNilConfig)
 	}
