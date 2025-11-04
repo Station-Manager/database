@@ -160,7 +160,7 @@ func (s *Service) Migrate() error {
 	}
 
 	switch s.config.Driver {
-	case "postgres":
+	case PostgresDriver:
 		return postgres.Migrations(s.handle)
 	default:
 		return errors.New(op).Msg("Driver not supported.")

@@ -9,7 +9,7 @@ import (
 
 func (s *Service) getDsn() string {
 	switch s.config.Driver {
-	case "postgres":
+	case PostgresDriver:
 		user := url.QueryEscape(s.config.User)
 		pass := url.QueryEscape(s.config.Password)
 		host := s.config.Host

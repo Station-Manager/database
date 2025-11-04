@@ -10,3 +10,8 @@ const (
 	errMsgNilHandle      = "Database handle is nil."
 	errMsgPingFailed     = "Failed to ping database."
 )
+
+const (
+	PostgresDriver = "postgres"
+	SqliteDriver   = "sqlite3"
+)
