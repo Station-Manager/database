@@ -75,7 +75,6 @@ func TestSQLiteIntegration(t *testing.T) {
 		// Query data
 		rows, err := svc.QueryContext(context.Background(), "SELECT name, email FROM users WHERE name = ?", "Alice")
 		require.NoError(t, err)
-		defer rows.Close()
 
 		assert.True(t, rows.Next())
 		var name, email string
@@ -83,17 +82,18 @@ func TestSQLiteIntegration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "Alice", name)
 		assert.Equal(t, "alice@example.com", email)
+		rows.Close() // Close rows before starting transaction
 
 		// Transaction
 		tx, cancel, err := svc.BeginTxContext(context.Background())
 		require.NoError(t, err)
-		defer cancel()
 
 		_, err = tx.Exec("INSERT INTO users (name, email) VALUES (?, ?)", "Bob", "bob@example.com")
 		require.NoError(t, err)
 
 		err = tx.Commit()
 		assert.NoError(t, err)
+		cancel() // Cancel immediately after commit
 
 		// Verify transaction committed
 		rows, err = svc.QueryContext(context.Background(), "SELECT COUNT(*) FROM users")
@@ -124,7 +124,6 @@ func TestSQLiteIntegration(t *testing.T) {
 		// Start transaction
 		tx, cancel, err := svc.BeginTxContext(context.Background())
 		require.NoError(t, err)
-		defer cancel()
 
 		// Insert in transaction
 		_, err = tx.Exec("INSERT INTO test (value) VALUES (2)")
@@ -133,6 +132,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		// Rollback
 		err = tx.Rollback()
 		assert.NoError(t, err)
+		cancel() // Cancel immediately after rollback
 
 		// Verify rollback worked
 		rows, err := svc.QueryContext(context.Background(), "SELECT COUNT(*) FROM test")
@@ -169,7 +169,7 @@ func TestSQLiteIntegration(t *testing.T) {
 
 	t.Run("query context timeout", func(t *testing.T) {
 		cfg := getSqliteFileConfig(t)
-		cfg.ContextTimeout = 1 // 1 second
+		cfg.ContextTimeout = 5 // 5 seconds (minimum allowed)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
@@ -184,7 +184,7 @@ func TestSQLiteIntegration(t *testing.T) {
 
 	t.Run("exec context timeout", func(t *testing.T) {
 		cfg := getSqliteFileConfig(t)
-		cfg.ContextTimeout = 1 // 1 second
+		cfg.ContextTimeout = 5 // 5 seconds (minimum allowed)
 		svc := &Service{config: cfg}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
