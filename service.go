@@ -38,6 +38,13 @@ func (s *Service) Initialize() error {
 		return err
 	}
 
+	if s.config.Driver == SqliteDriver {
+		// Ensure the database file exists before opening
+		if err := s.checkDatabaseFile(s.config.Path); err != nil {
+			return errors.New(op).Errorf("s.checkDatabaseFile: %w", err)
+		}
+	}
+
 	s.isInitialized.Store(true)
 
 	return nil
