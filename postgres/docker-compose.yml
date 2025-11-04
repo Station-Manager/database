@@ -1,0 +1,17 @@
+services:
+  postgresql:
+    image: postgres:15-alpine
+    restart: always
+    container_name: smpostgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-smuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-1q2w3e4r}
+      POSTGRES_DB: ${POSTGRES_DB:-station_manager}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+#      - ./migrations/001_schema_migrations.up.sql:/docker-entrypoint-initdb.d/001_schema_migrations.up.sql
+
+volumes:
+  postgres_data:

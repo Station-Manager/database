@@ -4,22 +4,22 @@ import (
 	"context"
 	"database/sql"
 	"github.com/Station-Manager/errors"
-	dbtypes "github.com/Station-Manager/types/database"
+	"github.com/Station-Manager/types"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"sync"
 	"sync/atomic"
 )
 
 type Service struct {
-	config *dbtypes.Config
-	handle *sql.DB
-
+	config        *types.DatastoreConfig
+	handle        *sql.DB
 	mu            sync.Mutex
 	isCfgValid    atomic.Bool
 	isInitialized atomic.Bool
 	isOpen        atomic.Bool
 }
 
+// Initialize initializes the database service.
 func (s *Service) Initialize() error {
 	const op errors.Op = "database.Service.Initialize"
 	if s == nil {
@@ -41,6 +41,7 @@ func (s *Service) Initialize() error {
 	return nil
 }
 
+// Open opens the database connection.
 func (s *Service) Open() error {
 	const op errors.Op = "database.Service.Open"
 	if s == nil {
@@ -61,7 +62,7 @@ func (s *Service) Open() error {
 	dsn := s.getDsn()
 	var err error
 	if s.handle, err = sql.Open(s.config.Driver, dsn); err != nil {
-
+		return errors.New(op).Err(err).Msg("Database connection failed.")
 	}
 
 	s.isOpen.Store(true)
