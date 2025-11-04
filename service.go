@@ -245,14 +245,14 @@ func (s *Service) QueryContext(ctx context.Context, query string, args ...interf
 
 func (s *Service) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	if s == nil {
-		return nil
+		return &sql.Row{}
 	}
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if s.handle == nil || !s.isOpen.Load() {
-		return nil
+		return &sql.Row{}
 	}
 
 	return s.handle.QueryRowContext(ctx, query, args...)

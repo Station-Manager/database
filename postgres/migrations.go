@@ -35,8 +35,9 @@ func Migrations(handle *sql.DB) error {
 		return errors.New(op).Errorf("migrate.NewWithInstance: %w", err)
 	}
 	defer func(m *migrate.Migrate) {
-		if closeErr, _ := m.Close(); closeErr != nil {
-			// If the Close() fails, we don't want to return the error, so we ignore it
+		if closeErr, _ := m.Close(); closeErr != nil && err == nil {
+			// Only return close error if no other error occurred
+			err = errors.New(op).Errorf("m.Close: %w", closeErr)
 		}
 	}(m)
 
@@ -45,5 +46,6 @@ func Migrations(handle *sql.DB) error {
 		return errors.New(op).Errorf("m.Up: %w", err)
 	}
 
-	return nil
+	// Returns err (which could be set by deferred close)
+	return err
 }
