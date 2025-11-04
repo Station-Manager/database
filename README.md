@@ -9,9 +9,17 @@ the local database.
 
 `sudo systemctl start docker.service`
 
-`docker-compose up`
+`docker-compose --env-file .env up -d`
 
 `docker-compose down`
+
+### SQLBoiler
+
+`cd postgres`
+
+`export PSQL_PASS=[some password]`
+
+`sqlboiler psql`
 
 ## SQLite
 

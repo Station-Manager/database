@@ -1,6 +1,8 @@
 services:
   postgresql:
     image: postgres:15-alpine
+    env_file:
+      - .env
     restart: always
     container_name: smpostgres
     ports:
@@ -11,7 +13,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-station_manager}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-#      - ./migrations/001_schema_migrations.up.sql:/docker-entrypoint-initdb.d/001_schema_migrations.up.sql
 
 volumes:
   postgres_data:
