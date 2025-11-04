@@ -146,11 +146,7 @@ func (s *Service) Ping() error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	if s.handle == nil {
-		return errors.New(op).Msg(errMsgNilHandle)
-	}
-
-	if !s.isOpen.Load() {
+	if s.handle == nil || !s.isOpen.Load() {
 		return errors.New(op).Msg(errMsgNotOpen)
 	}
 

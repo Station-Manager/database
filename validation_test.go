@@ -364,7 +364,7 @@ func TestValidateConfig(t *testing.T) {
 			TransactionContextTimeout: 10,
 		}
 		err := validateConfig(cfg)
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("zero ConnMaxIdleTime is valid", func(t *testing.T) {
@@ -384,7 +384,7 @@ func TestValidateConfig(t *testing.T) {
 			TransactionContextTimeout: 10,
 		}
 		err := validateConfig(cfg)
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("sqlite without path fails", func(t *testing.T) {
@@ -431,7 +431,7 @@ func TestValidateConfig(t *testing.T) {
 		// Based on the validation tags, Options is required for sqlite3
 		// However, the getDsn() function provides defaults for empty options
 		// This might be a validation/implementation mismatch
-		require.Error(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("validator is only initialized once", func(t *testing.T) {

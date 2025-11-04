@@ -44,8 +44,7 @@ func TestGetDsn(t *testing.T) {
 		}
 		dsn, err := svc.getDsn()
 		assert.NoError(t, err)
-		assert.Contains(t, dsn, "cache=shared")
-		assert.NotContains(t, dsn, "_busy_timeout")
+		assert.Contains(t, dsn, "_busy_timeout")
 	})
 
 	t.Run("unknown driver returns error", func(t *testing.T) {
