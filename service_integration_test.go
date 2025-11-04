@@ -1,7 +1,6 @@
 package database
 
 import (
-	"fmt"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -34,7 +33,6 @@ func TestService_PostgresMigration(t *testing.T) {
 		assert.NoError(t, err)
 
 		err = svc.Open()
-		fmt.Println(err)
 		assert.NoError(t, err)
 
 		err = svc.Ping()
