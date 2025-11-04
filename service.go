@@ -5,16 +5,17 @@ import (
 	"database/sql"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/lib/pq"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type Service struct {
-	config        *types.DatastoreConfig
-	handle        *sql.DB
-	mu            sync.Mutex
-	isCfgValid    atomic.Bool
+	config *types.DatastoreConfig
+	handle *sql.DB
+
+	mu            sync.RWMutex
 	isInitialized atomic.Bool
 	isOpen        atomic.Bool
 }
@@ -34,8 +35,6 @@ func (s *Service) Initialize() error {
 		return err
 	}
 
-	s.isCfgValid.Store(true)
-
 	s.isInitialized.Store(true)
 
 	return nil
@@ -48,15 +47,22 @@ func (s *Service) Open() error {
 		return errors.New(op).Msg(errMsgNilService)
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
+	// Has the service been initialized?
 	if !s.isInitialized.Load() {
 		return errors.New(op).Msg(errMsgNotInitialized)
 	}
 
-	if !s.isOpen.Load() {
-		return errors.New(op).Msg(errMsgNotOpen)
+	// Quick pre-check to see if the database is already open.
+	if s.isOpen.Load() {
+		return errors.New(op).Msg(errMsgAlreadyOpen)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Re-check under lock to avoid TOCTOU
+	if s.isOpen.Load() {
+		return errors.New(op).Msg(errMsgAlreadyOpen)
 	}
 
 	dsn := s.getDsn()
@@ -75,6 +81,27 @@ func (s *Service) Close() error {
 	if s == nil {
 		return errors.New(op).Msg(errMsgNilService)
 	}
+
+	// Quick pre-check
+	if !s.isOpen.Load() {
+		return errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Re-check under lock
+	if !s.isOpen.Load() {
+		return errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	if err := s.handle.Close(); err != nil {
+		return errors.New(op).Err(err).Msg("Failed to close database connection.")
+	}
+
+	s.handle = nil
+	s.isOpen.Store(false)
+
 	return nil
 }
 
@@ -83,6 +110,25 @@ func (s *Service) Ping() error {
 	if s == nil {
 		return errors.New(op).Msg(errMsgNilService)
 	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.handle == nil {
+		return errors.New(op).Msg(errMsgNilHandle)
+	}
+
+	if !s.isOpen.Load() {
+		return errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	cPing, cancelPing := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelPing()
+
+	if err := s.handle.PingContext(cPing); err != nil {
+		return errors.New(op).Err(err).Msg("Failed to ping database.")
+	}
+
 	return nil
 }
 
@@ -97,22 +143,46 @@ func (s *Service) Migrate() error {
 func (s *Service) ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
 	const op errors.Op = "database.Service.ExecContext"
 	if s == nil {
-		return nil, errors.New(op).Msg("Service is nil.")
+		return nil, errors.New(op).Msg(errMsgNilService)
 	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.handle == nil || !s.isOpen.Load() {
+		return nil, errors.New(op).Msg(errMsgNotOpen)
+	}
+
 	return s.handle.ExecContext(ctx, query, args...)
 }
 
 func (s *Service) QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
 	const op errors.Op = "database.Service.QueryContext"
 	if s == nil {
-		return nil, errors.New(op).Msg("Service is nil.")
+		return nil, errors.New(op).Msg(errMsgNilService)
 	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.handle == nil || !s.isOpen.Load() {
+		return nil, errors.New(op).Msg(errMsgNotOpen)
+	}
+
 	return s.handle.QueryContext(ctx, query, args...)
 }
 
 func (s *Service) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	if s == nil {
-		panic("Service is nil.")
+		panic(errMsgNilService)
 	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.handle == nil || !s.isOpen.Load() {
+		panic(errMsgNotOpen)
+	}
+
 	return s.handle.QueryRowContext(ctx, query, args...)
 }

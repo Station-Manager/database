@@ -2,11 +2,11 @@ package database
 
 import (
 	"github.com/Station-Manager/errors"
-	types "github.com/Station-Manager/types/database"
+	"github.com/Station-Manager/types"
 	"github.com/go-playground/validator/v10"
 )
 
-func validateConfig(cfg *types.Config) error {
+func validateConfig(cfg *types.DatastoreConfig) error {
 	const op errors.Op = "database.validateConfig"
 	if cfg == nil {
 		return errors.New(op).Msg(errMsgNilConfig)
