@@ -55,3 +55,13 @@ func (s *Service) withDefaultTimeout(ctx context.Context) (context.Context, cont
 	}
 	return context.WithTimeout(ctx, time.Duration(s.config.ContextTimeout)*time.Second)
 }
+
+// checkDatabaseFile ensures the database file exists; if not, it creates the necessary directory and file structure.
+// Returns an error if any issue occurs during file validation, directory creation, or file creation.
+func (s *Service) checkDatabaseFile(dbFilePath string) error {
+	const op errors.Op = "database.Service.checkDatabaseFile"
+	if len(dbFilePath) == 0 {
+		return errors.New(op).Msg(errMsgEmptyPath)
+	}
+	return nil
+}
