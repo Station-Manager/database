@@ -15,7 +15,7 @@ import (
 )
 
 type Service struct {
-	config *types.DatastoreConfig
+	config *types.DatastoreConfig `inject:"datastoreconfig"`
 	handle *sql.DB
 
 	mu            sync.RWMutex
@@ -23,7 +23,8 @@ type Service struct {
 	isOpen        atomic.Bool
 }
 
-// Initialize initializes the database service.
+// Initialize initializes the database service. No constructor is provided as this service is to be
+// initialized within an IOC/DI container.
 func (s *Service) Initialize() error {
 	const op errors.Op = "database.Service.Initialize"
 	if s == nil {
