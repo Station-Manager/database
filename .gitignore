@@ -1,2 +1,4 @@
 copilot.*
 postgres/.env
+:memory:
+coverage*
