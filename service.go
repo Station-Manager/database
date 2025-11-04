@@ -278,14 +278,11 @@ func (s *Service) QueryContext(ctx context.Context, query string, args ...interf
 	// Note: We do NOT defer cancel() here because the returned *sql.Rows needs
 	// the context to remain valid while the caller iterates over rows.
 	// The caller must ensure rows.Close() is called to release resources.
-	var cancel context.CancelFunc
+	// The timeout context (if created) will be automatically cleaned up after the timeout expires.
 	_, ok := ctx.Deadline()
 	if !ok {
-		ctx, cancel = s.withDefaultTimeout(ctx)
-	} else {
-		cancel = func() {} // No-op for contexts that already have deadlines
+		ctx, _ = s.withDefaultTimeout(ctx)
 	}
-	defer cancel()
 
 	res, err := h.QueryContext(ctx, query, args...)
 	if err != nil {
