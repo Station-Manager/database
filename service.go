@@ -153,7 +153,7 @@ func (s *Service) Ping() error {
 func (s *Service) Migrate() error {
 	const op errors.Op = "database.Service.Migrate"
 	if s == nil {
-		return errors.New(op).Msg("Service is nil.")
+		return errors.New(op).Msg(errMsgNilService)
 	}
 
 	s.mu.RLock()
@@ -242,14 +242,14 @@ func (s *Service) QueryContext(ctx context.Context, query string, args ...interf
 
 func (s *Service) QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row {
 	if s == nil {
-		panic(errMsgNilService)
+		return nil
 	}
 
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
 	if s.handle == nil || !s.isOpen.Load() {
-		panic(errMsgNotOpen)
+		return nil
 	}
 
 	return s.handle.QueryRowContext(ctx, query, args...)
