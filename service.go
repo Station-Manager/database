@@ -7,7 +7,7 @@ import (
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -113,7 +113,8 @@ func (s *Service) Close() error {
 
 	// Quick pre-check
 	if !s.isOpen.Load() {
-		return errors.New(op).Msg(errMsgNotOpen)
+		return nil // Idempotent
+		// return errors.New(op).Msg(errMsgNotOpen)
 	}
 
 	s.mu.Lock()
@@ -121,7 +122,8 @@ func (s *Service) Close() error {
 
 	// Re-check under lock - TOCTOU
 	if !s.isOpen.Load() {
-		return errors.New(op).Msg(errMsgNotOpen)
+		return nil // Idempotent
+		// return errors.New(op).Msg(errMsgNotOpen)
 	}
 
 	if err := s.handle.Close(); err != nil {
