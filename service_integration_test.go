@@ -32,6 +32,9 @@ func TestService_PostgresMigration(t *testing.T) {
 		err = svc.Ping()
 		assert.NoError(t, err)
 
+		err = svc.Migrate()
+		assert.NoError(t, err)
+
 		err = svc.Close()
 		assert.NoError(t, err)
 	})
