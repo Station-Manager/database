@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	stderr "errors"
+	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	_ "github.com/lib/pq"
@@ -14,8 +15,9 @@ import (
 )
 
 type Service struct {
-	config *types.DatastoreConfig `inject:"datastoreconfig"`
-	handle *sql.DB
+	ConfigService *config.Service `inject:"appconfig"`
+	config        *types.DatastoreConfig
+	handle        *sql.DB
 
 	mu            sync.RWMutex
 	isInitialized atomic.Bool
@@ -34,18 +36,24 @@ func (s *Service) Initialize() error {
 		return nil // Exit gracefully
 	}
 
-	if s.config == nil {
-		return errors.New(op).Msg(errMsgNilConfig)
+	if s.ConfigService == nil {
+		return errors.New(op).Msg(errMsgAppConfigNil)
 	}
 
-	if err := validateConfig(s.config); err != nil {
-		return err
+	dbCfg, err := s.ConfigService.DatastoreConfig()
+	if err != nil {
+		return errors.New(op).Err(err)
 	}
+
+	if err = validateConfig(&dbCfg); err != nil {
+		return errors.New(op).Err(err)
+	}
+	s.config = &dbCfg
 
 	if s.config.Driver == SqliteDriver {
 		// Ensure the database directory exists
-		if err := s.checkDatabaseDir(s.config.Path); err != nil {
-			return errors.New(op).Errorf("s.checkDatabaseFile: %w", err)
+		if err = s.checkDatabaseDir(s.config.Path); err != nil {
+			return errors.New(op).Err(err)
 		}
 	}
 

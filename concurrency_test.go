@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -38,10 +39,21 @@ func getValidSqliteConfigForConcurrency(t *testing.T) *types.DatastoreConfig {
 	}
 }
 
+func getServiceWithConfigForConcurrency(t *testing.T) *Service {
+	cfg := getValidSqliteConfigForConcurrency(t)
+	cfgSvc := &config.Service{
+		AppConfig: types.AppConfig{
+			DatastoreConfig: *cfg,
+		},
+	}
+	require.NoError(t, cfgSvc.Initialize())
+	return &Service{ConfigService: cfgSvc}
+}
+
 // TestConcurrency_OpenClose tests concurrent open and close operations
 func TestConcurrency_OpenClose(t *testing.T) {
 	t.Run("concurrent open and close are safe", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 
 		var wg sync.WaitGroup
@@ -73,7 +85,7 @@ func TestConcurrency_OpenClose(t *testing.T) {
 	})
 
 	t.Run("concurrent pings during open/close", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 
@@ -114,7 +126,7 @@ func TestConcurrency_OpenClose(t *testing.T) {
 // TestConcurrency_QueryExec tests concurrent query and exec operations
 func TestConcurrency_QueryExec(t *testing.T) {
 	t.Run("concurrent queries are safe", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -146,7 +158,7 @@ func TestConcurrency_QueryExec(t *testing.T) {
 	})
 
 	t.Run("concurrent execs are safe", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -186,7 +198,7 @@ func TestConcurrency_QueryExec(t *testing.T) {
 	})
 
 	t.Run("concurrent mixed query and exec", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -224,7 +236,7 @@ func TestConcurrency_QueryExec(t *testing.T) {
 // TestConcurrency_Transactions tests concurrent transaction operations
 func TestConcurrency_Transactions(t *testing.T) {
 	t.Run("multiple concurrent transactions", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -277,7 +289,7 @@ func TestConcurrency_Transactions(t *testing.T) {
 	})
 
 	t.Run("transaction rollback and commit mix", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -335,7 +347,7 @@ func TestConcurrency_Transactions(t *testing.T) {
 // TestConcurrency_OperationsDuringClose tests operations during close
 func TestConcurrency_OperationsDuringClose(t *testing.T) {
 	t.Run("queries during close handle gracefully", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 
@@ -369,7 +381,7 @@ func TestConcurrency_OperationsDuringClose(t *testing.T) {
 	})
 
 	t.Run("transactions during close handle gracefully", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 
@@ -410,7 +422,7 @@ func TestConcurrency_OperationsDuringClose(t *testing.T) {
 // TestConcurrency_StateConsistency tests state consistency
 func TestConcurrency_StateConsistency(t *testing.T) {
 	t.Run("isOpen and handle are always consistent", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 
 		var wg sync.WaitGroup
@@ -468,7 +480,7 @@ func TestConcurrency_StateConsistency(t *testing.T) {
 // TestConcurrency_PingStorm tests many concurrent pings
 func TestConcurrency_PingStorm(t *testing.T) {
 	t.Run("handle many concurrent pings", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfigForConcurrency(t)}
+		svc := getServiceWithConfigForConcurrency(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -511,7 +523,13 @@ func BenchmarkConcurrency_Query(b *testing.B) {
 		ContextTimeout:            5,
 		TransactionContextTimeout: 10,
 	}
-	svc := &Service{config: cfg}
+	cfgSvc := &config.Service{
+		AppConfig: types.AppConfig{
+			DatastoreConfig: *cfg,
+		},
+	}
+	_ = cfgSvc.Initialize()
+	svc := &Service{ConfigService: cfgSvc}
 	_ = svc.Initialize()
 	_ = svc.Open()
 	defer svc.Close()
@@ -539,7 +557,13 @@ func BenchmarkConcurrency_Exec(b *testing.B) {
 		ContextTimeout:            5,
 		TransactionContextTimeout: 10,
 	}
-	svc := &Service{config: cfg}
+	cfgSvc := &config.Service{
+		AppConfig: types.AppConfig{
+			DatastoreConfig: *cfg,
+		},
+	}
+	_ = cfgSvc.Initialize()
+	svc := &Service{ConfigService: cfgSvc}
 	_ = svc.Initialize()
 	_ = svc.Open()
 	defer svc.Close()
@@ -566,7 +590,13 @@ func BenchmarkConcurrency_Transaction(b *testing.B) {
 		ContextTimeout:            5,
 		TransactionContextTimeout: 10,
 	}
-	svc := &Service{config: cfg}
+	cfgSvc := &config.Service{
+		AppConfig: types.AppConfig{
+			DatastoreConfig: *cfg,
+		},
+	}
+	_ = cfgSvc.Initialize()
+	svc := &Service{ConfigService: cfgSvc}
 	_ = svc.Initialize()
 	_ = svc.Open()
 	defer svc.Close()

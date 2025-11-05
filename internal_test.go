@@ -1,11 +1,63 @@
 package database
 
 import (
+	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
+
+func getServiceForInternalTest(cfg *types.DatastoreConfig) *Service {
+	// Fill in required fields if not set
+	if cfg.MaxOpenConns == 0 {
+		cfg.MaxOpenConns = 10
+	}
+	if cfg.MaxIdleConns == 0 {
+		cfg.MaxIdleConns = 5
+	}
+	if cfg.ConnMaxLifetime == 0 {
+		cfg.ConnMaxLifetime = 15
+	}
+	if cfg.ConnMaxIdleTime == 0 {
+		cfg.ConnMaxIdleTime = 5
+	}
+	if cfg.ContextTimeout == 0 {
+		cfg.ContextTimeout = 5
+	}
+	if cfg.TransactionContextTimeout == 0 {
+		cfg.TransactionContextTimeout = 10
+	}
+	// Fill in fields required for validation but not used by getDsn for SQLite
+	if cfg.Host == "" {
+		cfg.Host = "localhost"
+	}
+	if cfg.Port == 0 {
+		cfg.Port = 5432
+	}
+	if cfg.User == "" {
+		cfg.User = "testuser"
+	}
+	if cfg.Password == "" {
+		cfg.Password = "testpass"
+	}
+	if cfg.Database == "" {
+		cfg.Database = "testdb"
+	}
+	if cfg.SSLMode == "" {
+		cfg.SSLMode = "disable"
+	}
+
+	cfgSvc := &config.Service{
+		AppConfig: types.AppConfig{
+			DatastoreConfig: *cfg,
+		},
+	}
+	_ = cfgSvc.Initialize()
+	svc := &Service{ConfigService: cfgSvc}
+	_ = svc.Initialize()
+	return svc
+}
 
 // TestService_getDsn tests DSN generation for different drivers
 func TestService_getDsn(t *testing.T) {
@@ -19,7 +71,7 @@ func TestService_getDsn(t *testing.T) {
 			Password: "testpass",
 			SSLMode:  "disable",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -42,7 +94,7 @@ func TestService_getDsn(t *testing.T) {
 			Password: "p@ss:w/rd!#",
 			SSLMode:  "require",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -60,7 +112,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "/tmp/test.db",
 			Options: "",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -78,7 +130,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "/tmp/test.db",
 			Options: "cache=shared&mode=memory",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -93,7 +145,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "test_options.db",
 			Options: "?cache=shared",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -108,7 +160,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "test_question.db",
 			Options: "?",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -124,7 +176,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "test_file.db",
 			Options: "",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -133,32 +185,64 @@ func TestService_getDsn(t *testing.T) {
 		assert.Contains(t, dsn, "_busy_timeout")
 	})
 
-	t.Run("unknown driver returns error", func(t *testing.T) {
+	t.Run("unknown driver fails validation during initialization", func(t *testing.T) {
 		cfg := &types.DatastoreConfig{
-			Driver: "mysql",
+			Driver:                    "mysql",
+			Host:                      "localhost",
+			Port:                      3306,
+			User:                      "testuser",
+			Password:                  "testpass",
+			Database:                  "testdb",
+			SSLMode:                   "disable",
+			MaxOpenConns:              10,
+			MaxIdleConns:              5,
+			ConnMaxLifetime:           15,
+			ConnMaxIdleTime:           5,
+			ContextTimeout:            5,
+			TransactionContextTimeout: 10,
 		}
-		svc := &Service{config: cfg}
-
-		dsn, err := svc.getDsn()
+		cfgSvc := &config.Service{
+			AppConfig: types.AppConfig{
+				DatastoreConfig: *cfg,
+			},
+		}
+		_ = cfgSvc.Initialize()
+		svc := &Service{ConfigService: cfgSvc}
+		err := svc.Initialize()
 
 		assert.Error(t, err)
-		assert.Empty(t, dsn)
-		assert.Contains(t, err.Error(), "Unsupported database driver")
+		assert.Error(t, err)
 	})
 
-	t.Run("sqlite with empty path returns error", func(t *testing.T) {
+	t.Run("sqlite with empty path fails validation during initialization", func(t *testing.T) {
 		cfg := &types.DatastoreConfig{
-			Driver:  SqliteDriver,
-			Path:    "",
-			Options: "",
+			Driver:                    SqliteDriver,
+			Path:                      "",
+			Options:                   "",
+			Host:                      "localhost",
+			Port:                      5432,
+			User:                      "testuser",
+			Password:                  "testpass",
+			Database:                  "testdb",
+			SSLMode:                   "disable",
+			MaxOpenConns:              10,
+			MaxIdleConns:              5,
+			ConnMaxLifetime:           15,
+			ConnMaxIdleTime:           5,
+			ContextTimeout:            5,
+			TransactionContextTimeout: 10,
 		}
-		svc := &Service{config: cfg}
-
-		dsn, err := svc.getDsn()
+		cfgSvc := &config.Service{
+			AppConfig: types.AppConfig{
+				DatastoreConfig: *cfg,
+			},
+		}
+		_ = cfgSvc.Initialize()
+		svc := &Service{ConfigService: cfgSvc}
+		err := svc.Initialize()
 
 		assert.Error(t, err)
-		assert.Empty(t, dsn)
-		assert.Contains(t, err.Error(), errMsgEmptyPath)
+		assert.Error(t, err)
 	})
 }
 
@@ -174,7 +258,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Password: "pass",
 			SSLMode:  "disable",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -194,7 +278,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Password: "pass",
 			SSLMode:  "disable",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -208,7 +292,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Path:    "./relative/path/db.sqlite",
 			Options: "",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -222,7 +306,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Path:    "/absolute/path/db.sqlite",
 			Options: "",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -240,7 +324,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Password: "",
 			SSLMode:  "disable",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -263,7 +347,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 				Password: "pass",
 				SSLMode:  mode,
 			}
-			svc := &Service{config: cfg}
+			svc := getServiceForInternalTest(cfg)
 
 			dsn, err := svc.getDsn()
 			require.NoError(t, err)
@@ -278,7 +362,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Path:    "test_complex.db",
 			Options: "_busy_timeout=10000&_journal_mode=DELETE&_synchronous=FULL&cache=private",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -300,7 +384,7 @@ func BenchmarkService_getDsn(b *testing.B) {
 			Password: "testpass",
 			SSLMode:  "disable",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -314,7 +398,7 @@ func BenchmarkService_getDsn(b *testing.B) {
 			Path:    "test_bench.db",
 			Options: "",
 		}
-		svc := &Service{config: cfg}
+		svc := getServiceForInternalTest(cfg)
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

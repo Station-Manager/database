@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -37,6 +38,17 @@ func getSqliteFileConfig(t *testing.T) *types.DatastoreConfig {
 	}
 }
 
+func getSqliteService(t *testing.T) *Service {
+	cfg := getSqliteFileConfig(t)
+	cfgSvc := &config.Service{
+		AppConfig: types.AppConfig{
+			DatastoreConfig: *cfg,
+		},
+	}
+	_ = cfgSvc.Initialize()
+	return &Service{ConfigService: cfgSvc}
+}
+
 // TestSQLiteIntegration tests actual SQLite database operations
 func TestSQLiteIntegration(t *testing.T) {
 	if testing.Short() {
@@ -44,8 +56,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	}
 
 	t.Run("full lifecycle with SQLite", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 
 		// Initialize
 		err := svc.Initialize()
@@ -107,8 +118,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("transaction rollback", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -146,8 +156,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("close and reopen", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 
 		// First open/close cycle
@@ -170,7 +179,13 @@ func TestSQLiteIntegration(t *testing.T) {
 	t.Run("query context timeout", func(t *testing.T) {
 		cfg := getSqliteFileConfig(t)
 		cfg.ContextTimeout = 5 // 5 seconds (minimum allowed)
-		svc := &Service{config: cfg}
+		cfgSvc := &config.Service{
+			AppConfig: types.AppConfig{
+				DatastoreConfig: *cfg,
+			},
+		}
+		_ = cfgSvc.Initialize()
+		svc := &Service{ConfigService: cfgSvc}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -185,7 +200,13 @@ func TestSQLiteIntegration(t *testing.T) {
 	t.Run("exec context timeout", func(t *testing.T) {
 		cfg := getSqliteFileConfig(t)
 		cfg.ContextTimeout = 5 // 5 seconds (minimum allowed)
-		svc := &Service{config: cfg}
+		cfgSvc := &config.Service{
+			AppConfig: types.AppConfig{
+				DatastoreConfig: *cfg,
+			},
+		}
+		_ = cfgSvc.Initialize()
+		svc := &Service{ConfigService: cfgSvc}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -197,8 +218,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("transaction with custom context", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -221,8 +241,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("multiple inserts", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -249,8 +268,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("query multiple rows", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -280,8 +298,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("exec with no rows affected", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -300,8 +317,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("query with no results", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -319,8 +335,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("update operations", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -351,8 +366,7 @@ func TestSQLiteIntegration(t *testing.T) {
 	})
 
 	t.Run("delete operations", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -392,8 +406,7 @@ func TestSQLiteMigrations(t *testing.T) {
 	}
 
 	t.Run("run migrations", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -413,8 +426,7 @@ func TestErrorPaths(t *testing.T) {
 	}
 
 	t.Run("ping closed database", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		require.NoError(t, svc.Close())
@@ -425,8 +437,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("exec on closed database", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		require.NoError(t, svc.Close())
@@ -437,8 +448,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("query on closed database", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		require.NoError(t, svc.Close())
@@ -449,8 +459,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("begin transaction on closed database", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		require.NoError(t, svc.Close())
@@ -462,8 +471,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("invalid SQL in exec", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -473,8 +481,7 @@ func TestErrorPaths(t *testing.T) {
 	})
 
 	t.Run("invalid SQL in query", func(t *testing.T) {
-		cfg := getSqliteFileConfig(t)
-		svc := &Service{config: cfg}
+		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()

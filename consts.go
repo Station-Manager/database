@@ -7,7 +7,7 @@ const (
 	errMsgNotOpen        = "Database service is not open."
 	errMsgAlreadyOpen    = "Database service is already open."
 	errMsgConfigInvalid  = "Database configuration is invalid."
-	errMsgNilHandle      = "Database handle is nil."
+	errMsgAppConfigNil   = "Config service is nil."
 	errMsgPingFailed     = "Failed to ping database."
 	errMsgConnFailed     = "Database connection failed."
 	errMsgFailedClose    = "Failed to close database connection."

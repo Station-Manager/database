@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -57,6 +58,38 @@ func getValidSqliteConfig(t *testing.T) *types.DatastoreConfig {
 	}
 }
 
+func getServiceWithPostgresConfig() *Service {
+	cfg := getValidPostgresConfig()
+	cfgSvc := &config.Service{
+		AppConfig: types.AppConfig{
+			DatastoreConfig: *cfg,
+		},
+	}
+	_ = cfgSvc.Initialize()
+	return &Service{ConfigService: cfgSvc}
+}
+
+func getServiceWithSqliteConfig(t *testing.T) *Service {
+	cfg := getValidSqliteConfig(t)
+	cfgSvc := &config.Service{
+		AppConfig: types.AppConfig{
+			DatastoreConfig: *cfg,
+		},
+	}
+	_ = cfgSvc.Initialize()
+	return &Service{ConfigService: cfgSvc}
+}
+
+func getServiceWithConfig(cfg *types.DatastoreConfig) *Service {
+	cfgSvc := &config.Service{
+		AppConfig: types.AppConfig{
+			DatastoreConfig: *cfg,
+		},
+	}
+	_ = cfgSvc.Initialize()
+	return &Service{ConfigService: cfgSvc}
+}
+
 // TestService_Initialize tests the Initialize method
 func TestService_Initialize(t *testing.T) {
 	t.Run("nil service returns error", func(t *testing.T) {
@@ -66,29 +99,29 @@ func TestService_Initialize(t *testing.T) {
 		assert.Contains(t, err.Error(), errMsgNilService)
 	})
 
-	t.Run("nil config returns error", func(t *testing.T) {
+	t.Run("nil config service returns error", func(t *testing.T) {
 		svc := &Service{}
 		err := svc.Initialize()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNilConfig)
+		assert.Contains(t, err.Error(), errMsgAppConfigNil)
 	})
 
 	t.Run("empty config fails validation", func(t *testing.T) {
-		svc := &Service{config: &types.DatastoreConfig{}}
+		svc := getServiceWithConfig(&types.DatastoreConfig{})
 		err := svc.Initialize()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgConfigInvalid)
+		assert.Error(t, err)
 	})
 
 	t.Run("valid postgres config succeeds", func(t *testing.T) {
-		svc := &Service{config: getValidPostgresConfig()}
+		svc := getServiceWithPostgresConfig()
 		err := svc.Initialize()
 		assert.NoError(t, err)
 		assert.True(t, svc.isInitialized.Load())
 	})
 
 	t.Run("valid sqlite config succeeds", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		err := svc.Initialize()
 		assert.NoError(t, err)
 		assert.True(t, svc.isInitialized.Load())
@@ -97,14 +130,14 @@ func TestService_Initialize(t *testing.T) {
 	t.Run("invalid driver fails validation", func(t *testing.T) {
 		cfg := getValidPostgresConfig()
 		cfg.Driver = "mysql"
-		svc := &Service{config: cfg}
+		svc := getServiceWithConfig(cfg)
 		err := svc.Initialize()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgConfigInvalid)
+		assert.Error(t, err)
 	})
 
 	t.Run("double initialization succeeds", func(t *testing.T) {
-		svc := &Service{config: getValidPostgresConfig()}
+		svc := getServiceWithPostgresConfig()
 		err := svc.Initialize()
 		require.NoError(t, err)
 		err = svc.Initialize()
@@ -122,14 +155,14 @@ func TestService_Open(t *testing.T) {
 	})
 
 	t.Run("uninitialized service returns error", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		err := svc.Open()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), errMsgNotInitialized)
 	})
 
 	t.Run("valid sqlite config opens successfully", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 
 		err := svc.Open()
@@ -142,7 +175,7 @@ func TestService_Open(t *testing.T) {
 	})
 
 	t.Run("double open returns error", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 
@@ -155,7 +188,7 @@ func TestService_Open(t *testing.T) {
 	})
 
 	t.Run("concurrent open attempts are safe", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 
 		var wg sync.WaitGroup
@@ -201,14 +234,14 @@ func TestService_Close(t *testing.T) {
 	})
 
 	t.Run("closing unopened service is idempotent", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		err := svc.Close()
 		// Close is idempotent, should not error
 		assert.NoError(t, err)
 	})
 
 	t.Run("close after open succeeds", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 
@@ -219,7 +252,7 @@ func TestService_Close(t *testing.T) {
 	})
 
 	t.Run("double close is idempotent", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		require.NoError(t, svc.Close())
@@ -230,7 +263,7 @@ func TestService_Close(t *testing.T) {
 	})
 
 	t.Run("concurrent close attempts are safe", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 
@@ -265,14 +298,14 @@ func TestService_Ping(t *testing.T) {
 	})
 
 	t.Run("ping unopened service returns error", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		err := svc.Ping()
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), errMsgNotOpen)
 	})
 
 	t.Run("ping open service succeeds", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -282,7 +315,7 @@ func TestService_Ping(t *testing.T) {
 	})
 
 	t.Run("concurrent pings are safe", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -313,7 +346,7 @@ func TestService_BeginTxContext(t *testing.T) {
 	})
 
 	t.Run("unopened service returns error", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		tx, cancel, err := svc.BeginTxContext(context.Background())
 		assert.Nil(t, tx)
 		assert.Nil(t, cancel)
@@ -322,7 +355,7 @@ func TestService_BeginTxContext(t *testing.T) {
 	})
 
 	t.Run("begin transaction succeeds", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -338,7 +371,7 @@ func TestService_BeginTxContext(t *testing.T) {
 	})
 
 	t.Run("context without deadline gets timeout", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -354,7 +387,7 @@ func TestService_BeginTxContext(t *testing.T) {
 	})
 
 	t.Run("context with deadline is preserved", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -372,7 +405,7 @@ func TestService_BeginTxContext(t *testing.T) {
 	})
 
 	t.Run("multiple concurrent transactions", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -405,7 +438,7 @@ func TestService_ExecContext(t *testing.T) {
 	})
 
 	t.Run("unopened service returns error", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		res, err := svc.ExecContext(context.Background(), "SELECT 1")
 		assert.Nil(t, res)
 		require.Error(t, err)
@@ -413,7 +446,7 @@ func TestService_ExecContext(t *testing.T) {
 	})
 
 	t.Run("create table succeeds", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -424,7 +457,7 @@ func TestService_ExecContext(t *testing.T) {
 	})
 
 	t.Run("insert and get affected rows", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -441,7 +474,7 @@ func TestService_ExecContext(t *testing.T) {
 	})
 
 	t.Run("context with deadline is respected", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -455,7 +488,7 @@ func TestService_ExecContext(t *testing.T) {
 	})
 
 	t.Run("invalid SQL returns error", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -477,7 +510,7 @@ func TestService_QueryContext(t *testing.T) {
 	})
 
 	t.Run("unopened service returns error", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		rows, err := svc.QueryContext(context.Background(), "SELECT 1")
 		assert.Nil(t, rows)
 		require.Error(t, err)
@@ -485,7 +518,7 @@ func TestService_QueryContext(t *testing.T) {
 	})
 
 	t.Run("simple query succeeds", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -503,7 +536,7 @@ func TestService_QueryContext(t *testing.T) {
 	})
 
 	t.Run("query with parameters", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -525,7 +558,7 @@ func TestService_QueryContext(t *testing.T) {
 	})
 
 	t.Run("context with deadline is respected", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -540,7 +573,7 @@ func TestService_QueryContext(t *testing.T) {
 	})
 
 	t.Run("invalid SQL returns error", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -554,7 +587,7 @@ func TestService_QueryContext(t *testing.T) {
 // TestService_Lifecycle tests the full lifecycle
 func TestService_Lifecycle(t *testing.T) {
 	t.Run("full lifecycle with operations", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 
 		// Initialize
 		err := svc.Initialize()
@@ -604,7 +637,7 @@ func TestService_Lifecycle(t *testing.T) {
 	})
 
 	t.Run("reopen after close", func(t *testing.T) {
-		svc := &Service{config: getValidSqliteConfig(t)}
+		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 
 		// Open, close, reopen

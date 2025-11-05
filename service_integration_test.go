@@ -1,6 +1,7 @@
 package database
 
 import (
+	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -28,7 +29,13 @@ func TestService_PostgresMigration(t *testing.T) {
 				"application_name": "station-manager",
 			},
 		}
-		svc := &Service{config: cfg}
+		cfgSvc := &config.Service{
+			AppConfig: types.AppConfig{
+				DatastoreConfig: *cfg,
+			},
+		}
+		_ = cfgSvc.Initialize()
+		svc := &Service{ConfigService: cfgSvc}
 		err := svc.Initialize()
 		assert.NoError(t, err)
 
