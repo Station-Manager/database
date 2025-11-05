@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// getDsn returns the DSN for the database identified in the config.
 func (s *Service) getDsn() (string, error) {
 	const op errors.Op = "database.Service.getDsn"
 	switch s.config.Driver {
@@ -26,8 +27,8 @@ func (s *Service) getDsn() (string, error) {
 		return u.String(), nil
 	case SqliteDriver:
 		path := s.config.Path
-		if path == "" {
-			return "", errors.New(op).Msg(errMsgEmptyPath)
+		if path == emptyString {
+			return emptyString, errors.New(op).Msg(errMsgEmptyPath)
 		}
 
 		opts := s.config.Options
@@ -40,10 +41,11 @@ func (s *Service) getDsn() (string, error) {
 		dsn := fmt.Sprintf("file:%s?mode=rwc&_foreign_keys=on&_journal_mode=WAL&_busy_timeout=5000", path)
 		return dsn, nil
 	default:
-		return "", errors.New(op).Errorf("Unsupported database driver: %s (expected %q or %q)", s.config.Driver, PostgresDriver, SqliteDriver)
+		return emptyString, errors.New(op).Errorf("Unsupported database driver: %s (expected %q or %q)", s.config.Driver, PostgresDriver, SqliteDriver)
 	}
 }
 
+// withDefaultTimeout returns a context with a default timeout if none is provided.
 func (s *Service) withDefaultTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	if _, hasDeadline := ctx.Deadline(); hasDeadline {
 		return ctx, func() {}
@@ -70,15 +72,6 @@ func (s *Service) checkDatabaseDir(dbFilePath string) error {
 	if err = os.MkdirAll(dbDir, 0755); err != nil {
 		return errors.New(op).Errorf("os.MkdirAll: %w", err)
 	}
-
-	// Replaced by mode=rwc in DSN
-	//var f *os.File
-	//if f, err = os.OpenFile(dbFilePath, os.O_RDWR|os.O_CREATE, 0644); err != nil {
-	//	return errors.New(op).Errorf("os.OpenFile: %w", err)
-	//}
-	//if err = f.Close(); err != nil {
-	//	return errors.New(op).Errorf("f.Close: %w", err)
-	//}
 
 	return nil
 }
