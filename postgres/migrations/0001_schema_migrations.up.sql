@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS qso
     qso_date        DATE          NOT NULL,
     time_on         TIME          NOT NULL,
     time_off        TIME          NOT NULL,
-    rst_send        VARCHAR(3)    NOT NULL,
-    rst_recv        VARCHAR(3)    NOT NULL,
+    rst_sent        VARCHAR(3)    NOT NULL,
+    rst_rcvd        VARCHAR(3)    NOT NULL,
     country         VARCHAR(50),
 
     -- Everything else (name, QTH, contest data, propagation info, etc.)

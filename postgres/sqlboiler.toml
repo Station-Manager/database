@@ -9,6 +9,7 @@ add-enum-types = true
 user = "smuser"
 dbname = "station_manager"
 host = "localhost"
+port = 5432
 sslmode = "disable"
 blacklist = ["schema_migrations"]
 
