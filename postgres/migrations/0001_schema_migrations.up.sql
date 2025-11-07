@@ -33,24 +33,24 @@ CREATE INDEX idx_api_keys_expires_at ON api_keys (expires_at) WHERE expires_at I
 CREATE TABLE IF NOT EXISTS qso
 (
     id              BIGSERIAL PRIMARY KEY,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at      TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
     modified_at     TIMESTAMPTZ,
     deleted_at      TIMESTAMPTZ, -- Soft delete
 
     -- Frequently queried fields as columns
-    call            VARCHAR(20) NOT NULL,
-    band            VARCHAR(10) NOT NULL,
-    mode            VARCHAR(10) NOT NULL,
-    freq            INTEGER     NOT NULL,
-    qso_date        DATE        NOT NULL,
-    time_on         TIME        NOT NULL,
-    time_off        TIME        NOT NULL,
-    rst_send        VARCHAR(3)  NOT NULL,
-    rst_recv        VARCHAR(3)  NOT NULL,
+    call            VARCHAR(20)   NOT NULL,
+    band            VARCHAR(10)   NOT NULL,
+    mode            VARCHAR(10)   NOT NULL,
+    freq            NUMERIC(6, 3) NOT NULL,
+    qso_date        DATE          NOT NULL,
+    time_on         TIME          NOT NULL,
+    time_off        TIME          NOT NULL,
+    rst_send        VARCHAR(3)    NOT NULL,
+    rst_recv        VARCHAR(3)    NOT NULL,
     country         VARCHAR(50),
 
     -- Everything else (name, QTH, contest data, propagation info, etc.)
-    additional_data JSONB                DEFAULT '{}'::jsonb,
+    additional_data JSONB                  DEFAULT '{}'::jsonb,
 
     CONSTRAINT qso_data_no_duplicates CHECK (
         additional_data ? 'call' = false AND
