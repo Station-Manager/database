@@ -2,4 +2,5 @@ copilot.*
 postgres/.env
 :memory:
 coverage*
-data/test.db
+data
+relative
