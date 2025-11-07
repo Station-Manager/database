@@ -7,6 +7,8 @@ the local database.
 
 ### Development setup
 
+`cd database/postgres`
+
 `sudo systemctl start docker.service`
 
 `docker-compose --env-file .env up -d`
@@ -15,7 +17,7 @@ the local database.
 
 ### SQLBoiler
 
-`cd postgres`
+Your location must be the `database/postgres` directory.
 
 `export PSQL_PASS=[some password]`
 

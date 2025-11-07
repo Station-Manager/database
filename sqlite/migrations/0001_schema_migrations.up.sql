@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS qso
     call            VARCHAR(20) NOT NULL,
     band            VARCHAR(10) NOT NULL,
     mode            VARCHAR(10) NOT NULL,
-    freq            REAL        NOT NULL CHECK (freq >= 0 AND freq <= 999.999 AND round(freq * 1000) = freq * 1000),
+    freq            DECIMAL NOT NULL CHECK (freq >= 0 AND freq <= 999.999 AND round(freq * 1000) = freq * 1000),
     /* DATETIME here prompts SQLBoiler to use the "time.Time" type */
     qso_date        DATETIME    NOT NULL CHECK (
         length(qso_date) = 8 AND

@@ -18,27 +18,28 @@ import (
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/aarondl/sqlboiler/v4/queries/qmhelper"
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/aarondl/strmangle"
 	"github.com/friendsofgo/errors"
 )
 
 // Qso is an object representing the database table.
 type Qso struct {
-	ID             null.Int64  `boil:"id" json:"id,omitempty" toml:"id" yaml:"id,omitempty"`
-	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ModifiedAt     null.Time   `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
-	DeletedAt      null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
-	Call           string      `boil:"call" json:"call" toml:"call" yaml:"call"`
-	Band           string      `boil:"band" json:"band" toml:"band" yaml:"band"`
-	Mode           string      `boil:"mode" json:"mode" toml:"mode" yaml:"mode"`
-	Freq           float64     `boil:"freq" json:"freq" toml:"freq" yaml:"freq"`
-	QsoDate        time.Time   `boil:"qso_date" json:"qso_date" toml:"qso_date" yaml:"qso_date"`
-	TimeOn         time.Time   `boil:"time_on" json:"time_on" toml:"time_on" yaml:"time_on"`
-	TimeOff        time.Time   `boil:"time_off" json:"time_off" toml:"time_off" yaml:"time_off"`
-	RstSent        string      `boil:"rst_sent" json:"rst_sent" toml:"rst_sent" yaml:"rst_sent"`
-	RstRcvd        string      `boil:"rst_rcvd" json:"rst_rcvd" toml:"rst_rcvd" yaml:"rst_rcvd"`
-	Country        null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
-	AdditionalData null.JSON   `boil:"additional_data" json:"additional_data,omitempty" toml:"additional_data" yaml:"additional_data,omitempty"`
+	ID             null.Int64    `boil:"id" json:"id,omitempty" toml:"id" yaml:"id,omitempty"`
+	CreatedAt      time.Time     `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt     null.Time     `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
+	DeletedAt      null.Time     `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	Call           string        `boil:"call" json:"call" toml:"call" yaml:"call"`
+	Band           string        `boil:"band" json:"band" toml:"band" yaml:"band"`
+	Mode           string        `boil:"mode" json:"mode" toml:"mode" yaml:"mode"`
+	Freq           types.Decimal `boil:"freq" json:"freq" toml:"freq" yaml:"freq"`
+	QsoDate        time.Time     `boil:"qso_date" json:"qso_date" toml:"qso_date" yaml:"qso_date"`
+	TimeOn         time.Time     `boil:"time_on" json:"time_on" toml:"time_on" yaml:"time_on"`
+	TimeOff        time.Time     `boil:"time_off" json:"time_off" toml:"time_off" yaml:"time_off"`
+	RstSent        string        `boil:"rst_sent" json:"rst_sent" toml:"rst_sent" yaml:"rst_sent"`
+	RstRcvd        string        `boil:"rst_rcvd" json:"rst_rcvd" toml:"rst_rcvd" yaml:"rst_rcvd"`
+	Country        null.String   `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
+	AdditionalData null.JSON     `boil:"additional_data" json:"additional_data,omitempty" toml:"additional_data" yaml:"additional_data,omitempty"`
 
 	R *qsoR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L qsoL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -222,33 +223,25 @@ func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
-type whereHelperfloat64 struct{ field string }
+type whereHelpertypes_Decimal struct{ field string }
 
-func (w whereHelperfloat64) EQ(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperfloat64) NEQ(x float64) qm.QueryMod {
+func (w whereHelpertypes_Decimal) EQ(x types.Decimal) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertypes_Decimal) NEQ(x types.Decimal) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.NEQ, x)
 }
-func (w whereHelperfloat64) LT(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperfloat64) LTE(x float64) qm.QueryMod {
+func (w whereHelpertypes_Decimal) LT(x types.Decimal) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_Decimal) LTE(x types.Decimal) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LTE, x)
 }
-func (w whereHelperfloat64) GT(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperfloat64) GTE(x float64) qm.QueryMod {
+func (w whereHelpertypes_Decimal) GT(x types.Decimal) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_Decimal) GTE(x types.Decimal) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-func (w whereHelperfloat64) IN(slice []float64) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelperfloat64) NIN(slice []float64) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
 type whereHelpernull_String struct{ field string }
@@ -327,7 +320,7 @@ var QsoWhere = struct {
 	Call           whereHelperstring
 	Band           whereHelperstring
 	Mode           whereHelperstring
-	Freq           whereHelperfloat64
+	Freq           whereHelpertypes_Decimal
 	QsoDate        whereHelpertime_Time
 	TimeOn         whereHelpertime_Time
 	TimeOff        whereHelpertime_Time
@@ -343,7 +336,7 @@ var QsoWhere = struct {
 	Call:           whereHelperstring{field: "\"qso\".\"call\""},
 	Band:           whereHelperstring{field: "\"qso\".\"band\""},
 	Mode:           whereHelperstring{field: "\"qso\".\"mode\""},
-	Freq:           whereHelperfloat64{field: "\"qso\".\"freq\""},
+	Freq:           whereHelpertypes_Decimal{field: "\"qso\".\"freq\""},
 	QsoDate:        whereHelpertime_Time{field: "\"qso\".\"qso_date\""},
 	TimeOn:         whereHelpertime_Time{field: "\"qso\".\"time_on\""},
 	TimeOff:        whereHelpertime_Time{field: "\"qso\".\"time_off\""},
