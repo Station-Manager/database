@@ -30,7 +30,7 @@ tasks:
     desc: "Clean up build artifacts"
     cmds:
       - rm -rf ./relative
-      - rm -r ./data
+      - rm -rf ./data
       - echo "Build artifacts cleaned"
 
   docker:start:
