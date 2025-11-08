@@ -15,7 +15,7 @@ import (
 )
 
 type Service struct {
-	ConfigService *config.Service `inject:"appconfig"`
+	ConfigService *config.Service `inject:"configservice"`
 	config        *types.DatastoreConfig
 	handle        *sql.DB
 
