@@ -19,6 +19,10 @@ const (
 )
 
 const (
+	errMsgInvalidId = "Invalid ID"
+)
+
+const (
 	ServiceName    = types.DatabaseServiceName
 	PostgresDriver = "postgres"
 	SqliteDriver   = "sqlite"

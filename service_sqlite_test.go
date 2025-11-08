@@ -9,7 +9,7 @@ import (
 func TestGetDsn(t *testing.T) {
 	t.Run("SQLite empty options gets defaults", func(t *testing.T) {
 		svc := &Service{
-			config: &types.DatastoreConfig{
+			DatabaseConfig: &types.DatastoreConfig{
 				Driver:  SqliteDriver,
 				Path:    "/tmp/test.db",
 				Options: "",
@@ -23,7 +23,7 @@ func TestGetDsn(t *testing.T) {
 
 	t.Run("SQLite just question mark gets defaults", func(t *testing.T) {
 		svc := &Service{
-			config: &types.DatastoreConfig{
+			DatabaseConfig: &types.DatastoreConfig{
 				Driver:  SqliteDriver,
 				Path:    "/tmp/test.db",
 				Options: "?",
@@ -36,7 +36,7 @@ func TestGetDsn(t *testing.T) {
 
 	t.Run("SQLite custom options preserved", func(t *testing.T) {
 		svc := &Service{
-			config: &types.DatastoreConfig{
+			DatabaseConfig: &types.DatastoreConfig{
 				Driver:  SqliteDriver,
 				Path:    "/tmp/test.db",
 				Options: "?cache=shared&mode=memory",
@@ -49,7 +49,7 @@ func TestGetDsn(t *testing.T) {
 
 	t.Run("unknown driver returns error", func(t *testing.T) {
 		svc := &Service{
-			config: &types.DatastoreConfig{
+			DatabaseConfig: &types.DatastoreConfig{
 				Driver: "mysql",
 			},
 		}
@@ -60,7 +60,7 @@ func TestGetDsn(t *testing.T) {
 
 	t.Run("SQLite empty path returns error", func(t *testing.T) {
 		svc := &Service{
-			config: &types.DatastoreConfig{
+			DatabaseConfig: &types.DatastoreConfig{
 				Driver: SqliteDriver,
 				Path:   "",
 			},

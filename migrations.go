@@ -20,7 +20,7 @@ func (s *Service) doMigrations() error {
 	var dbDriver database.Driver
 	var err error
 
-	switch s.config.Driver {
+	switch s.DatabaseConfig.Driver {
 	case PostgresDriver:
 		srcDriver, dbDriver, err = postgres.GetMigrationDrivers(s.handle)
 	case SqliteDriver:
@@ -29,16 +29,17 @@ func (s *Service) doMigrations() error {
 		return errors.New(op).Msg("Driver not supported.")
 	}
 
-	m, err := migrate.NewWithInstance("iofs", srcDriver, s.config.Driver, dbDriver)
+	m, err := migrate.NewWithInstance("iofs", srcDriver, s.DatabaseConfig.Driver, dbDriver)
 	if err != nil {
 		return errors.New(op).Errorf("migrate.NewWithInstance: %w", err)
 	}
-	defer func(m *migrate.Migrate) {
-		if closeErr, _ := m.Close(); closeErr != nil && err == nil {
-			// Only return a close error if no other error occurred
-			err = errors.New(op).Errorf("m.Close: %w", closeErr)
-		}
-	}(m)
+	// BUG: closes the database connection
+	//defer func(m *migrate.Migrate) {
+	//	if closeErr, _ := m.Close(); closeErr != nil && err == nil {
+	//		// Only return a close error if no other error occurred
+	//		err = errors.New(op).Errorf("m.Close: %w", closeErr)
+	//	}
+	//}(m)
 
 	err = m.Up()
 	if err != nil && !stderr.Is(err, migrate.ErrNoChange) {

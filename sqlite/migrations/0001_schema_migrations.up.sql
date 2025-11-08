@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS qso
 (
-    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    id              INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     created_at      DATETIME    NOT NULL DEFAULT (CURRENT_TIMESTAMP),
     modified_at     DATETIME,
     deleted_at      DATETIME,
@@ -8,9 +8,9 @@ CREATE TABLE IF NOT EXISTS qso
     call            VARCHAR(20) NOT NULL,
     band            VARCHAR(10) NOT NULL,
     mode            VARCHAR(10) NOT NULL,
-    freq            DECIMAL NOT NULL CHECK (freq >= 0 AND freq <= 999.999 AND round(freq * 1000) = freq * 1000),
+    freq            REAL        NOT NULL CHECK (freq >= 0 AND freq <= 999.999 AND round(freq * 1000) = freq * 1000),
     /* DATETIME here prompts SQLBoiler to use the "time.Time" type */
-    qso_date        DATETIME    NOT NULL CHECK (
+    qso_date        TEXT        NOT NULL CHECK (
         length(qso_date) = 8 AND
         substr(qso_date, 1, 4) BETWEEN '0000' AND '9999' AND
         substr(qso_date, 5, 2) BETWEEN '01' AND '12' AND
@@ -18,12 +18,12 @@ CREATE TABLE IF NOT EXISTS qso
         date(substr(qso_date, 1, 4) || '-' || substr(qso_date, 5, 2) || '-' || substr(qso_date, 7, 2)) IS NOT NULL
         ),
     /* DATETIME here prompts SQLBoiler to use the "time.Time" type */
-    time_on         DATETIME    NOT NULL CHECK (
+    time_on         TEXT        NOT NULL CHECK (
         (length(time_on) = 4 AND substr(time_on, 1, 2) BETWEEN '00' AND '23' AND
          substr(time_on, 3, 2) BETWEEN '00' AND '59')
         ),
     /* DATETIME here prompts SQLBoiler to use the "time.Time" type */
-    time_off        DATETIME    NOT NULL CHECK (
+    time_off        TEXT    NOT NULL CHECK (
         (length(time_off) = 4 AND substr(time_off, 1, 2) BETWEEN '00' AND '23' AND
          substr(time_off, 3, 2) BETWEEN '00' AND '59')
         ),

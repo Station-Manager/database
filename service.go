@@ -15,9 +15,9 @@ import (
 )
 
 type Service struct {
-	ConfigService *config.Service `inject:"configservice"`
-	config        *types.DatastoreConfig
-	handle        *sql.DB
+	ConfigService  *config.Service `inject:"configservice"`
+	DatabaseConfig *types.DatastoreConfig
+	handle         *sql.DB
 
 	mu            sync.RWMutex
 	isInitialized atomic.Bool
@@ -48,11 +48,11 @@ func (s *Service) Initialize() error {
 	if err = validateConfig(&dbCfg); err != nil {
 		return errors.New(op).Err(err)
 	}
-	s.config = &dbCfg
+	s.DatabaseConfig = &dbCfg
 
-	if s.config.Driver == SqliteDriver {
+	if s.DatabaseConfig.Driver == SqliteDriver {
 		// Ensure the database directory exists
-		if err = s.checkDatabaseDir(s.config.Path); err != nil {
+		if err = s.checkDatabaseDir(s.DatabaseConfig.Path); err != nil {
 			return errors.New(op).Err(err)
 		}
 	}
@@ -93,15 +93,15 @@ func (s *Service) Open() error {
 		return errors.New(op).Msg(errMsgAlreadyOpen)
 	}
 
-	db, err := sql.Open(s.config.Driver, dsn)
+	db, err := sql.Open(s.DatabaseConfig.Driver, dsn)
 	if err != nil {
 		return errors.New(op).Err(err).Msg(errMsgConnFailed)
 	}
 
-	db.SetMaxOpenConns(s.config.MaxOpenConns)
-	db.SetMaxIdleConns(s.config.MaxIdleConns)
-	db.SetConnMaxLifetime(time.Duration(s.config.ConnMaxLifetime) * time.Minute)
-	db.SetConnMaxIdleTime(time.Duration(s.config.ConnMaxIdleTime) * time.Minute)
+	db.SetMaxOpenConns(s.DatabaseConfig.MaxOpenConns)
+	db.SetMaxIdleConns(s.DatabaseConfig.MaxIdleConns)
+	db.SetConnMaxLifetime(time.Duration(s.DatabaseConfig.ConnMaxLifetime) * time.Minute)
+	db.SetConnMaxIdleTime(time.Duration(s.DatabaseConfig.ConnMaxIdleTime) * time.Minute)
 
 	ctx, cancel := s.withDefaultTimeout(context.Background())
 	defer cancel()
@@ -212,7 +212,7 @@ func (s *Service) BeginTxContext(ctx context.Context) (*sql.Tx, context.CancelFu
 	var cancel context.CancelFunc
 
 	if !hasDeadline {
-		txCtx, cancel = context.WithTimeout(ctx, time.Duration(s.config.TransactionContextTimeout)*time.Second)
+		txCtx, cancel = context.WithTimeout(ctx, time.Duration(s.DatabaseConfig.TransactionContextTimeout)*time.Second)
 	} else {
 		txCtx = ctx
 		cancel = func() {} // No-op cancel
