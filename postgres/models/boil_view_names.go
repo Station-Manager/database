@@ -4,4 +4,7 @@
 package models
 
 var ViewNames = struct {
-}{}
+	APIKeysStatus string
+}{
+	APIKeysStatus: "api_keys_status",
+}

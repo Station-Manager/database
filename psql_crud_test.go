@@ -6,28 +6,29 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"path/filepath"
 	"testing"
 )
 
-type TestSuite struct {
+type TestSuitePG struct {
 	suite.Suite
 	typeQso types.Qso
 	service Service
 }
 
-func TestSqliteCrudSuite(t *testing.T) {
-	suite.Run(t, new(TestSuite))
+func TestPsqlCrudSuite(t *testing.T) {
+	suite.Run(t, new(TestSuitePG))
 }
 
-func (s *TestSuite) SetupSuite() {
-	fp, err := filepath.Abs("../build/db/data.db")
-	require.NoError(s.T(), err)
-
+func (s *TestSuitePG) SetupSuite() {
 	cfg := types.AppConfig{
 		DatastoreConfig: types.DatastoreConfig{
-			Driver:                    SqliteDriver,
-			Path:                      fp,
+			Driver:                    PostgresDriver,
+			Host:                      "localhost",
+			Port:                      5432,
+			Database:                  "station_manager",
+			User:                      "smuser",
+			Password:                  "1q2w3e4r",
+			SSLMode:                   "disable",
 			MaxOpenConns:              1,
 			MaxIdleConns:              1,
 			ConnMaxLifetime:           1,
@@ -40,7 +41,7 @@ func (s *TestSuite) SetupSuite() {
 		WorkingDir: "",
 		AppConfig:  cfg,
 	}
-	err = cfgService.Initialize()
+	err := cfgService.Initialize()
 	require.NoError(s.T(), err)
 
 	s.service = Service{
@@ -95,28 +96,8 @@ func (s *TestSuite) SetupSuite() {
 	}
 }
 
-func (s *TestSuite) TestSqliteInsertQso() {
+func (s *TestSuitePG) TestPsqlInsertQso() {
 	qso, err := s.service.InsertQso(s.typeQso)
 	require.NoError(s.T(), err)
 	assert.True(s.T(), qso.ID > 0)
-
-	// Verify AdditionalData contains fields not in the model
-	//ctx, cancel := s.service.withDefaultTimeout(nil)
-	//defer cancel()
-	//
-	//var additionalData string
-	//query := "SELECT additional_data FROM qso WHERE id = ?"
-	//err = s.service.handle.QueryRowContext(ctx, query, qso.ID).Scan(&additionalData)
-	//require.NoError(s.T(), err)
-	//
-	//// Parse the additional data
-	//var additionalFields map[string]interface{}
-	//err = json.Unmarshal([]byte(additionalData), &additionalFields)
-	//require.NoError(s.T(), err)
-	//
-	//// Verify that fields not in the database model are stored in AdditionalData
-	//assert.Contains(s.T(), additionalFields, "MyCountry", "MyCountry should be in AdditionalData")
-	//assert.Equal(s.T(), "Mzuzu", additionalFields["MyCountry"], "MyCountry value should be 'Mzuzu'")
-	//assert.Contains(s.T(), additionalFields, "MyAntenna", "MyAntenna should be in AdditionalData")
-	//assert.Equal(s.T(), "VHQ Hex Beam", additionalFields["MyAntenna"], "MyAntenna value should be 'VHQ Hex Beam'")
 }

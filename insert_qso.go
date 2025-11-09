@@ -3,8 +3,7 @@ package database
 import (
 	"context"
 	"github.com/Station-Manager/adapters"
-	"github.com/Station-Manager/adapters/converters/postgres"
-	"github.com/Station-Manager/adapters/converters/sqlite"
+	"github.com/Station-Manager/adapters/converters/common"
 	pgmodels "github.com/Station-Manager/database/postgres/models"
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
@@ -48,11 +47,11 @@ func (s *Service) sqliteInsertQso(qso types.Qso) (types.Qso, error) {
 	}
 
 	adapter := adapters.New()
-	adapter.RegisterConverter("QsoDate", sqlite.TypeToModelDateConverter)
-	adapter.RegisterConverter("TimeOn", sqlite.TypeToModelTimeConverter)
-	adapter.RegisterConverter("TimeOff", sqlite.TypeToModelTimeConverter)
-	adapter.RegisterConverter("Freq", sqlite.TypeToModelFreqConverter)
-	adapter.RegisterConverter("Country", sqlite.TypeToModelCountryConverter)
+	adapter.RegisterConverter("QsoDate", common.TypeToModelDateConverter)
+	adapter.RegisterConverter("TimeOn", common.TypeToModelTimeConverter)
+	adapter.RegisterConverter("TimeOff", common.TypeToModelTimeConverter)
+	adapter.RegisterConverter("Freq", common.TypeToModelFreqConverter)
+	adapter.RegisterConverter("Country", common.TypeToModelCountryConverter)
 
 	model := &sqmodels.Qso{}
 	if err := adapter.Adapt(&qso, model); err != nil {
@@ -65,6 +64,7 @@ func (s *Service) sqliteInsertQso(qso types.Qso) (types.Qso, error) {
 		return qso, errors.New(op).Err(err)
 	}
 
+	// Update the returned types.Qso with the ID from the database
 	qso.ID = model.ID
 
 	return qso, nil
@@ -86,9 +86,11 @@ func (s *Service) postgresInsertQso(qso types.Qso) (types.Qso, error) {
 	}
 
 	adapter := adapters.New()
-	adapter.RegisterConverter("QsoDate", postgres.TypeToModelDateConverter)
-	adapter.RegisterConverter("TimeOn", postgres.TypeToModelTimeConverter)
-	adapter.RegisterConverter("Freq", postgres.TypeToModelFreqConverter)
+	adapter.RegisterConverter("QsoDate", common.TypeToModelDateConverter)
+	adapter.RegisterConverter("TimeOn", common.TypeToModelTimeConverter)
+	adapter.RegisterConverter("TimeOff", common.TypeToModelTimeConverter)
+	adapter.RegisterConverter("Freq", common.TypeToModelFreqConverter)
+	adapter.RegisterConverter("Country", common.TypeToModelCountryConverter)
 
 	model := &pgmodels.Qso{}
 	if err := adapter.Adapt(&qso, model); err != nil {

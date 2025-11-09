@@ -28,3 +28,5 @@ const (
 	SqliteDriver   = "sqlite"
 	emptyString    = ""
 )
+
+const ()
