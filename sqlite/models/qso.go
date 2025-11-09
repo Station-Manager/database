@@ -18,6 +18,7 @@ import (
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"github.com/aarondl/sqlboiler/v4/queries/qmhelper"
+	"github.com/aarondl/sqlboiler/v4/types"
 	"github.com/aarondl/strmangle"
 	"github.com/friendsofgo/errors"
 )
@@ -31,14 +32,14 @@ type Qso struct {
 	Call           string      `boil:"call" json:"call" toml:"call" yaml:"call"`
 	Band           string      `boil:"band" json:"band" toml:"band" yaml:"band"`
 	Mode           string      `boil:"mode" json:"mode" toml:"mode" yaml:"mode"`
-	Freq           float64     `boil:"freq" json:"freq" toml:"freq" yaml:"freq"`
+	Freq           int64       `boil:"freq" json:"freq" toml:"freq" yaml:"freq"`
 	QsoDate        string      `boil:"qso_date" json:"qso_date" toml:"qso_date" yaml:"qso_date"`
 	TimeOn         string      `boil:"time_on" json:"time_on" toml:"time_on" yaml:"time_on"`
 	TimeOff        string      `boil:"time_off" json:"time_off" toml:"time_off" yaml:"time_off"`
 	RstSent        string      `boil:"rst_sent" json:"rst_sent" toml:"rst_sent" yaml:"rst_sent"`
 	RstRcvd        string      `boil:"rst_rcvd" json:"rst_rcvd" toml:"rst_rcvd" yaml:"rst_rcvd"`
 	Country        null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
-	AdditionalData null.JSON   `boil:"additional_data" json:"additional_data,omitempty" toml:"additional_data" yaml:"additional_data,omitempty"`
+	AdditionalData types.JSON  `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
 
 	R *qsoR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L qsoL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -207,35 +208,6 @@ func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
-type whereHelperfloat64 struct{ field string }
-
-func (w whereHelperfloat64) EQ(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperfloat64) NEQ(x float64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.NEQ, x)
-}
-func (w whereHelperfloat64) LT(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperfloat64) LTE(x float64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelperfloat64) GT(x float64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperfloat64) GTE(x float64) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-func (w whereHelperfloat64) IN(slice []float64) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelperfloat64) NIN(slice []float64) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
 type whereHelpernull_String struct{ field string }
 
 func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
@@ -280,29 +252,26 @@ func (w whereHelpernull_String) NIN(slice []string) qm.QueryMod {
 func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
 func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
-type whereHelpernull_JSON struct{ field string }
+type whereHelpertypes_JSON struct{ field string }
 
-func (w whereHelpernull_JSON) EQ(x null.JSON) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
+func (w whereHelpertypes_JSON) EQ(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
 }
-func (w whereHelpernull_JSON) NEQ(x null.JSON) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
+func (w whereHelpertypes_JSON) NEQ(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
 }
-func (w whereHelpernull_JSON) LT(x null.JSON) qm.QueryMod {
+func (w whereHelpertypes_JSON) LT(x types.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LT, x)
 }
-func (w whereHelpernull_JSON) LTE(x null.JSON) qm.QueryMod {
+func (w whereHelpertypes_JSON) LTE(x types.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LTE, x)
 }
-func (w whereHelpernull_JSON) GT(x null.JSON) qm.QueryMod {
+func (w whereHelpertypes_JSON) GT(x types.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GT, x)
 }
-func (w whereHelpernull_JSON) GTE(x null.JSON) qm.QueryMod {
+func (w whereHelpertypes_JSON) GTE(x types.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
-
-func (w whereHelpernull_JSON) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_JSON) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var QsoWhere = struct {
 	ID             whereHelperint64
@@ -312,14 +281,14 @@ var QsoWhere = struct {
 	Call           whereHelperstring
 	Band           whereHelperstring
 	Mode           whereHelperstring
-	Freq           whereHelperfloat64
+	Freq           whereHelperint64
 	QsoDate        whereHelperstring
 	TimeOn         whereHelperstring
 	TimeOff        whereHelperstring
 	RstSent        whereHelperstring
 	RstRcvd        whereHelperstring
 	Country        whereHelpernull_String
-	AdditionalData whereHelpernull_JSON
+	AdditionalData whereHelpertypes_JSON
 }{
 	ID:             whereHelperint64{field: "\"qso\".\"id\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"qso\".\"created_at\""},
@@ -328,14 +297,14 @@ var QsoWhere = struct {
 	Call:           whereHelperstring{field: "\"qso\".\"call\""},
 	Band:           whereHelperstring{field: "\"qso\".\"band\""},
 	Mode:           whereHelperstring{field: "\"qso\".\"mode\""},
-	Freq:           whereHelperfloat64{field: "\"qso\".\"freq\""},
+	Freq:           whereHelperint64{field: "\"qso\".\"freq\""},
 	QsoDate:        whereHelperstring{field: "\"qso\".\"qso_date\""},
 	TimeOn:         whereHelperstring{field: "\"qso\".\"time_on\""},
 	TimeOff:        whereHelperstring{field: "\"qso\".\"time_off\""},
 	RstSent:        whereHelperstring{field: "\"qso\".\"rst_sent\""},
 	RstRcvd:        whereHelperstring{field: "\"qso\".\"rst_rcvd\""},
 	Country:        whereHelpernull_String{field: "\"qso\".\"country\""},
-	AdditionalData: whereHelpernull_JSON{field: "\"qso\".\"additional_data\""},
+	AdditionalData: whereHelpertypes_JSON{field: "\"qso\".\"additional_data\""},
 }
 
 // QsoRels is where relationship names are stored.

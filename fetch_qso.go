@@ -1,10 +1,6 @@
 package database
 
 import (
-	"database/sql"
-	stderr "errors"
-	"fmt"
-	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 )
@@ -41,16 +37,23 @@ func (s *Service) sqliteFetchQso(id int64) (types.Qso, error) {
 		return emptyRetVal, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	ctx, cancel := s.withDefaultTimeout(nil)
-	defer cancel()
-	model, err := sqmodels.FindQso(ctx, h, id)
-	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
-		return emptyRetVal, errors.New(op).Err(err)
-	}
+	//ctx, cancel := s.withDefaultTimeout(nil)
+	//defer cancel()
+	//model, err := sqmodels.FindQso(ctx, h, id)
+	//if err != nil && !stderr.Is(err, sql.ErrNoRows) {
+	//	return emptyRetVal, errors.New(op).Err(err)
+	//}
+	//
+	//adapter := adapters.New()
+	//adapter.RegisterConverter("Freq", sqlite.ModelToTypeFreqConverter)
+	//adapter.RegisterConverter("Country", sqlite.ModelToTypeCountryConverter)
+	//
+	typeQso := types.Qso{}
+	//if err = adapter.Adapt(model, &typeQso); err != nil {
+	//	return emptyRetVal, errors.New(op).Err(err)
+	//}
 
-	fmt.Println(model)
-
-	return types.Qso{}, nil
+	return typeQso, nil
 }
 
 func (s *Service) postgresFetchQso(id int64) (types.Qso, error) {

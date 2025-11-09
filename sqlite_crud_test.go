@@ -11,6 +11,7 @@ import (
 )
 
 func TestSqliteCRUD(t *testing.T) {
+
 	t.Run("SQLite InserQSO test", func(t *testing.T) {
 		qso := types.Qso{
 			QsoDetails: types.QsoDetails{
@@ -113,7 +114,16 @@ func TestSqliteCRUD(t *testing.T) {
 		require.Contains(t, additionalFields, "MyCountry", "MyCountry should be in AdditionalData")
 		require.Equal(t, "Mzuzu", additionalFields["MyCountry"], "MyCountry value should be 'Mzuzu'")
 
+		var qsoModel types.Qso
+		qsoModel, err = dbService.FetchQsoById(qso.ID)
+		require.NoError(t, err)
+
+		assert.Equal(t, qsoModel.ID, qso.ID)
+
 		err = dbService.Close()
 		require.NoError(t, err)
+	})
+	t.Run("SQLite FetchQsoByID test", func(t *testing.T) {
+
 	})
 }

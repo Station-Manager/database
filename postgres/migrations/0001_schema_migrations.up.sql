@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS qso
     country         VARCHAR(50),
 
     -- Everything else (name, QTH, contest data, propagation info, etc.)
-    additional_data JSONB                  DEFAULT '{}'::jsonb,
+    additional_data JSONB NOT NULL DEFAULT '{}'::jsonb,
 
     CONSTRAINT qso_data_no_duplicates CHECK (
         additional_data ? 'call' = false AND
@@ -60,8 +60,8 @@ CREATE TABLE IF NOT EXISTS qso
         additional_data ? 'qso_date' = false AND
         additional_data ? 'time_on' = false AND
         additional_data ? 'time_off' = false AND
-        additional_data ? 'rst_send' = false AND
-        additional_data ? 'rst_recv' = false AND
+        additional_data ? 'rst_sent' = false AND
+        additional_data ? 'rst_rcvd' = false AND
         additional_data ? 'country' = false
         )
 );

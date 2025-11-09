@@ -65,7 +65,7 @@ func (s *Service) sqliteInsertQso(qso types.Qso) (types.Qso, error) {
 		return qso, errors.New(op).Err(err)
 	}
 
-	qso.ID = model.ID
+	//	qso.ID = model.ID
 
 	return qso, nil
 }
