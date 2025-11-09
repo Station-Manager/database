@@ -1,8 +1,6 @@
 package database
 
 import (
-	"database/sql"
-	stderr "errors"
 	"github.com/Station-Manager/adapters"
 	"github.com/Station-Manager/adapters/converters/common"
 	"github.com/Station-Manager/adapters/converters/sqlite"
@@ -51,11 +49,6 @@ func (s *Service) sqliteFetchQso(id int64) (types.Qso, error) {
 	ctx, cancel := s.withDefaultTimeout(nil)
 	defer cancel()
 	model, err := sqmodels.FindQso(ctx, h, id)
-	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
-		return emptyRetVal, errors.New(op).Err(err)
-	}
-
-	model, err = sqmodels.FindQso(ctx, h, id)
 	if err != nil {
 		return emptyRetVal, errors.New(op).Err(err)
 	}

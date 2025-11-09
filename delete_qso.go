@@ -33,14 +33,13 @@ func (s *Service) sqliteDeleteQso(id int64) error {
 		return errors.New(op).Err(err)
 	}
 
-	//s.mu.RLock()
-	//h := s.handle
-	//isOpen := s.isOpen.Load()
-	//s.mu.RUnlock()
+	s.mu.RLock()
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
 
-	//if h == nil || !isOpen {
-	//	return errors.New(op).Msg(errMsgNotOpen)
-	//}
+	if !isOpen {
+		return errors.New(op).Msg(errMsgNotOpen)
+	}
 
 	ctx, cancel := s.withDefaultTimeout(nil)
 	defer cancel()
@@ -74,14 +73,13 @@ func (s *Service) postgresDeleteQso(id int64) error {
 		return errors.New(op).Err(err)
 	}
 
-	//s.mu.RLock()
-	//h := s.handle
-	//isOpen := s.isOpen.Load()
-	//s.mu.RUnlock()
-	//
-	//if h == nil || !isOpen {
-	//	return errors.New(op).Msg(errMsgNotOpen)
-	//}
+	s.mu.RLock()
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
+
+	if !isOpen {
+		return errors.New(op).Msg(errMsgNotOpen)
+	}
 
 	ctx, cancel := s.withDefaultTimeout(nil)
 	defer cancel()

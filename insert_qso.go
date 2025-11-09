@@ -1,7 +1,6 @@
 package database
 
 import (
-	"context"
 	"github.com/Station-Manager/adapters"
 	"github.com/Station-Manager/adapters/converters/common"
 	"github.com/Station-Manager/adapters/converters/postgres"
@@ -99,7 +98,9 @@ func (s *Service) postgresInsertQso(qso types.Qso) (types.Qso, error) {
 		return qso, errors.New(op).Err(err)
 	}
 
-	if err := model.Insert(context.Background(), h, boil.Infer()); err != nil {
+	ctx, cancel := s.withDefaultTimeout(nil)
+	defer cancel()
+	if err := model.Insert(ctx, h, boil.Infer()); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
 
