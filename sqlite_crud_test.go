@@ -12,8 +12,9 @@ import (
 
 type TestSuite struct {
 	suite.Suite
-	typeQso types.Qso
+	//	typeQso types.Qso
 	service Service
+	qsoID   int64
 }
 
 func TestSqliteCrudSuite(t *testing.T) {
@@ -51,8 +52,10 @@ func (s *TestSuite) SetupSuite() {
 
 	err = s.service.Open()
 	require.NoError(s.T(), err)
+}
 
-	s.typeQso = types.Qso{
+func (s *TestSuite) TestSqliteInsertQso() {
+	typeQso := types.Qso{
 		QsoDetails: types.QsoDetails{
 			AIndex:      "",
 			AntPath:     "",
@@ -93,13 +96,12 @@ func (s *TestSuite) SetupSuite() {
 			MyAntenna:       "VHQ Hex Beam",
 		},
 	}
-}
 
-func (s *TestSuite) TestSqliteInsertQso() {
-	qso, err := s.service.InsertQso(s.typeQso)
+	qso, err := s.service.InsertQso(typeQso)
 	require.NoError(s.T(), err)
 	assert.True(s.T(), qso.ID > 0)
 
+	s.qsoID = qso.ID
 	// Verify AdditionalData contains fields not in the model
 	//ctx, cancel := s.service.withDefaultTimeout(nil)
 	//defer cancel()
@@ -119,4 +121,18 @@ func (s *TestSuite) TestSqliteInsertQso() {
 	//assert.Equal(s.T(), "Mzuzu", additionalFields["MyCountry"], "MyCountry value should be 'Mzuzu'")
 	//assert.Contains(s.T(), additionalFields, "MyAntenna", "MyAntenna should be in AdditionalData")
 	//assert.Equal(s.T(), "VHQ Hex Beam", additionalFields["MyAntenna"], "MyAntenna value should be 'VHQ Hex Beam'")
+}
+
+func (s *TestSuite) TestSqliteFetchQso() {
+	if s.qsoID == 0 {
+		s.TestSqliteInsertQso()
+	}
+
+	typeQso, err := s.service.FetchQsoById(s.qsoID)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), s.qsoID, typeQso.ID)
+	assert.Equal(s.T(), "M0CMC", typeQso.ContactedStation.Call)
+	assert.Equal(s.T(), "7Q5MLV", typeQso.LoggingStation.StationCallsign)
+	assert.Equal(s.T(), "Mzuzu", typeQso.LoggingStation.MyCountry)
+	assert.Equal(s.T(), "VHQ Hex Beam", typeQso.LoggingStation.MyAntenna)
 }

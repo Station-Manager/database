@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/Station-Manager/adapters"
 	"github.com/Station-Manager/adapters/converters/common"
+	"github.com/Station-Manager/adapters/converters/postgres"
+	"github.com/Station-Manager/adapters/converters/sqlite"
 	pgmodels "github.com/Station-Manager/database/postgres/models"
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
@@ -47,11 +49,11 @@ func (s *Service) sqliteInsertQso(qso types.Qso) (types.Qso, error) {
 	}
 
 	adapter := adapters.New()
-	adapter.RegisterConverter("QsoDate", common.TypeToModelDateConverter)
-	adapter.RegisterConverter("TimeOn", common.TypeToModelTimeConverter)
-	adapter.RegisterConverter("TimeOff", common.TypeToModelTimeConverter)
+	adapter.RegisterConverter("QsoDate", sqlite.TypeToModelDateConverter)
+	adapter.RegisterConverter("TimeOn", sqlite.TypeToModelTimeConverter)
+	adapter.RegisterConverter("TimeOff", sqlite.TypeToModelTimeConverter)
 	adapter.RegisterConverter("Freq", common.TypeToModelFreqConverter)
-	adapter.RegisterConverter("Country", common.TypeToModelCountryConverter)
+	adapter.RegisterConverter("Country", common.TypeToModelStringConverter)
 
 	model := &sqmodels.Qso{}
 	if err := adapter.Adapt(&qso, model); err != nil {
@@ -86,11 +88,11 @@ func (s *Service) postgresInsertQso(qso types.Qso) (types.Qso, error) {
 	}
 
 	adapter := adapters.New()
-	adapter.RegisterConverter("QsoDate", common.TypeToModelDateConverter)
-	adapter.RegisterConverter("TimeOn", common.TypeToModelTimeConverter)
-	adapter.RegisterConverter("TimeOff", common.TypeToModelTimeConverter)
+	adapter.RegisterConverter("QsoDate", postgres.TypeToModelDateConverter)
+	adapter.RegisterConverter("TimeOn", postgres.TypeToModelTimeConverter)
+	adapter.RegisterConverter("TimeOff", postgres.TypeToModelTimeConverter)
 	adapter.RegisterConverter("Freq", common.TypeToModelFreqConverter)
-	adapter.RegisterConverter("Country", common.TypeToModelCountryConverter)
+	adapter.RegisterConverter("Country", common.TypeToModelStringConverter)
 
 	model := &pgmodels.Qso{}
 	if err := adapter.Adapt(&qso, model); err != nil {

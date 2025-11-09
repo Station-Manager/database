@@ -1,6 +1,12 @@
 package database
 
 import (
+	"database/sql"
+	stderr "errors"
+	"github.com/Station-Manager/adapters"
+	"github.com/Station-Manager/adapters/converters/common"
+	"github.com/Station-Manager/adapters/converters/sqlite"
+	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 )
@@ -27,7 +33,12 @@ func (s *Service) FetchQsoById(id int64) (types.Qso, error) {
 
 func (s *Service) sqliteFetchQso(id int64) (types.Qso, error) {
 	const op errors.Op = "database.Service.sqliteFetchQso"
+
 	emptyRetVal := types.Qso{}
+	if err := checkService(op, s); err != nil {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
 	s.mu.RLock()
 	h := s.handle
 	isOpen := s.isOpen.Load()
@@ -37,21 +48,29 @@ func (s *Service) sqliteFetchQso(id int64) (types.Qso, error) {
 		return emptyRetVal, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	//ctx, cancel := s.withDefaultTimeout(nil)
-	//defer cancel()
-	//model, err := sqmodels.FindQso(ctx, h, id)
-	//if err != nil && !stderr.Is(err, sql.ErrNoRows) {
-	//	return emptyRetVal, errors.New(op).Err(err)
-	//}
-	//
-	//adapter := adapters.New()
-	//adapter.RegisterConverter("Freq", sqlite.ModelToTypeFreqConverter)
-	//adapter.RegisterConverter("Country", sqlite.ModelToTypeCountryConverter)
-	//
+	ctx, cancel := s.withDefaultTimeout(nil)
+	defer cancel()
+	model, err := sqmodels.FindQso(ctx, h, id)
+	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	model, err = sqmodels.FindQso(ctx, h, id)
+	if err != nil {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	adapter := adapters.New()
+	adapter.RegisterConverter("Freq", common.ModelToTypeFreqConverter)
+	adapter.RegisterConverter("Country", common.ModelToTypeStringConverter)
+	adapter.RegisterConverter("QsoDate", sqlite.ModelToTypeDateConverter)
+	adapter.RegisterConverter("TimeOn", sqlite.ModelToTypeTimeConverter)
+	adapter.RegisterConverter("TimeOff", sqlite.ModelToTypeTimeConverter)
+
 	typeQso := types.Qso{}
-	//if err = adapter.Adapt(model, &typeQso); err != nil {
-	//	return emptyRetVal, errors.New(op).Err(err)
-	//}
+	if err = adapter.Adapt(model, &typeQso); err != nil {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
 
 	return typeQso, nil
 }
