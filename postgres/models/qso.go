@@ -39,7 +39,7 @@ type Qso struct {
 	RstSent        string        `boil:"rst_sent" json:"rst_sent" toml:"rst_sent" yaml:"rst_sent"`
 	RstRcvd        string        `boil:"rst_rcvd" json:"rst_rcvd" toml:"rst_rcvd" yaml:"rst_rcvd"`
 	Country        null.String   `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
-	AdditionalData null.JSON     `boil:"additional_data" json:"additional_data,omitempty" toml:"additional_data" yaml:"additional_data,omitempty"`
+	AdditionalData types.JSON    `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
 
 	R *qsoR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L qsoL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -136,29 +136,26 @@ func (w whereHelpertypes_Decimal) GTE(x types.Decimal) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelpernull_JSON struct{ field string }
+type whereHelpertypes_JSON struct{ field string }
 
-func (w whereHelpernull_JSON) EQ(x null.JSON) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
+func (w whereHelpertypes_JSON) EQ(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
 }
-func (w whereHelpernull_JSON) NEQ(x null.JSON) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
+func (w whereHelpertypes_JSON) NEQ(x types.JSON) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
 }
-func (w whereHelpernull_JSON) LT(x null.JSON) qm.QueryMod {
+func (w whereHelpertypes_JSON) LT(x types.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LT, x)
 }
-func (w whereHelpernull_JSON) LTE(x null.JSON) qm.QueryMod {
+func (w whereHelpertypes_JSON) LTE(x types.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.LTE, x)
 }
-func (w whereHelpernull_JSON) GT(x null.JSON) qm.QueryMod {
+func (w whereHelpertypes_JSON) GT(x types.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GT, x)
 }
-func (w whereHelpernull_JSON) GTE(x null.JSON) qm.QueryMod {
+func (w whereHelpertypes_JSON) GTE(x types.JSON) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
-
-func (w whereHelpernull_JSON) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_JSON) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var QsoWhere = struct {
 	ID             whereHelperint64
@@ -175,7 +172,7 @@ var QsoWhere = struct {
 	RstSent        whereHelperstring
 	RstRcvd        whereHelperstring
 	Country        whereHelpernull_String
-	AdditionalData whereHelpernull_JSON
+	AdditionalData whereHelpertypes_JSON
 }{
 	ID:             whereHelperint64{field: "\"qso\".\"id\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"qso\".\"created_at\""},
@@ -191,7 +188,7 @@ var QsoWhere = struct {
 	RstSent:        whereHelperstring{field: "\"qso\".\"rst_sent\""},
 	RstRcvd:        whereHelperstring{field: "\"qso\".\"rst_rcvd\""},
 	Country:        whereHelpernull_String{field: "\"qso\".\"country\""},
-	AdditionalData: whereHelpernull_JSON{field: "\"qso\".\"additional_data\""},
+	AdditionalData: whereHelpertypes_JSON{field: "\"qso\".\"additional_data\""},
 }
 
 // QsoRels is where relationship names are stored.
