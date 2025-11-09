@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS qso
     band            TEXT     NOT NULL CHECK (length(band) <= 10),
     mode            TEXT     NOT NULL CHECK (length(mode) <= 10),
     /* freq is in kHz, thus app MUST multiply by 1000 for MHz */
-    freq            INTEGER  NOT NULL CHECK (freq >= 0 AND freq <= 999999),
+    freq            INTEGER  NOT NULL CHECK (freq >= 0 AND freq <= 99999999),
     /* DATETIME here prompts SQLBoiler to use the "time.Time" type */
     qso_date        TEXT     NOT NULL CHECK (
         length(qso_date) = 8 AND

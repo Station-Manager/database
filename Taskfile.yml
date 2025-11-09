@@ -53,3 +53,15 @@ tasks:
     cmds:
       - docker-compose down -v
       - echo "✓ Docker cleanup complete"
+
+  sqlite:db:
+    desc: "Generate SQL boilerplate code for SQLite database"
+    cmds:
+      - rm -rf ../build/db/data.db
+      - go run ./sqlite/example/main.go
+  sqlite:sqlboiler:
+    deps: [sqlite:db]
+    desc: "Generate SQL boilerplate code using SQLBoiler for SQLite"
+    dir: ./sqlite
+      - sqlboiler sqlite3
+      - echo "✓ SQLite SQL boilerplate generated"
