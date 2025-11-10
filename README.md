@@ -1,27 +1,28 @@
 # Station Manager: database module
 
-## Postgres
+## Regenerating the database models
 
-This database is used by the server for the online services, whereas SQLite is used for
-the local database.
+The build uses `sqlboiler` to generate the database models. To regenerate the models, each database
+must be rebuilt separately, but both follow roughly the same steps.
 
-### Development setup
+### SQLite
 
-`cd database/postgres`
+1. Delete the existing development database file at `build/db/data.db`.
+2. Run the `database/sqlite/example/main.go` file.
+3. `cd database/sqlite`
+4. `sqlboiler sqlite3`
 
-`sudo systemctl start docker.service`
+### Postgres
 
-`docker-compose --env-file .env up -d`
+1. Delete the existing development database file at `build/db/postgres_data` - this will require the use of `sudo`.
+2. Start the Postgres Docker container.
 
-`docker-compose down`
+   ```
+    sudo systemctl start docker.service`
+    docker-compose up
+   ```
 
-### SQLBoiler
-
-Your location must be the `database/postgres` directory.
-
-`export PSQL_PASS=[some password]`
-
-`sqlboiler psql`
-
-## SQLite
-
+3. Run the `database/postgres/example/main.go` file.
+4. `cd database/postgres`
+5. `export PSQL_PASS=[some password]` - obviously replace `[some password]` with the correct password.
+6. `sqlboiler psql`
