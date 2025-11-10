@@ -16,6 +16,10 @@ CREATE TABLE IF NOT EXISTS logbook
     description TEXT
 );
 
+-- Seed a default logbook so newly initialized databases have a usable logbook.
+-- Use INSERT OR IGNORE so migrations are idempotent.
+INSERT OR IGNORE INTO logbook (name, callsign, description) VALUES ('default', 'NOCALL', 'Default logbook created by migrations');
+
 CREATE TABLE IF NOT EXISTS qso
 (
     id              INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -65,13 +69,16 @@ CREATE TABLE IF NOT EXISTS qso
         json_extract(additional_data, '$.rst_rcvd') IS NULL AND
         json_extract(additional_data, '$.country') IS NULL
         ),
-    CONSTRAINT fk_qso_logbook FOREIGN KEY (logbook_id) REFERENCES logbook (id)
+    -- Explicit foreign key behavior: prevent deleting a logbook that still has QSOs. Change to ON DELETE CASCADE if you prefer automatic cleanup.
+    CONSTRAINT fk_qso_logbook FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 
 CREATE INDEX IF NOT EXISTS idx_qso_call ON qso (call);
 CREATE INDEX IF NOT EXISTS idx_qso_band ON qso (band);
 CREATE INDEX IF NOT EXISTS idx_qso_country ON qso (country);
 CREATE INDEX IF NOT EXISTS idx_qso_date_time ON qso (qso_date, time_on);
+-- Index on the FK column for joins/deletes
+CREATE INDEX IF NOT EXISTS idx_qso_logbook_id ON qso (logbook_id);
 
 -- Optional: index freq if you query by frequency often
 /*

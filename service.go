@@ -110,6 +110,15 @@ func (s *Service) Open() error {
 		return errors.New(op).Err(err).Msg(errMsgPingFailed)
 	}
 
+	// Ensure SQLite enforces foreign keys on this connection. Some drivers may ignore DSN params,
+	// so execute the PRAGMA explicitly per-connection. If this fails, close the DB and return error.
+	if s.DatabaseConfig.Driver == SqliteDriver {
+		if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = ON"); err != nil {
+			_ = db.Close()
+			return errors.New(op).Err(err).Msg("failed to enable sqlite foreign_keys PRAGMA")
+		}
+	}
+
 	s.handle = db
 	s.isOpen.Store(true)
 

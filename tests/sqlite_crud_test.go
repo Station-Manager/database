@@ -1,35 +1,26 @@
 package database
 
 import (
+	"context"
+	"path/filepath"
+	"testing"
+
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
-	"path/filepath"
-	"testing"
 )
 
-type TestSuite struct {
-	suite.Suite
-	//	typeQso types.Qso
-	service database.Service
-	qsoID   int64
-}
-
-func TestSqliteCrudSuite(t *testing.T) {
-	suite.Run(t, new(TestSuite))
-}
-
-func (s *TestSuite) SetupSuite() {
-	fp, err := filepath.Abs("../../build/db/data.db")
-	require.NoError(s.T(), err)
+func setupSvcAndDefaultLogbook(t *testing.T) (*database.Service, int64) {
+	// Temporary file-backed database (works like an in-memory DB for tests but is file-backed)
+	tmpDir := t.TempDir()
+	dbPath := filepath.Join(tmpDir, "test.db")
 
 	cfg := types.AppConfig{
 		DatastoreConfig: types.DatastoreConfig{
 			Driver:                    database.SqliteDriver,
-			Path:                      fp,
+			Path:                      dbPath,
 			MaxOpenConns:              1,
 			MaxIdleConns:              1,
 			ConnMaxLifetime:           1,
@@ -38,102 +29,141 @@ func (s *TestSuite) SetupSuite() {
 			TransactionContextTimeout: 5,
 		},
 	}
-	cfgService := &config.Service{
+
+	cfgSvc := &config.Service{
 		WorkingDir: "",
 		AppConfig:  cfg,
 	}
-	err = cfgService.Initialize()
-	require.NoError(s.T(), err)
+	require.NoError(t, cfgSvc.Initialize())
 
-	s.service = database.Service{
-		ConfigService: cfgService,
+	svc := &database.Service{ConfigService: cfgSvc}
+	require.NoError(t, svc.Initialize())
+	require.NoError(t, svc.Open())
+	// Ensure closed on test cleanup
+	t.Cleanup(func() { _ = svc.Close() })
+
+	// Run migrations to create tables and seed default logbook
+	require.NoError(t, svc.Migrate())
+
+	// Query seeded logbook id by name
+	ctx := context.Background()
+	rows, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", "default")
+	require.NoError(t, err)
+	defer rows.Close()
+
+	var lbID int64
+	if rows.Next() {
+		require.NoError(t, rows.Scan(&lbID))
+	} else {
+		require.FailNow(t, "default logbook not found after migrations")
 	}
-	err = s.service.Initialize()
-	require.NoError(s.T(), err)
 
-	err = s.service.Open()
-	require.NoError(s.T(), err)
+	return svc, lbID
 }
 
-func (s *TestSuite) TestSqliteInsertQso() {
-	typeQso := types.Qso{
+// TestSqliteCRUDSequence creates a temporary SQLite database, runs migrations, then
+// performs a sequence: insert QSO -> fetch QSO -> update QSO -> delete QSO. This is deliberately
+// sequential to ensure tests that depend on prior operations run in order.
+func TestSqliteCRUDSequence(t *testing.T) {
+	svc, lbID := setupSvcAndDefaultLogbook(t)
+
+	// Prepare a QSO using the default seeded logbook
+	qsoIn := types.Qso{
 		QsoDetails: types.QsoDetails{
-			AIndex:      "",
-			AntPath:     "",
-			Band:        "20m",
-			BandRx:      "",
-			Comment:     "",
-			ContestId:   "",
-			Distance:    "",
-			Freq:        "14.320",
-			FreqRx:      "",
-			Mode:        "SSB",
-			Submode:     "USB",
-			MySig:       "",
-			MySigInfo:   "",
-			Notes:       "",
-			QsoDate:     "2025-11-08",
-			QsoDateOff:  "2025-11-08",
-			QsoRandom:   "",
-			QsoComplete: "",
-			RstRcvd:     "59",
-			RstSent:     "56",
-			RxPwr:       "",
-			Sig:         "",
-			SigInfo:     "",
-			SRX:         "",
-			STX:         "",
-			TimeOff:     "11:46",
-			TimeOn:      "11:40",
-			TxPwr:       "500w",
+			Band:    "20m",
+			Freq:    "14.320",
+			Mode:    "SSB",
+			QsoDate: "20251108", // YYYYMMDD format expected by schema
+			TimeOn:  "1140",
+			TimeOff: "1146",
+			RstRcvd: "59",
+			RstSent: "56",
 		},
-		ContactedStation: types.ContactedStation{
-			Call:    "M0CMC",
-			Country: "England",
-		},
-		LoggingStation: types.LoggingStation{
-			StationCallsign: "7Q5MLV",
-			MyCountry:       "Mzuzu",
-			MyAntenna:       "VHQ Hex Beam",
-		},
+		ContactedStation: types.ContactedStation{Call: "M0CMC", Country: "England"},
+		LoggingStation:   types.LoggingStation{StationCallsign: "7Q5MLV", MyCountry: "Mzuzu", MyAntenna: "VHQ Hex Beam"},
+		LogbookID:        lbID,
 	}
 
-	qso, err := s.service.InsertQso(typeQso)
-	require.NoError(s.T(), err)
-	assert.True(s.T(), qso.ID > 0)
+	// Insert
+	qsoOut, err := svc.InsertQso(qsoIn)
+	require.NoError(t, err)
+	assert.Greater(t, qsoOut.ID, int64(0))
 
-	s.qsoID = qso.ID
-	// Verify AdditionalData contains fields not in the model
-	//ctx, cancel := s.service.withDefaultTimeout(nil)
-	//defer cancel()
-	//
-	//var additionalData string
-	//query := "SELECT additional_data FROM qso WHERE id = ?"
-	//err = s.service.handle.QueryRowContext(ctx, query, qso.ID).Scan(&additionalData)
-	//require.NoError(s.T(), err)
-	//
-	//// Parse the additional data
-	//var additionalFields map[string]interface{}
-	//err = json.Unmarshal([]byte(additionalData), &additionalFields)
-	//require.NoError(s.T(), err)
-	//
-	//// Verify that fields not in the database model are stored in AdditionalData
-	//assert.Contains(s.T(), additionalFields, "MyCountry", "MyCountry should be in AdditionalData")
-	//assert.Equal(s.T(), "Mzuzu", additionalFields["MyCountry"], "MyCountry value should be 'Mzuzu'")
-	//assert.Contains(s.T(), additionalFields, "MyAntenna", "MyAntenna should be in AdditionalData")
-	//assert.Equal(s.T(), "VHQ Hex Beam", additionalFields["MyAntenna"], "MyAntenna value should be 'VHQ Hex Beam'")
+	// Fetch
+	typQso, err := svc.FetchQsoById(qsoOut.ID)
+	require.NoError(t, err)
+	assert.Equal(t, qsoOut.ID, typQso.ID)
+	assert.Equal(t, "M0CMC", typQso.ContactedStation.Call)
+	assert.Equal(t, "7Q5MLV", typQso.LoggingStation.StationCallsign)
+	assert.Equal(t, "Mzuzu", typQso.LoggingStation.MyCountry)
+	assert.Equal(t, "VHQ Hex Beam", typQso.LoggingStation.MyAntenna)
+
+	// Update: change contacted call and persist
+	typQso.ContactedStation.Call = "M1NEW"
+	require.NoError(t, svc.UpdateQso(typQso))
+
+	// Re-fetch and verify update
+	refetched, err := svc.FetchQsoById(qsoOut.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "M1NEW", refetched.ContactedStation.Call)
+
+	// Delete
+	require.NoError(t, svc.DeleteQso(qsoOut.ID))
+
+	// Verify deletion returns an error when fetching
+	_, err = svc.FetchQsoById(qsoOut.ID)
+	require.Error(t, err)
 }
 
-func (s *TestSuite) TestSqliteFetchQso() {
-	if s.qsoID == 0 {
-		s.TestSqliteInsertQso()
+// Test update with invalid ID should return an error
+func TestSqliteUpdateInvalidID(t *testing.T) {
+	svc, lbID := setupSvcAndDefaultLogbook(t)
+
+	// Prepare and insert a QSO to have a valid row
+	qsoIn := types.Qso{
+		QsoDetails:       types.QsoDetails{Band: "20m", Freq: "14.320", Mode: "SSB", QsoDate: "20251108", TimeOn: "1140", TimeOff: "1146", RstRcvd: "59", RstSent: "56"},
+		ContactedStation: types.ContactedStation{Call: "M0CMC", Country: "England"},
+		LoggingStation:   types.LoggingStation{StationCallsign: "7Q5MLV"},
+		LogbookID:        lbID,
 	}
 
-	typeQso, err := s.service.FetchQsoById(s.qsoID)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), s.qsoID, typeQso.ID)
-	assert.Equal(s.T(), "M0CMC", typeQso.ContactedStation.Call)
-	assert.Equal(s.T(), "7Q5MLV", typeQso.LoggingStation.StationCallsign)
-	assert.Equal(s.T(), "Mzuzu", typeQso.LoggingStation.MyCountry)
-	assert.Equal(s.T(), "VHQ Hex Beam", typeQso.LoggingStation.MyAntenna)
+	qsoOut, err := svc.InsertQso(qsoIn)
+	require.NoError(t, err)
+	assert.Greater(t, qsoOut.ID, int64(0))
+
+	// Attempt to update a non-existent ID
+	bad := qsoOut
+	bad.ID = qsoOut.ID + 9999
+	bad.ContactedStation.Call = "BADD"
+	err = svc.UpdateQso(bad)
+	require.Error(t, err)
+
+	// Cleanup
+	require.NoError(t, svc.DeleteQso(qsoOut.ID))
+}
+
+// Test updating a QSO to reference a non-existent logbook should fail due to FK
+func TestSqliteUpdateForeignKeyViolation(t *testing.T) {
+	svc, lbID := setupSvcAndDefaultLogbook(t)
+
+	qsoIn := types.Qso{
+		QsoDetails:       types.QsoDetails{Band: "20m", Freq: "14.320", Mode: "SSB", QsoDate: "20251108", TimeOn: "1140", TimeOff: "1146", RstRcvd: "59", RstSent: "56"},
+		ContactedStation: types.ContactedStation{Call: "M0CMC", Country: "England"},
+		LoggingStation:   types.LoggingStation{StationCallsign: "7Q5MLV"},
+		LogbookID:        lbID,
+	}
+
+	qsoOut, err := svc.InsertQso(qsoIn)
+	require.NoError(t, err)
+	assert.Greater(t, qsoOut.ID, int64(0))
+
+	// Change logbook_id to a non-existent value and attempt update
+	qsoOut.LogbookID = 999999
+	err = svc.UpdateQso(qsoOut)
+	require.Error(t, err)
+
+	// Cleanup: set back original and delete
+	qsoOut.LogbookID = lbID
+	require.NoError(t, svc.UpdateQso(qsoOut))
+	require.NoError(t, svc.DeleteQso(qsoOut.ID))
 }
