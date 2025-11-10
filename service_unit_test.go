@@ -96,14 +96,14 @@ func TestService_Initialize(t *testing.T) {
 		var svc *Service
 		err := svc.Initialize()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNilService)
+		assert.Contains(t, err.Error(), "Database service is nil.")
 	})
 
 	t.Run("nil config service returns error", func(t *testing.T) {
 		svc := &Service{}
 		err := svc.Initialize()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgAppConfigNil)
+		assert.Contains(t, err.Error(), "Config service is nil.")
 	})
 
 	t.Run("empty config fails validation", func(t *testing.T) {
@@ -151,14 +151,14 @@ func TestService_Open(t *testing.T) {
 		var svc *Service
 		err := svc.Open()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNilService)
+		assert.Contains(t, err.Error(), "Database service is nil.")
 	})
 
 	t.Run("uninitialized service returns error", func(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		err := svc.Open()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNotInitialized)
+		assert.Contains(t, err.Error(), "Database service is not initialized.")
 	})
 
 	t.Run("valid sqlite config opens successfully", func(t *testing.T) {
@@ -230,7 +230,7 @@ func TestService_Close(t *testing.T) {
 		var svc *Service
 		err := svc.Close()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNilService)
+		assert.Contains(t, err.Error(), "Database service is nil.")
 	})
 
 	t.Run("closing unopened service is idempotent", func(t *testing.T) {
@@ -294,14 +294,14 @@ func TestService_Ping(t *testing.T) {
 		var svc *Service
 		err := svc.Ping()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNilService)
+		assert.Contains(t, err.Error(), "Database service is nil.")
 	})
 
 	t.Run("ping unopened service returns error", func(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		err := svc.Ping()
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNotOpen)
+		assert.Contains(t, err.Error(), "Database service is not open.")
 	})
 
 	t.Run("ping open service succeeds", func(t *testing.T) {
@@ -342,7 +342,7 @@ func TestService_BeginTxContext(t *testing.T) {
 		assert.Nil(t, tx)
 		assert.Nil(t, cancel)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNilService)
+		assert.Contains(t, err.Error(), "Database service is nil.")
 	})
 
 	t.Run("unopened service returns error", func(t *testing.T) {
@@ -351,7 +351,7 @@ func TestService_BeginTxContext(t *testing.T) {
 		assert.Nil(t, tx)
 		assert.Nil(t, cancel)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNotOpen)
+		assert.Contains(t, err.Error(), "Database service is not open.")
 	})
 
 	t.Run("begin transaction succeeds", func(t *testing.T) {
@@ -434,7 +434,7 @@ func TestService_ExecContext(t *testing.T) {
 		res, err := svc.ExecContext(context.Background(), "SELECT 1")
 		assert.Nil(t, res)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNilService)
+		assert.Contains(t, err.Error(), "Database service is nil.")
 	})
 
 	t.Run("unopened service returns error", func(t *testing.T) {
@@ -442,7 +442,7 @@ func TestService_ExecContext(t *testing.T) {
 		res, err := svc.ExecContext(context.Background(), "SELECT 1")
 		assert.Nil(t, res)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNotOpen)
+		assert.Contains(t, err.Error(), "Database service is not open.")
 	})
 
 	t.Run("create table succeeds", func(t *testing.T) {
@@ -506,7 +506,7 @@ func TestService_QueryContext(t *testing.T) {
 		rows, err := svc.QueryContext(context.Background(), "SELECT 1")
 		assert.Nil(t, rows)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNilService)
+		assert.Contains(t, err.Error(), "Database service is nil.")
 	})
 
 	t.Run("unopened service returns error", func(t *testing.T) {
@@ -514,7 +514,7 @@ func TestService_QueryContext(t *testing.T) {
 		rows, err := svc.QueryContext(context.Background(), "SELECT 1")
 		assert.Nil(t, rows)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNotOpen)
+		assert.Contains(t, err.Error(), "Database service is not open.")
 	})
 
 	t.Run("simple query succeeds", func(t *testing.T) {
