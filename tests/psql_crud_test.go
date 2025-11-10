@@ -2,6 +2,7 @@ package database_test
 
 import (
 	"context"
+	"database/sql"
 	"os"
 	"path/filepath"
 	"strings"
@@ -101,7 +102,9 @@ func (s *TestSuitePG) SetupSuite() {
 	// Query its ID
 	rows, err := s.service.QueryContext(ctx, "SELECT id FROM logbook WHERE name = $1", name)
 	require.NoError(s.T(), err)
-	defer rows.Close()
+	defer func(rows *sql.Rows) {
+		_ = rows.Close()
+	}(rows)
 	if rows.Next() {
 		require.NoError(s.T(), rows.Scan(&s.logbookID))
 	} else {
