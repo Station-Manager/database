@@ -1,9 +1,10 @@
-package database
+package database_test
 
 import (
 	"context"
 	"fmt"
 	"github.com/Station-Manager/config"
+	"github.com/Station-Manager/database"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,7 +21,7 @@ func getSqliteFileConfig(t *testing.T) *types.DatastoreConfig {
 		os.Remove(dbPath)
 	})
 	return &types.DatastoreConfig{
-		Driver:                    SqliteDriver,
+		Driver:                    database.SqliteDriver,
 		Path:                      dbPath,
 		Options:                   "",
 		Host:                      "127.0.0.1",
@@ -38,7 +39,7 @@ func getSqliteFileConfig(t *testing.T) *types.DatastoreConfig {
 	}
 }
 
-func getSqliteService(t *testing.T) *Service {
+func getSqliteService(t *testing.T) *database.Service {
 	cfg := getSqliteFileConfig(t)
 	cfgSvc := &config.Service{
 		AppConfig: types.AppConfig{
@@ -46,7 +47,7 @@ func getSqliteService(t *testing.T) *Service {
 		},
 	}
 	_ = cfgSvc.Initialize()
-	return &Service{ConfigService: cfgSvc}
+	return &database.Service{ConfigService: cfgSvc}
 }
 
 // TestSQLiteIntegration tests actual SQLite database operations
@@ -185,7 +186,7 @@ func TestSQLiteIntegration(t *testing.T) {
 			},
 		}
 		_ = cfgSvc.Initialize()
-		svc := &Service{ConfigService: cfgSvc}
+		svc := &database.Service{ConfigService: cfgSvc}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -206,7 +207,7 @@ func TestSQLiteIntegration(t *testing.T) {
 			},
 		}
 		_ = cfgSvc.Initialize()
-		svc := &Service{ConfigService: cfgSvc}
+		svc := &database.Service{ConfigService: cfgSvc}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer svc.Close()
@@ -433,7 +434,7 @@ func TestErrorPaths(t *testing.T) {
 
 		err := svc.Ping()
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNotOpen)
+		assert.Contains(t, err.Error(), "Database service is not open.")
 	})
 
 	t.Run("exec on closed database", func(t *testing.T) {
@@ -444,7 +445,7 @@ func TestErrorPaths(t *testing.T) {
 
 		_, err := svc.ExecContext(context.Background(), "SELECT 1")
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNotOpen)
+		assert.Contains(t, err.Error(), "Database service is not open.")
 	})
 
 	t.Run("query on closed database", func(t *testing.T) {
@@ -455,7 +456,7 @@ func TestErrorPaths(t *testing.T) {
 
 		_, err := svc.QueryContext(context.Background(), "SELECT 1")
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), errMsgNotOpen)
+		assert.Contains(t, err.Error(), "Database service is not open.")
 	})
 
 	t.Run("begin transaction on closed database", func(t *testing.T) {

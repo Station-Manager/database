@@ -2,6 +2,7 @@ package database
 
 import (
 	"github.com/Station-Manager/config"
+	"github.com/Station-Manager/database"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,7 +14,7 @@ import (
 type TestSuite struct {
 	suite.Suite
 	//	typeQso types.Qso
-	service Service
+	service database.Service
 	qsoID   int64
 }
 
@@ -22,12 +23,12 @@ func TestSqliteCrudSuite(t *testing.T) {
 }
 
 func (s *TestSuite) SetupSuite() {
-	fp, err := filepath.Abs("../build/db/data.db")
+	fp, err := filepath.Abs("../../build/db/data.db")
 	require.NoError(s.T(), err)
 
 	cfg := types.AppConfig{
 		DatastoreConfig: types.DatastoreConfig{
-			Driver:                    SqliteDriver,
+			Driver:                    database.SqliteDriver,
 			Path:                      fp,
 			MaxOpenConns:              1,
 			MaxIdleConns:              1,
@@ -44,7 +45,7 @@ func (s *TestSuite) SetupSuite() {
 	err = cfgService.Initialize()
 	require.NoError(s.T(), err)
 
-	s.service = Service{
+	s.service = database.Service{
 		ConfigService: cfgService,
 	}
 	err = s.service.Initialize()

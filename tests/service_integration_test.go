@@ -1,18 +1,19 @@
-package database
+package database_test
 
 import (
 	"github.com/Station-Manager/config"
+	"github.com/Station-Manager/database"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestSqliteService(t *testing.T) {
+func TestService_PostgresMigration(t *testing.T) {
 	t.Run("valid config", func(t *testing.T) {
 		cfg := &types.DatastoreConfig{
-			Driver:                    "sqlite",
-			Path:                      "data/test.db",
-			Options:                   "",
+			Driver:                    "postgres",
+			Path:                      "test",
+			Options:                   "1234567890",
 			Host:                      "localhost",
 			Port:                      5432,
 			Database:                  "station_manager",
@@ -35,13 +36,20 @@ func TestSqliteService(t *testing.T) {
 			},
 		}
 		_ = cfgSvc.Initialize()
-		svc := &Service{ConfigService: cfgSvc}
+		svc := &database.Service{ConfigService: cfgSvc}
 		err := svc.Initialize()
 		assert.NoError(t, err)
 
 		err = svc.Open()
 		assert.NoError(t, err)
-		assert.True(t, svc.isOpen.Load())
-		_ = svc.Close()
+
+		err = svc.Ping()
+		assert.NoError(t, err)
+
+		err = svc.Migrate()
+		assert.NoError(t, err)
+
+		err = svc.Close()
+		assert.NoError(t, err)
 	})
 }

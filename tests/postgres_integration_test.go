@@ -1,4 +1,4 @@
-package database
+package database_test
 
 //
 //import (
@@ -14,7 +14,7 @@ package database
 //// Using the same config format as service_integration_test.go which is known to work
 //func getPostgresTestConfig() *types.DatastoreConfig {
 //	return &types.DatastoreConfig{
-//		Driver:                    PostgresDriver,
+//		Driver:                    database.PostgresDriver,
 //		Path:                      "test",
 //		Options:                   "1234567890",
 //		Host:                      "localhost",
@@ -43,7 +43,7 @@ package database
 //
 //	t.Run("full lifecycle with PostgreSQL", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //
 //		// Initialize
 //		err := svc.Initialize()
@@ -110,7 +110,7 @@ package database
 //
 //	t.Run("transaction rollback", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //		require.NoError(t, svc.Initialize())
 //		require.NoError(t, svc.Open())
 //		defer svc.Close()
@@ -153,7 +153,7 @@ package database
 //
 //	t.Run("close and reopen", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //		require.NoError(t, svc.Initialize())
 //
 //		// First open/close cycle
@@ -175,7 +175,7 @@ package database
 //
 //	t.Run("multiple concurrent operations", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //		require.NoError(t, svc.Initialize())
 //		require.NoError(t, svc.Open())
 //		defer svc.Close()
@@ -209,7 +209,7 @@ package database
 //
 //	t.Run("context with custom deadline", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //		require.NoError(t, svc.Initialize())
 //		require.NoError(t, svc.Open())
 //		defer svc.Close()
@@ -226,7 +226,7 @@ package database
 //
 //	t.Run("exec and query operations", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //		require.NoError(t, svc.Initialize())
 //		require.NoError(t, svc.Open())
 //		defer svc.Close()
@@ -274,7 +274,7 @@ package database
 //
 //	t.Run("migrations", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //		require.NoError(t, svc.Initialize())
 //		require.NoError(t, svc.Open())
 //		defer svc.Close()
@@ -294,7 +294,7 @@ package database
 //
 //	t.Run("invalid SQL in exec", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //		require.NoError(t, svc.Initialize())
 //		require.NoError(t, svc.Open())
 //		defer svc.Close()
@@ -305,7 +305,7 @@ package database
 //
 //	t.Run("invalid SQL in query", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //		require.NoError(t, svc.Initialize())
 //		require.NoError(t, svc.Open())
 //		defer svc.Close()
@@ -316,7 +316,7 @@ package database
 //
 //	t.Run("operations on closed database", func(t *testing.T) {
 //		cfg := getPostgresTestConfig()
-//		svc := &Service{config: cfg}
+//		svc := &database.Service{config: cfg}
 //		require.NoError(t, svc.Initialize())
 //		require.NoError(t, svc.Open())
 //		require.NoError(t, svc.Close())

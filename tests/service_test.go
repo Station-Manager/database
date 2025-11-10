@@ -1,7 +1,8 @@
-package database
+package database_test
 
 import (
 	"github.com/Station-Manager/config"
+	"github.com/Station-Manager/database"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -9,10 +10,10 @@ import (
 
 func TestConfigValidation(t *testing.T) {
 	t.Run("nil config service", func(t *testing.T) {
-		svc := &Service{}
+		svc := &database.Service{}
 		err := svc.Initialize()
 		assert.Error(t, err)
-		assert.Equal(t, errMsgAppConfigNil, err.Error())
+		assert.Equal(t, "Config service is nil.", err.Error())
 	})
 	t.Run("invalid config", func(t *testing.T) {
 		cfg := &types.DatastoreConfig{}
@@ -22,7 +23,7 @@ func TestConfigValidation(t *testing.T) {
 			},
 		}
 		_ = cfgSvc.Initialize()
-		svc := &Service{ConfigService: cfgSvc}
+		svc := &database.Service{ConfigService: cfgSvc}
 		err := svc.Initialize()
 		assert.Error(t, err)
 		assert.Error(t, err)
@@ -52,7 +53,7 @@ func TestConfigValidation(t *testing.T) {
 			},
 		}
 		_ = cfgSvc.Initialize()
-		svc := &Service{ConfigService: cfgSvc}
+		svc := &database.Service{ConfigService: cfgSvc}
 		err := svc.Initialize()
 		assert.NoError(t, err)
 	})
@@ -78,7 +79,7 @@ func TestConfigValidation(t *testing.T) {
 			},
 		}
 		_ = cfgSvc.Initialize()
-		svc := &Service{ConfigService: cfgSvc}
+		svc := &database.Service{ConfigService: cfgSvc}
 		err := svc.Initialize()
 		assert.Error(t, err)
 		assert.Error(t, err)
