@@ -53,8 +53,8 @@ func (s *Service) withDefaultTimeout(ctx context.Context) (context.Context, cont
 		return context.WithTimeout(context.Background(), time.Duration(s.DatabaseConfig.ContextTimeout)*time.Second)
 	}
 	if ctx.Err() != nil {
-		cctx, cancel := context.WithCancel(ctx)
-		return cctx, cancel
+		//		cctx, cancel := context.WithCancel(ctx)
+		return ctx, func() {}
 	}
 	if _, hasDeadline := ctx.Deadline(); hasDeadline {
 		return ctx, func() {}

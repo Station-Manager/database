@@ -1,8 +1,24 @@
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE IF NOT EXISTS logbook
+(
+    id          INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+    created_at  DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+    modified_at DATETIME,
+    deleted_at  DATETIME,
+
+    name        TEXT     NOT NULL UNIQUE CHECK (length(name) <= 20),
+    /*
+        The callsign associated with the logbook. This should be treated as the 'station_callsign' according to the
+        ADIF standard (the one used 'on the air').
+    */
+    callsign    TEXT     NOT NULL CHECK (length(callsign) <= 20),
+    description TEXT
+);
+
 CREATE TABLE IF NOT EXISTS qso
 (
-    id              INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    id              INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
     created_at      DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
     modified_at     DATETIME,
     deleted_at      DATETIME,
@@ -35,6 +51,8 @@ CREATE TABLE IF NOT EXISTS qso
     country         TEXT CHECK (length(country) <= 50),
     additional_data JSON     NOT NULL DEFAULT ('{}') CHECK (json_valid(additional_data)),
 
+    logbook_id      INTEGER  NOT NULL,
+
     CONSTRAINT qso_data_no_duplicates CHECK (
         json_extract(additional_data, '$.call') IS NULL AND
         json_extract(additional_data, '$.band') IS NULL AND
@@ -46,7 +64,8 @@ CREATE TABLE IF NOT EXISTS qso
         json_extract(additional_data, '$.rst_sent') IS NULL AND
         json_extract(additional_data, '$.rst_rcvd') IS NULL AND
         json_extract(additional_data, '$.country') IS NULL
-        )
+        ),
+    CONSTRAINT fk_qso_logbook FOREIGN KEY (logbook_id) REFERENCES logbook (id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_qso_call ON qso (call);
@@ -69,12 +88,11 @@ CREATE INDEX IF NOT EXISTS idx_qso_active_date_time ON qso (qso_date, time_on) W
 -- CREATE UNIQUE INDEX IF NOT EXISTS uq_qso_active_unique ON qso (call, qso_date, time_on, freq) WHERE deleted_at IS NULL;
 
 -- Trigger to set modified_at on updates (safe pattern: update the row after the user's update)
-/*
 CREATE TRIGGER IF NOT EXISTS trg_qso_set_modified_at
-    AFTER UPDATE ON qso
+    AFTER UPDATE
+    ON qso
     FOR EACH ROW
     WHEN NEW.modified_at IS NULL OR NEW.modified_at = OLD.modified_at
 BEGIN
     UPDATE qso SET modified_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
-*/

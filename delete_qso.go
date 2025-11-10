@@ -94,6 +94,7 @@ func (s *Service) postgresDeleteQso(id int64) error {
 	if err != nil {
 		return errors.New(op).Err(err)
 	}
+	// No soft delete on the server side (postgres)
 	if _, err = model.Delete(ctx, tx); err != nil {
 		_ = tx.Rollback()
 		return errors.New(op).Err(err)

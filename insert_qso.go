@@ -15,11 +15,8 @@ import (
 // InsertQso inserts a QSO into the database. The returned QSO will have an ID set.
 func (s *Service) InsertQso(qso types.Qso) (types.Qso, error) {
 	const op errors.Op = "database.Service.InsertQso"
-	if s == nil {
-		return qso, errors.New(op).Msg(errMsgNilService)
-	}
-	if !s.isOpen.Load() {
-		return qso, errors.New(op).Msg(errMsgNotOpen)
+	if err := checkService(op, s); err != nil {
+		return qso, errors.New(op).Err(err)
 	}
 
 	switch s.DatabaseConfig.Driver {

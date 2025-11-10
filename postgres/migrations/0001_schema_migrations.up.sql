@@ -25,6 +25,18 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_key_prefix ON api_keys (key_prefix);
 CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys (revoked_at) WHERE revoked_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_api_keys_expires_at ON api_keys (expires_at) WHERE expires_at IS NOT NULL;
 
+CREATE TABLE IF NOT EXISTS logbook
+(
+    id          BIGSERIAL PRIMARY KEY,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    modified_at TIMESTAMPTZ,
+    deleted_at  TIMESTAMPTZ,
+
+    name VARCHAR(20) NOT NULL UNIQUE,
+    callsign VARCHAR(20) NOT NULL,
+    description VARCHAR(255)
+);
+
 CREATE TABLE IF NOT EXISTS qso
 (
     id              BIGSERIAL PRIMARY KEY,
@@ -42,8 +54,9 @@ CREATE TABLE IF NOT EXISTS qso
     rst_sent        VARCHAR(3)  NOT NULL,
     rst_rcvd        VARCHAR(3)  NOT NULL,
     country         VARCHAR(50),
-
     additional_data JSONB       NOT NULL DEFAULT '{}'::jsonb,
+
+    logbook_id      BIGINT      NOT NULL,
 
     -- Ensure additional_data does not duplicate main columns
     CONSTRAINT qso_additional_no_overlap CHECK (
@@ -51,7 +64,8 @@ CREATE TABLE IF NOT EXISTS qso
             'call','band','mode','freq','qso_date',
             'time_on','time_off','rst_sent','rst_rcvd','country'
             ])
-        )
+        ),
+    CONSTRAINT qso_logbook_fk FOREIGN KEY (logbook_id) REFERENCES logbook (id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_qso_call ON qso (call);

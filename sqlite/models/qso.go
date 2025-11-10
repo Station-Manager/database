@@ -40,6 +40,7 @@ type Qso struct {
 	RstRcvd        string      `boil:"rst_rcvd" json:"rst_rcvd" toml:"rst_rcvd" yaml:"rst_rcvd"`
 	Country        null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
 	AdditionalData types.JSON  `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
+	LogbookID      int64       `boil:"logbook_id" json:"logbook_id" toml:"logbook_id" yaml:"logbook_id"`
 
 	R *qsoR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L qsoL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -61,6 +62,7 @@ var QsoColumns = struct {
 	RstRcvd        string
 	Country        string
 	AdditionalData string
+	LogbookID      string
 }{
 	ID:             "id",
 	CreatedAt:      "created_at",
@@ -77,6 +79,7 @@ var QsoColumns = struct {
 	RstRcvd:        "rst_rcvd",
 	Country:        "country",
 	AdditionalData: "additional_data",
+	LogbookID:      "logbook_id",
 }
 
 var QsoTableColumns = struct {
@@ -95,6 +98,7 @@ var QsoTableColumns = struct {
 	RstRcvd        string
 	Country        string
 	AdditionalData string
+	LogbookID      string
 }{
 	ID:             "qso.id",
 	CreatedAt:      "qso.created_at",
@@ -111,146 +115,10 @@ var QsoTableColumns = struct {
 	RstRcvd:        "qso.rst_rcvd",
 	Country:        "qso.country",
 	AdditionalData: "qso.additional_data",
+	LogbookID:      "qso.logbook_id",
 }
 
 // Generated where
-
-type whereHelperint64 struct{ field string }
-
-func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelperint64) NIN(slice []int64) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-type whereHelpertime_Time struct{ field string }
-
-func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.EQ, x)
-}
-func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.NEQ, x)
-}
-func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
-type whereHelpernull_Time struct{ field string }
-
-func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
-func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-
-type whereHelperstring struct{ field string }
-
-func (w whereHelperstring) EQ(x string) qm.QueryMod    { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperstring) NEQ(x string) qm.QueryMod   { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperstring) LT(x string) qm.QueryMod    { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperstring) LTE(x string) qm.QueryMod   { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperstring) GT(x string) qm.QueryMod    { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperstring) GTE(x string) qm.QueryMod   { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperstring) LIKE(x string) qm.QueryMod  { return qm.Where(w.field+" LIKE ?", x) }
-func (w whereHelperstring) NLIKE(x string) qm.QueryMod { return qm.Where(w.field+" NOT LIKE ?", x) }
-func (w whereHelperstring) IN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-type whereHelpernull_String struct{ field string }
-
-func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-func (w whereHelpernull_String) LIKE(x null.String) qm.QueryMod {
-	return qm.Where(w.field+" LIKE ?", x)
-}
-func (w whereHelpernull_String) NLIKE(x null.String) qm.QueryMod {
-	return qm.Where(w.field+" NOT LIKE ?", x)
-}
-func (w whereHelpernull_String) IN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelpernull_String) NIN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 type whereHelpertypes_JSON struct{ field string }
 
@@ -289,6 +157,7 @@ var QsoWhere = struct {
 	RstRcvd        whereHelperstring
 	Country        whereHelpernull_String
 	AdditionalData whereHelpertypes_JSON
+	LogbookID      whereHelperint64
 }{
 	ID:             whereHelperint64{field: "\"qso\".\"id\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"qso\".\"created_at\""},
@@ -305,14 +174,19 @@ var QsoWhere = struct {
 	RstRcvd:        whereHelperstring{field: "\"qso\".\"rst_rcvd\""},
 	Country:        whereHelpernull_String{field: "\"qso\".\"country\""},
 	AdditionalData: whereHelpertypes_JSON{field: "\"qso\".\"additional_data\""},
+	LogbookID:      whereHelperint64{field: "\"qso\".\"logbook_id\""},
 }
 
 // QsoRels is where relationship names are stored.
 var QsoRels = struct {
-}{}
+	Logbook string
+}{
+	Logbook: "Logbook",
+}
 
 // qsoR is where relationships are stored.
 type qsoR struct {
+	Logbook *Logbook `boil:"Logbook" json:"Logbook" toml:"Logbook" yaml:"Logbook"`
 }
 
 // NewStruct creates a new relationship struct
@@ -320,12 +194,28 @@ func (*qsoR) NewStruct() *qsoR {
 	return &qsoR{}
 }
 
+func (o *Qso) GetLogbook() *Logbook {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetLogbook()
+}
+
+func (r *qsoR) GetLogbook() *Logbook {
+	if r == nil {
+		return nil
+	}
+
+	return r.Logbook
+}
+
 // qsoL is where Load methods for each relationship are stored.
 type qsoL struct{}
 
 var (
-	qsoAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "country", "additional_data"}
-	qsoColumnsWithoutDefault = []string{"call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd"}
+	qsoAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "country", "additional_data", "logbook_id"}
+	qsoColumnsWithoutDefault = []string{"call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "logbook_id"}
 	qsoColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "country", "additional_data"}
 	qsoPrimaryKeyColumns     = []string{"id"}
 	qsoGeneratedColumns      = []string{"id"}
@@ -420,6 +310,177 @@ func (q qsoQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, 
 	}
 
 	return count > 0, nil
+}
+
+// Logbook pointed to by the foreign key.
+func (o *Qso) Logbook(mods ...qm.QueryMod) logbookQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.LogbookID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Logbooks(queryMods...)
+}
+
+// LoadLogbook allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (qsoL) LoadLogbook(ctx context.Context, e boil.ContextExecutor, singular bool, maybeQso interface{}, mods queries.Applicator) error {
+	var slice []*Qso
+	var object *Qso
+
+	if singular {
+		var ok bool
+		object, ok = maybeQso.(*Qso)
+		if !ok {
+			object = new(Qso)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeQso)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeQso))
+			}
+		}
+	} else {
+		s, ok := maybeQso.(*[]*Qso)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeQso)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeQso))
+			}
+		}
+	}
+
+	args := make(map[interface{}]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &qsoR{}
+		}
+		args[object.LogbookID] = struct{}{}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &qsoR{}
+			}
+
+			args[obj.LogbookID] = struct{}{}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]interface{}, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`logbook`),
+		qm.WhereIn(`logbook.id in ?`, argsSlice...),
+		qmhelper.WhereIsNull(`logbook.deleted_at`),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Logbook")
+	}
+
+	var resultSlice []*Logbook
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Logbook")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for logbook")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for logbook")
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Logbook = foreign
+		if foreign.R == nil {
+			foreign.R = &logbookR{}
+		}
+		foreign.R.Qsos = append(foreign.R.Qsos, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.LogbookID == foreign.ID {
+				local.R.Logbook = foreign
+				if foreign.R == nil {
+					foreign.R = &logbookR{}
+				}
+				foreign.R.Qsos = append(foreign.R.Qsos, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// SetLogbook of the qso to the related item.
+// Sets o.R.Logbook to related.
+// Adds o to related.R.Qsos.
+func (o *Qso) SetLogbook(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Logbook) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"qso\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 0, []string{"logbook_id"}),
+		strmangle.WhereClause("\"", "\"", 0, qsoPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.LogbookID = related.ID
+	if o.R == nil {
+		o.R = &qsoR{
+			Logbook: related,
+		}
+	} else {
+		o.R.Logbook = related
+	}
+
+	if related.R == nil {
+		related.R = &logbookR{
+			Qsos: QsoSlice{o},
+		}
+	} else {
+		related.R.Qsos = append(related.R.Qsos, o)
+	}
+
+	return nil
 }
 
 // Qsos retrieves all the records using an executor.

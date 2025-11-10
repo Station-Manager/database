@@ -5,8 +5,10 @@ package models
 
 var TableNames = struct {
 	APIKeys string
+	Logbook string
 	Qso     string
 }{
 	APIKeys: "api_keys",
+	Logbook: "logbook",
 	Qso:     "qso",
 }

@@ -4,7 +4,9 @@
 package models
 
 var TableNames = struct {
-	Qso string
+	Logbook string
+	Qso     string
 }{
-	Qso: "qso",
+	Logbook: "logbook",
+	Qso:     "qso",
 }
