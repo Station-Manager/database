@@ -21,7 +21,7 @@ func (s *Service) getDsn() (string, error) {
 	case PostgresDriver:
 		userInfo := url.UserPassword(s.DatabaseConfig.User, s.DatabaseConfig.Password)
 		q := url.Values{}
-		if s.DatabaseConfig.SSLMode != "" {
+		if s.DatabaseConfig.SSLMode != emptyString {
 			q.Set("sslmode", s.DatabaseConfig.SSLMode)
 		}
 		hostPort := net.JoinHostPort(s.DatabaseConfig.Host, fmt.Sprintf("%d", s.DatabaseConfig.Port))
@@ -118,8 +118,7 @@ func (s *Service) checkDatabaseDir(dbFilePath string) error {
 		return nil
 	}
 
-	// Consider tightening permissions to 0700 for privacy; keep current for compatibility
-	if err = os.MkdirAll(dbDir, 0o755); err != nil {
+	if err = os.MkdirAll(dbDir, 0o700); err != nil {
 		return errors.New(op).Errorf("os.MkdirAll: %w", err)
 	}
 
