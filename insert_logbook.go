@@ -54,7 +54,7 @@ func (s *Service) sqliteInsertLogbookContext(ctx context.Context, logbook types.
 	adapter := s.adapterToModel
 
 	model := &sqmodels.Logbook{}
-	if err := adapter.Adapt(&logbook, model); err != nil {
+	if err := adapter.Into(model, &logbook); err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
 
@@ -91,7 +91,7 @@ func (s *Service) postgresInsertLogbookContext(ctx context.Context, logbook type
 	adapter := s.adapterToModel
 
 	model := &pgmodels.Logbook{}
-	if err := adapter.Adapt(&logbook, model); err != nil {
+	if err := adapter.Into(model, &logbook); err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
 

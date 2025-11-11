@@ -65,7 +65,7 @@ func (s *Service) sqliteUpdateQsoContext(ctx context.Context, qso types.Qso) err
 	adapter := s.adapterToModel
 
 	model := &sqmodels.Qso{}
-	if err := adapter.Adapt(&qso, model); err != nil {
+	if err := adapter.Into(model, &qso); err != nil {
 		_ = tx.Rollback()
 		return errors.New(op).Err(err)
 	}
@@ -120,7 +120,7 @@ func (s *Service) postgresUpdateQsoContext(ctx context.Context, qso types.Qso) e
 	adapter := s.adapterToModel
 
 	model := &pgmodels.Qso{}
-	if err := adapter.Adapt(&qso, model); err != nil {
+	if err := adapter.Into(model, &qso); err != nil {
 		_ = tx.Rollback()
 		return errors.New(op).Err(err)
 	}

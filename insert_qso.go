@@ -61,7 +61,7 @@ func (s *Service) sqliteInsertQsoContext(ctx context.Context, qso types.Qso) (ty
 	adapter := s.adapterToModel
 
 	model := &sqmodels.Qso{}
-	if err := adapter.Adapt(&qso, model); err != nil {
+	if err := adapter.Into(model, &qso); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
 
@@ -99,7 +99,7 @@ func (s *Service) postgresInsertQsoContext(ctx context.Context, qso types.Qso) (
 	adapter := s.adapterToModel
 
 	model := &pgmodels.Qso{}
-	if err := adapter.Adapt(&qso, model); err != nil {
+	if err := adapter.Into(model, &qso); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
 

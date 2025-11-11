@@ -61,7 +61,7 @@ func (s *Service) sqliteFetchQsoContext(ctx context.Context, id int64) (types.Qs
 	s.initAdapters()
 	adapter := s.adapterFromModel
 	out := types.Qso{}
-	if err := adapter.Adapt(model, &out); err != nil {
+	if err := adapter.Into(&out, model); err != nil {
 		return emptyRetVal, errors.New(op).Err(err)
 	}
 	return out, nil
@@ -96,7 +96,7 @@ func (s *Service) postgresFetchQsoContext(ctx context.Context, id int64) (types.
 	s.initAdapters()
 	adapter := s.adapterFromModel
 	out := types.Qso{}
-	if err := adapter.Adapt(model, &out); err != nil {
+	if err := adapter.Into(&out, model); err != nil {
 		return emptyRetVal, errors.New(op).Err(err)
 	}
 	return out, nil
