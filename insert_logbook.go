@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	pgmodels "github.com/Station-Manager/database/postgres/models"
-	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/sqlboiler/v4/boil"
@@ -51,10 +49,8 @@ func (s *Service) sqliteInsertLogbookContext(ctx context.Context, logbook types.
 	}
 
 	s.initAdapters()
-	adapter := s.adapterToModel
-
-	model := &sqmodels.Logbook{}
-	if err := adapter.Into(model, &logbook); err != nil {
+	model, err := s.AdaptTypeToSqliteModelLogbook(logbook)
+	if err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
 
@@ -88,10 +84,8 @@ func (s *Service) postgresInsertLogbookContext(ctx context.Context, logbook type
 	}
 
 	s.initAdapters()
-	adapter := s.adapterToModel
-
-	model := &pgmodels.Logbook{}
-	if err := adapter.Into(model, &logbook); err != nil {
+	model, err := s.AdaptTypeToPostgresModelLogbook(logbook)
+	if err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
 

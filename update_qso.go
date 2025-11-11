@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	pgmodels "github.com/Station-Manager/database/postgres/models"
-	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/sqlboiler/v4/boil"
@@ -62,10 +60,9 @@ func (s *Service) sqliteUpdateQsoContext(ctx context.Context, qso types.Qso) err
 	defer txCancel()
 
 	s.initAdapters()
-	adapter := s.adapterToModel
 
-	model := &sqmodels.Qso{}
-	if err := adapter.Into(model, &qso); err != nil {
+	model, err := s.AdaptTypeToSqliteModelQso(qso)
+	if err != nil {
 		_ = tx.Rollback()
 		return errors.New(op).Err(err)
 	}
@@ -117,10 +114,9 @@ func (s *Service) postgresUpdateQsoContext(ctx context.Context, qso types.Qso) e
 	defer txCancel()
 
 	s.initAdapters()
-	adapter := s.adapterToModel
 
-	model := &pgmodels.Qso{}
-	if err := adapter.Into(model, &qso); err != nil {
+	model, err := s.AdaptTypeToPostgresModelQso(qso)
+	if err != nil {
 		_ = tx.Rollback()
 		return errors.New(op).Err(err)
 	}

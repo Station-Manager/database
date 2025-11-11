@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	pgmodels "github.com/Station-Manager/database/postgres/models"
-	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/sqlboiler/v4/boil"
@@ -58,10 +56,8 @@ func (s *Service) sqliteInsertQsoContext(ctx context.Context, qso types.Qso) (ty
 	}
 
 	s.initAdapters()
-	adapter := s.adapterToModel
-
-	model := &sqmodels.Qso{}
-	if err := adapter.Into(model, &qso); err != nil {
+	model, err := s.AdaptTypeToSqliteModelQso(qso)
+	if err != nil {
 		return qso, errors.New(op).Err(err)
 	}
 
@@ -96,10 +92,8 @@ func (s *Service) postgresInsertQsoContext(ctx context.Context, qso types.Qso) (
 	}
 
 	s.initAdapters()
-	adapter := s.adapterToModel
-
-	model := &pgmodels.Qso{}
-	if err := adapter.Into(model, &qso); err != nil {
+	model, err := s.AdaptTypeToPostgresModelQso(qso)
+	if err != nil {
 		return qso, errors.New(op).Err(err)
 	}
 
