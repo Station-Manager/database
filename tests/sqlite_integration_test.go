@@ -2,6 +2,7 @@ package database_test
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database"
@@ -66,7 +67,9 @@ func TestSQLiteIntegration(t *testing.T) {
 		// Open
 		err = svc.Open()
 		require.NoError(t, err)
-		defer svc.Close()
+		defer func(svc *database.Service) {
+			_ = svc.Close()
+		}(svc)
 
 		fmt.Println(err)
 
@@ -94,7 +97,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "Alice", name)
 		assert.Equal(t, "alice@example.com", email)
-		rows.Close() // Close rows before starting transaction
+		_ = rows.Close() // Close rows before starting transaction
 
 		// Transaction
 		tx, cancel, err := svc.BeginTxContext(context.Background())
@@ -110,7 +113,9 @@ func TestSQLiteIntegration(t *testing.T) {
 		// Verify transaction committed
 		rows, err = svc.QueryContext(context.Background(), "SELECT COUNT(*) FROM users")
 		require.NoError(t, err)
-		defer rows.Close()
+		defer func(rows *sql.Rows) {
+			_ = rows.Close()
+		}(rows)
 		assert.True(t, rows.Next())
 		var count int
 		err = rows.Scan(&count)
@@ -122,7 +127,9 @@ func TestSQLiteIntegration(t *testing.T) {
 		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *database.Service) {
+			_ = svc.Close()
+		}(svc)
 
 		// Create table
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)")
@@ -148,7 +155,9 @@ func TestSQLiteIntegration(t *testing.T) {
 		// Verify rollback worked
 		rows, err := svc.QueryContext(context.Background(), "SELECT COUNT(*) FROM test")
 		require.NoError(t, err)
-		defer rows.Close()
+		defer func(rows *sql.Rows) {
+			_ = rows.Close()
+		}(rows)
 		assert.True(t, rows.Next())
 		var count int
 		err = rows.Scan(&count)
@@ -189,13 +198,15 @@ func TestSQLiteIntegration(t *testing.T) {
 		svc := &database.Service{ConfigService: cfgSvc}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *database.Service) {
+			_ = svc.Close()
+		}(svc)
 
 		// Simple query should succeed within timeout
 		ctx := context.Background()
 		rows, err := svc.QueryContext(ctx, "SELECT 1")
 		require.NoError(t, err)
-		rows.Close()
+		_ = rows.Close()
 	})
 
 	t.Run("exec context timeout", func(t *testing.T) {
@@ -210,7 +221,9 @@ func TestSQLiteIntegration(t *testing.T) {
 		svc := &database.Service{ConfigService: cfgSvc}
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *database.Service) {
+			_ = svc.Close()
+		}(svc)
 
 		// Simple exec should succeed within timeout
 		ctx := context.Background()
@@ -222,7 +235,9 @@ func TestSQLiteIntegration(t *testing.T) {
 		svc := getSqliteService(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *database.Service) {
+			_ = svc.Close()
+		}(svc)
 
 		// Create table
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)")
