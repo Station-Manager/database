@@ -110,14 +110,14 @@ func TestService_getDsn(t *testing.T) {
 		cfg := &types.DatastoreConfig{
 			Driver:  SqliteDriver,
 			Path:    "/tmp/test.db",
-			Options: "",
+			Options: map[string]string{},
 		}
 		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
 
-		// DSN is hardwired, just verify it contains expected defaults
+		// Verify defaults are present
 		assert.Contains(t, dsn, "file:")
 		assert.Contains(t, dsn, "_busy_timeout=5000")
 		assert.Contains(t, dsn, "_journal_mode=WAL")
@@ -128,44 +128,46 @@ func TestService_getDsn(t *testing.T) {
 		cfg := &types.DatastoreConfig{
 			Driver:  SqliteDriver,
 			Path:    "/tmp/test.db",
-			Options: "cache=shared&mode=memory",
+			Options: map[string]string{"cache": "shared", "mode": "memory"},
 		}
 		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
 
-		// DSN is hardwired, options are ignored for now
 		assert.Contains(t, dsn, "file:")
+		assert.Contains(t, dsn, "cache=shared")
+		assert.Contains(t, dsn, "mode=memory")
 	})
 
 	t.Run("sqlite DSN with leading question mark in options", func(t *testing.T) {
 		cfg := &types.DatastoreConfig{
 			Driver:  SqliteDriver,
 			Path:    "test_options.db",
-			Options: "?cache=shared",
+			Options: map[string]string{"cache": "shared"},
 		}
 		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
 
-		// DSN is hardwired, so just check it's valid
+		// Check it's valid and contains provided option
 		assert.Contains(t, dsn, "file:")
+		assert.Contains(t, dsn, "cache=shared")
 	})
 
 	t.Run("sqlite DSN with just question mark gets defaults", func(t *testing.T) {
 		cfg := &types.DatastoreConfig{
 			Driver:  SqliteDriver,
 			Path:    "test_question.db",
-			Options: "?",
+			Options: map[string]string{},
 		}
 		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
 
-		// DSN is hardwired, so just check it's valid
+		// Defaults should be present
 		assert.Contains(t, dsn, "file:")
 		assert.Contains(t, dsn, "_busy_timeout")
 	})
@@ -174,7 +176,7 @@ func TestService_getDsn(t *testing.T) {
 		cfg := &types.DatastoreConfig{
 			Driver:  SqliteDriver,
 			Path:    "test_file.db",
-			Options: "",
+			Options: map[string]string{},
 		}
 		svc := getServiceForInternalTest(cfg)
 
@@ -218,7 +220,7 @@ func TestService_getDsn(t *testing.T) {
 		cfg := &types.DatastoreConfig{
 			Driver:                    SqliteDriver,
 			Path:                      "",
-			Options:                   "",
+			Options:                   map[string]string{},
 			Host:                      "localhost",
 			Port:                      5432,
 			User:                      "testuser",
@@ -290,7 +292,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 		cfg := &types.DatastoreConfig{
 			Driver:  SqliteDriver,
 			Path:    "./relative/path/db.sqlite",
-			Options: "",
+			Options: map[string]string{},
 		}
 		svc := getServiceForInternalTest(cfg)
 
@@ -304,7 +306,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 		cfg := &types.DatastoreConfig{
 			Driver:  SqliteDriver,
 			Path:    "/absolute/path/db.sqlite",
-			Options: "",
+			Options: map[string]string{},
 		}
 		svc := getServiceForInternalTest(cfg)
 
@@ -360,15 +362,18 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 		cfg := &types.DatastoreConfig{
 			Driver:  SqliteDriver,
 			Path:    "test_complex.db",
-			Options: "_busy_timeout=10000&_journal_mode=DELETE&_synchronous=FULL&cache=private",
+			Options: map[string]string{"_busy_timeout": "10000", "_journal_mode": "DELETE", "_synchronous": "FULL", "cache": "private"},
 		}
 		svc := getServiceForInternalTest(cfg)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
 
-		// DSN is hardwired, just verify it's valid
 		assert.Contains(t, dsn, "file:")
+		assert.Contains(t, dsn, "_busy_timeout=10000")
+		assert.Contains(t, dsn, "_journal_mode=DELETE")
+		assert.Contains(t, dsn, "_synchronous=FULL")
+		assert.Contains(t, dsn, "cache=private")
 	})
 }
 
@@ -396,7 +401,7 @@ func BenchmarkService_getDsn(b *testing.B) {
 		cfg := &types.DatastoreConfig{
 			Driver:  SqliteDriver,
 			Path:    "test_bench.db",
-			Options: "",
+			Options: map[string]string{},
 		}
 		svc := getServiceForInternalTest(cfg)
 

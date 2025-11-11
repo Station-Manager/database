@@ -28,18 +28,20 @@ func (s *Service) doMigrations() error {
 	default:
 		return errors.New(op).Msg("Driver not supported.")
 	}
+	if err != nil {
+		return errors.New(op).Err(err)
+	}
 
 	m, err := migrate.NewWithInstance("iofs", srcDriver, s.DatabaseConfig.Driver, dbDriver)
 	if err != nil {
+		_ = srcDriver.Close()
 		return errors.New(op).Errorf("migrate.NewWithInstance: %w", err)
 	}
-	// BUG: closes the database connection
-	//defer func(m *migrate.Migrate) {
-	//	if closeErr, _ := m.Close(); closeErr != nil && err == nil {
-	//		// Only return a close error if no other error occurred
-	//		err = errors.New(op).Errorf("m.Close: %w", closeErr)
-	//	}
-	//}(m)
+	// Do NOT call m.Close() because many database drivers close the shared *sql.DB handle.
+	// We explicitly close the source driver to free resources.
+	defer func() {
+		_ = srcDriver.Close()
+	}()
 
 	err = m.Up()
 	if err != nil && !stderr.Is(err, migrate.ErrNoChange) {

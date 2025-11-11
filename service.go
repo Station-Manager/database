@@ -209,25 +209,27 @@ func (s *Service) BeginTxContext(ctx context.Context) (*sql.Tx, context.CancelFu
 		return nil, nil, errors.New(op).Msg(errMsgNilService)
 	}
 
+	// Snapshot handle & open state under read lock (mirrors ExecContext/QueryContext pattern)
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
 
-	if s.handle == nil || !s.isOpen.Load() {
+	if h == nil || !isOpen {
 		return nil, nil, errors.New(op).Msg(errMsgNotOpen)
 	}
 
 	_, hasDeadline := ctx.Deadline()
 	var txCtx context.Context
 	var cancel context.CancelFunc
-
 	if !hasDeadline {
 		txCtx, cancel = context.WithTimeout(ctx, time.Duration(s.DatabaseConfig.TransactionContextTimeout)*time.Second)
 	} else {
 		txCtx = ctx
-		cancel = func() {} // No-op cancel
+		cancel = func() {} // No-op cancel when caller supplied deadline
 	}
 
-	tx, err := s.handle.BeginTx(txCtx, nil)
+	tx, err := h.BeginTx(txCtx, nil)
 	if err != nil {
 		cancel()
 		if stderr.Is(err, context.DeadlineExceeded) {

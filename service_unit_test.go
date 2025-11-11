@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
@@ -37,12 +38,12 @@ func getValidSqliteConfig(t *testing.T) *types.DatastoreConfig {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 	t.Cleanup(func() {
-		os.Remove(dbPath)
+		_ = os.Remove(dbPath)
 	})
 	return &types.DatastoreConfig{
 		Driver:                    SqliteDriver,
 		Path:                      dbPath,
-		Options:                   "",
+		Options:                   map[string]string{}, // updated for map type
 		Host:                      "localhost",
 		Port:                      1,
 		User:                      "test",
@@ -308,7 +309,9 @@ func TestService_Ping(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		err := svc.Ping()
 		assert.NoError(t, err)
@@ -318,7 +321,9 @@ func TestService_Ping(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		var wg sync.WaitGroup
 		for i := 0; i < 10; i++ {
@@ -358,7 +363,9 @@ func TestService_BeginTxContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		tx, cancel, err := svc.BeginTxContext(context.Background())
 		require.NoError(t, err)
@@ -374,7 +381,9 @@ func TestService_BeginTxContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		ctx := context.Background()
 		tx, cancel, err := svc.BeginTxContext(ctx)
@@ -390,7 +399,9 @@ func TestService_BeginTxContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		ctx, ctxCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer ctxCancel()
@@ -408,7 +419,9 @@ func TestService_BeginTxContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		var wg sync.WaitGroup
 		for i := 0; i < 5; i++ {
@@ -449,7 +462,9 @@ func TestService_ExecContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		res, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)")
 		assert.NoError(t, err)
@@ -460,7 +475,9 @@ func TestService_ExecContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)")
 		require.NoError(t, err)
@@ -477,7 +494,9 @@ func TestService_ExecContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -491,7 +510,9 @@ func TestService_ExecContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		res, err := svc.ExecContext(context.Background(), "INVALID SQL")
 		assert.Error(t, err)
@@ -521,12 +542,16 @@ func TestService_QueryContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		rows, err := svc.QueryContext(context.Background(), "SELECT 1")
 		require.NoError(t, err)
 		assert.NotNil(t, rows)
-		defer rows.Close()
+		defer func(rows *sql.Rows) {
+			_ = rows.Close()
+		}(rows)
 
 		assert.True(t, rows.Next())
 		var result int
@@ -539,7 +564,9 @@ func TestService_QueryContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)")
 		require.NoError(t, err)
@@ -548,7 +575,9 @@ func TestService_QueryContext(t *testing.T) {
 
 		rows, err := svc.QueryContext(context.Background(), "SELECT name FROM test WHERE name = ?", "Alice")
 		require.NoError(t, err)
-		defer rows.Close()
+		defer func(rows *sql.Rows) {
+			_ = rows.Close()
+		}(rows)
 
 		assert.True(t, rows.Next())
 		var name string
@@ -561,7 +590,9 @@ func TestService_QueryContext(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
@@ -569,14 +600,16 @@ func TestService_QueryContext(t *testing.T) {
 		rows, err := svc.QueryContext(ctx, "SELECT 1")
 		assert.NoError(t, err)
 		assert.NotNil(t, rows)
-		rows.Close()
+		_ = rows.Close()
 	})
 
 	t.Run("invalid SQL returns error", func(t *testing.T) {
 		svc := getServiceWithSqliteConfig(t)
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
-		defer svc.Close()
+		defer func(svc *Service) {
+			_ = svc.Close()
+		}(svc)
 
 		rows, err := svc.QueryContext(context.Background(), "INVALID SQL")
 		assert.Error(t, err)
@@ -619,7 +652,7 @@ func TestService_Lifecycle(t *testing.T) {
 		err = rows.Scan(&name)
 		assert.NoError(t, err)
 		assert.Equal(t, "John", name)
-		rows.Close()
+		_ = rows.Close()
 
 		// Transaction
 		tx, cancel, err := svc.BeginTxContext(context.Background())

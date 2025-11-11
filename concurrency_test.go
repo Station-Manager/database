@@ -18,12 +18,12 @@ func getValidSqliteConfigForConcurrency(t *testing.T) *types.DatastoreConfig {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 	t.Cleanup(func() {
-		os.Remove(dbPath)
+		_ = os.Remove(dbPath)
 	})
 	return &types.DatastoreConfig{
 		Driver:                    SqliteDriver,
 		Path:                      dbPath,
-		Options:                   "",
+		Options:                   map[string]string{}, // updated for map type
 		Host:                      "localhost",
 		Port:                      1,
 		User:                      "test",

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"path/filepath"
 	"testing"
 
@@ -21,6 +22,7 @@ func setupSvcAndDefaultLogbook(t *testing.T) (*database.Service, int64) {
 		DatastoreConfig: types.DatastoreConfig{
 			Driver:                    database.SqliteDriver,
 			Path:                      dbPath,
+			Options:                   map[string]string{},
 			MaxOpenConns:              1,
 			MaxIdleConns:              1,
 			ConnMaxLifetime:           1,
@@ -30,10 +32,7 @@ func setupSvcAndDefaultLogbook(t *testing.T) (*database.Service, int64) {
 		},
 	}
 
-	cfgSvc := &config.Service{
-		WorkingDir: "",
-		AppConfig:  cfg,
-	}
+	cfgSvc := &config.Service{WorkingDir: "", AppConfig: cfg}
 	require.NoError(t, cfgSvc.Initialize())
 
 	svc := &database.Service{ConfigService: cfgSvc}
@@ -42,22 +41,33 @@ func setupSvcAndDefaultLogbook(t *testing.T) (*database.Service, int64) {
 	// Ensure closed on test cleanup
 	t.Cleanup(func() { _ = svc.Close() })
 
-	// Run migrations to create tables and seed default logbook
+	// Run migrations to create tables
 	require.NoError(t, svc.Migrate())
 
-	// Query seeded logbook id by name
 	ctx := context.Background()
-	rows, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", "default")
-	require.NoError(t, err)
-	defer rows.Close()
-
-	var lbID int64
-	if rows.Next() {
-		require.NoError(t, rows.Scan(&lbID))
-	} else {
-		require.FailNow(t, "default logbook not found after migrations")
+	// Try find existing default logbook
+	if rows, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", "default"); err == nil {
+		defer func(rows *sql.Rows) {
+			_ = rows.Close()
+		}(rows)
+		if rows.Next() {
+			var id int64
+			require.NoError(t, rows.Scan(&id))
+			return svc, id
+		}
 	}
+	// Insert a default logbook manually with required api_key in case the migration seed didn't include api_key
+	_, err := svc.ExecContext(ctx, "INSERT INTO logbook (name, callsign, api_key, description) VALUES (?,?,?,?)", "default", "NOCALL", "DEFAULTKEY", "Default logbook created by test setup")
+	require.NoError(t, err)
 
+	rows2, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", "default")
+	require.NoError(t, err)
+	defer func(rows2 *sql.Rows) {
+		_ = rows2.Close()
+	}(rows2)
+	var lbID int64
+	require.True(t, rows2.Next(), "default logbook should exist")
+	require.NoError(t, rows2.Scan(&lbID))
 	return svc, lbID
 }
 

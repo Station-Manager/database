@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/utils"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 )
 
@@ -22,10 +24,11 @@ func (s *Service) getDsn() (string, error) {
 		if s.DatabaseConfig.SSLMode != "" {
 			q.Set("sslmode", s.DatabaseConfig.SSLMode)
 		}
+		hostPort := net.JoinHostPort(s.DatabaseConfig.Host, fmt.Sprintf("%d", s.DatabaseConfig.Port))
 		u := &url.URL{
 			Scheme:   "postgres",
 			User:     userInfo,
-			Host:     fmt.Sprintf("%s:%d", s.DatabaseConfig.Host, s.DatabaseConfig.Port),
+			Host:     hostPort,
 			Path:     "/" + s.DatabaseConfig.Database,
 			RawQuery: q.Encode(),
 		}
@@ -37,13 +40,34 @@ func (s *Service) getDsn() (string, error) {
 			return emptyString, errors.New(op).Msg(errMsgEmptyPath)
 		}
 
-		q := url.Values{}
+		// Merge defaults if not provided
+		opts := map[string]string{}
 		for k, v := range s.DatabaseConfig.Options {
-			q.Set(k, v)
+			opts[k] = v
+		}
+		// Set safe defaults only if not present
+		if _, ok := opts["_busy_timeout"]; !ok {
+			opts["_busy_timeout"] = "5000"
+		}
+		if _, ok := opts["_journal_mode"]; !ok {
+			opts["_journal_mode"] = "WAL"
+		}
+		if _, ok := opts["_foreign_keys"]; !ok {
+			opts["_foreign_keys"] = "on"
 		}
 
-		if len(q) == 0 {
+		if len(opts) == 0 {
 			return fmt.Sprintf("file:%s", path), nil
+		}
+		// Stabilize key order for determinism
+		keys := make([]string, 0, len(opts))
+		for k := range opts {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		q := url.Values{}
+		for _, k := range keys {
+			q.Set(k, opts[k])
 		}
 		return fmt.Sprintf("file:%s?%s", path, q.Encode()), nil
 
@@ -94,6 +118,7 @@ func (s *Service) checkDatabaseDir(dbFilePath string) error {
 		return nil
 	}
 
+	// Consider tightening permissions to 0700 for privacy; keep current for compatibility
 	if err = os.MkdirAll(dbDir, 0o755); err != nil {
 		return errors.New(op).Errorf("os.MkdirAll: %w", err)
 	}

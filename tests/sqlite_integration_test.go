@@ -18,12 +18,12 @@ func getSqliteFileConfig(t *testing.T) *types.DatastoreConfig {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 	t.Cleanup(func() {
-		os.Remove(dbPath)
+		_ = os.Remove(dbPath)
 	})
 	return &types.DatastoreConfig{
 		Driver:                    database.SqliteDriver,
 		Path:                      dbPath,
-		Options:                   "",
+		Options:                   map[string]string{},
 		Host:                      "127.0.0.1",
 		Port:                      5432,
 		User:                      "testuser",
