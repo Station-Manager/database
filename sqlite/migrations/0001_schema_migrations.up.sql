@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS logbook
         ADIF standard (the one used 'on the air').
     */
     callsign    TEXT     NOT NULL CHECK (length(callsign) <= 20),
+    api_key     TEXT     NOT NULL UNIQUE CHECK (length(api_key) <= 20),
     description TEXT
 );
 
