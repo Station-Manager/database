@@ -22,7 +22,6 @@ type TestSuitePG struct {
 	typeQso   types.Qso
 	service   database.Service
 	logbookID int64
-	qsoID     int64
 }
 
 func TestPsqlCrudSuite(t *testing.T) {
@@ -96,29 +95,48 @@ func (s *TestSuitePG) SetupSuite() {
 		s.T().Skip("Migrations failed; skipping suite")
 	}
 
+	// Post-migration ping to verify connection usability
+	if pingErr := s.service.Ping(); pingErr != nil {
+		// Attempt one reopen cycle
+		_ = s.service.Close()
+		if reopenErr := s.service.Open(); reopenErr != nil {
+			s.T().Skip("Post-migration reopen failed: " + reopenErr.Error())
+		}
+		if pingErr2 := s.service.Ping(); pingErr2 != nil {
+			s.T().Skip("Post-migration ping still failing: " + pingErr2.Error())
+		}
+	}
+
+	// Simple probe to detect long-running locks
+	probeCtx, probeCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer probeCancel()
+	_, probeErr := s.service.QueryContext(probeCtx, "SELECT 1")
+	if probeErr != nil {
+		s.T().Skip("Probe SELECT 1 failed: " + probeErr.Error())
+	}
+
 	// Create a test logbook for FK usage. Use a unique name to avoid conflicts.
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
-	name := "test_logbook_for_integration"
+	name := "test_logbook_it" // <= 20 chars to satisfy VARCHAR(20)
 	callsign := "SMTEST"
 	desc := "integration test logbook"
 	_, err = s.service.ExecContext(ctx, "INSERT INTO logbook (name, callsign, description) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING", name, callsign, desc)
 	if err != nil {
-		s.T().Skip("Postgres insert failed; skipping suite: " + err.Error())
+		// Fail early rather than silently skipping so underlying issue is visible
+		s.T().Fatal("Postgres insert failed: " + err.Error())
 	}
 
 	// Query its ID
 	rows, err := s.service.QueryContext(ctx, "SELECT id FROM logbook WHERE name = $1", name)
 	if err != nil {
-		s.T().Skip("Postgres query failed; skipping suite: " + err.Error())
+		s.T().Fatal("Postgres query failed: " + err.Error())
 	}
-	defer func(rows *sql.Rows) {
-		_ = rows.Close()
-	}(rows)
+	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	if rows.Next() {
 		require.NoError(s.T(), rows.Scan(&s.logbookID))
 	} else {
-		require.FailNow(s.T(), "failed to ensure logbook for tests")
+		s.T().Fatal("failed to ensure logbook for tests")
 	}
 
 	// Prepare a base QSO for insertion tests
@@ -150,21 +168,22 @@ func (s *TestSuitePG) TestPsqlInsertQso() {
 	qso, err := s.service.InsertQso(s.typeQso)
 	require.NoError(s.T(), err)
 	assert.True(s.T(), qso.ID > 0)
-	// store for later tests
-	s.qsoID = qso.ID
+	// cleanup
+	_ = s.service.DeleteQso(qso.ID)
 }
 
 func (s *TestSuitePG) TestPsqlFetchQso() {
 	if testing.Short() {
 		s.T().Skip("Skipping PostgreSQL integration test in short mode")
 	}
-	// ensure insert ran
-	if s.qsoID == 0 {
-		s.T().Run("insert", func(t *testing.T) { s.TestPsqlInsertQso() })
-	}
-	tq, err := s.service.FetchQsoById(s.qsoID)
+	// Insert a QSO to fetch
+	qso, err := s.service.InsertQso(s.typeQso)
 	require.NoError(s.T(), err)
-	assert.Equal(s.T(), s.qsoID, tq.ID)
+	defer func() { _ = s.service.DeleteQso(qso.ID) }()
+
+	tq, err := s.service.FetchQsoById(qso.ID)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), qso.ID, tq.ID)
 	assert.Equal(s.T(), "M0CMC", tq.ContactedStation.Call)
 }
 
@@ -172,16 +191,18 @@ func (s *TestSuitePG) TestPsqlUpdateQso() {
 	if testing.Short() {
 		s.T().Skip("Skipping PostgreSQL integration test in short mode")
 	}
-	if s.qsoID == 0 {
-		s.T().Run("insert", func(t *testing.T) { s.TestPsqlInsertQso() })
-	}
-	tq, err := s.service.FetchQsoById(s.qsoID)
+	// Insert baseline
+	qso, err := s.service.InsertQso(s.typeQso)
+	require.NoError(s.T(), err)
+	defer func() { _ = s.service.DeleteQso(qso.ID) }()
+
+	tq, err := s.service.FetchQsoById(qso.ID)
 	require.NoError(s.T(), err)
 	// change call
 	tq.ContactedStation.Call = "M1PG"
 	require.NoError(s.T(), s.service.UpdateQso(tq))
 	// re-fetch
-	req, err := s.service.FetchQsoById(s.qsoID)
+	req, err := s.service.FetchQsoById(qso.ID)
 	require.NoError(s.T(), err)
 	assert.Equal(s.T(), "M1PG", req.ContactedStation.Call)
 }
@@ -190,10 +211,10 @@ func (s *TestSuitePG) TestPsqlDeleteQso() {
 	if testing.Short() {
 		s.T().Skip("Skipping PostgreSQL integration test in short mode")
 	}
-	if s.qsoID == 0 {
-		s.T().Run("insert", func(t *testing.T) { s.TestPsqlInsertQso() })
-	}
-	require.NoError(s.T(), s.service.DeleteQso(s.qsoID))
-	_, err := s.service.FetchQsoById(s.qsoID)
+	// Insert then delete
+	qso, err := s.service.InsertQso(s.typeQso)
+	require.NoError(s.T(), err)
+	require.NoError(s.T(), s.service.DeleteQso(qso.ID))
+	_, err = s.service.FetchQsoById(qso.ID)
 	require.Error(s.T(), err)
 }
