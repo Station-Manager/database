@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	pgmodels "github.com/Station-Manager/database/postgres/models"
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
@@ -8,39 +9,54 @@ import (
 	"github.com/aarondl/sqlboiler/v4/boil"
 )
 
-// InsertQso inserts a QSO into the database. The returned QSO will have an ID set.
+// InsertQso inserts a QSO using a background context with default timeout semantics.
 func (s *Service) InsertQso(qso types.Qso) (types.Qso, error) {
-	const op errors.Op = "database.Service.InsertQso"
+	ctx := context.Background()
+	return s.InsertQsoContext(ctx, qso)
+}
+
+// InsertQsoContext inserts a QSO with caller-provided context.
+// If the context has no deadline, a default timeout is applied.
+func (s *Service) InsertQsoContext(ctx context.Context, qso types.Qso) (types.Qso, error) {
+	const op errors.Op = "database.Service.InsertQsoContext"
 	if err := checkService(op, s); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
 
 	switch s.DatabaseConfig.Driver {
 	case SqliteDriver:
-		return s.sqliteInsertQso(qso)
+		return s.sqliteInsertQsoContext(ctx, qso)
 	case PostgresDriver:
-		return s.postgresInsertQso(qso)
+		return s.postgresInsertQsoContext(ctx, qso)
 	default:
 		return qso, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
 	}
 }
 
-func (s *Service) sqliteInsertQso(qso types.Qso) (types.Qso, error) {
-	const op errors.Op = "database.Service.sqliteInsertQso"
+func (s *Service) sqliteInsertQsoContext(ctx context.Context, qso types.Qso) (types.Qso, error) {
+	const op errors.Op = "database.Service.sqliteInsertQsoContext"
 	if err := checkService(op, s); err != nil {
 		return qso, errors.New(op).Err(err)
+	}
+	if qso.LogbookID < 1 {
+		return qso, errors.New(op).Msg("LogbookID is required")
 	}
 
 	s.mu.RLock()
 	h := s.handle
 	isOpen := s.isOpen.Load()
 	s.mu.RUnlock()
-
 	if h == nil || !isOpen {
 		return qso, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	// Initialize adapters once and use cached one
+	// Apply default timeout if caller did not set one
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
 	s.initAdapters()
 	adapter := s.adapterToModel
 
@@ -49,34 +65,36 @@ func (s *Service) sqliteInsertQso(qso types.Qso) (types.Qso, error) {
 		return qso, errors.New(op).Err(err)
 	}
 
-	ctx, cancel := s.withDefaultTimeout(nil)
-	defer cancel()
 	if err := model.Insert(ctx, h, boil.Infer()); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
-
-	// Update the returned types.Qso with the ID from the database
 	qso.ID = model.ID
-
 	return qso, nil
 }
 
-func (s *Service) postgresInsertQso(qso types.Qso) (types.Qso, error) {
-	const op errors.Op = "database.Service.postgresInsertQso"
+func (s *Service) postgresInsertQsoContext(ctx context.Context, qso types.Qso) (types.Qso, error) {
+	const op errors.Op = "database.Service.postgresInsertQsoContext"
 	if err := checkService(op, s); err != nil {
 		return qso, errors.New(op).Err(err)
+	}
+	if qso.LogbookID < 1 {
+		return qso, errors.New(op).Msg("LogbookID is required")
 	}
 
 	s.mu.RLock()
 	h := s.handle
 	isOpen := s.isOpen.Load()
 	s.mu.RUnlock()
-
 	if h == nil || !isOpen {
 		return qso, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	// Initialize adapters once and use cached one
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
 	s.initAdapters()
 	adapter := s.adapterToModel
 
@@ -85,13 +103,9 @@ func (s *Service) postgresInsertQso(qso types.Qso) (types.Qso, error) {
 		return qso, errors.New(op).Err(err)
 	}
 
-	ctx, cancel := s.withDefaultTimeout(nil)
-	defer cancel()
 	if err := model.Insert(ctx, h, boil.Infer()); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
-
 	qso.ID = model.ID
-
 	return qso, nil
 }

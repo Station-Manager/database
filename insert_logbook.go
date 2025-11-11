@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	pgmodels "github.com/Station-Manager/database/postgres/models"
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
@@ -9,23 +10,27 @@ import (
 )
 
 func (s *Service) InsertLogbook(logbook types.Logbook) (types.Logbook, error) {
-	const op errors.Op = "database.Service.InsertLogbook"
+	return s.InsertLogbookContext(context.Background(), logbook)
+}
+
+func (s *Service) InsertLogbookContext(ctx context.Context, logbook types.Logbook) (types.Logbook, error) {
+	const op errors.Op = "database.Service.InsertLogbookContext"
 	if err := checkService(op, s); err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
 
 	switch s.DatabaseConfig.Driver {
 	case SqliteDriver:
-		return s.sqliteInsertLogbook(logbook)
+		return s.sqliteInsertLogbookContext(ctx, logbook)
 	case PostgresDriver:
-		return s.postgresInsertLogbook(logbook)
+		return s.postgresInsertLogbookContext(ctx, logbook)
 	default:
 		return logbook, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
 	}
 }
 
-func (s *Service) sqliteInsertLogbook(logbook types.Logbook) (types.Logbook, error) {
-	const op errors.Op = "database.Service.sqliteInsertLogbook"
+func (s *Service) sqliteInsertLogbookContext(ctx context.Context, logbook types.Logbook) (types.Logbook, error) {
+	const op errors.Op = "database.Service.sqliteInsertLogbookContext"
 	if err := checkService(op, s); err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
@@ -37,6 +42,12 @@ func (s *Service) sqliteInsertLogbook(logbook types.Logbook) (types.Logbook, err
 
 	if h == nil || !isOpen {
 		return logbook, errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
 	}
 
 	s.initAdapters()
@@ -47,20 +58,16 @@ func (s *Service) sqliteInsertLogbook(logbook types.Logbook) (types.Logbook, err
 		return logbook, errors.New(op).Err(err)
 	}
 
-	ctx, cancel := s.withDefaultTimeout(nil)
-	defer cancel()
 	if err := model.Insert(ctx, h, boil.Infer()); err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
 
-	// Update the returned types.Qso with the ID from the database
 	logbook.ID = model.ID
-
 	return logbook, nil
 }
 
-func (s *Service) postgresInsertLogbook(logbook types.Logbook) (types.Logbook, error) {
-	const op errors.Op = "database.Service.postgresInsertLogbook"
+func (s *Service) postgresInsertLogbookContext(ctx context.Context, logbook types.Logbook) (types.Logbook, error) {
+	const op errors.Op = "database.Service.postgresInsertLogbookContext"
 	if err := checkService(op, s); err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
@@ -74,6 +81,12 @@ func (s *Service) postgresInsertLogbook(logbook types.Logbook) (types.Logbook, e
 		return logbook, errors.New(op).Msg(errMsgNotOpen)
 	}
 
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
 	s.initAdapters()
 	adapter := s.adapterToModel
 
@@ -82,13 +95,10 @@ func (s *Service) postgresInsertLogbook(logbook types.Logbook) (types.Logbook, e
 		return logbook, errors.New(op).Err(err)
 	}
 
-	ctx, cancel := s.withDefaultTimeout(nil)
-	defer cancel()
 	if err := model.Insert(ctx, h, boil.Infer()); err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
 
 	logbook.ID = model.ID
-
 	return logbook, nil
 }

@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	pgmodels "github.com/Station-Manager/database/postgres/models"
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
@@ -8,9 +9,14 @@ import (
 	"github.com/aarondl/sqlboiler/v4/boil"
 )
 
-// UpdateQso updates an existing QSO row. It requires qso.ID to be > 0.
+// UpdateQso delegates to UpdateQsoContext with a background context.
 func (s *Service) UpdateQso(qso types.Qso) error {
-	const op errors.Op = "database.Service.UpdateQso"
+	return s.UpdateQsoContext(context.Background(), qso)
+}
+
+// UpdateQsoContext updates an existing QSO with caller-provided context.
+func (s *Service) UpdateQsoContext(ctx context.Context, qso types.Qso) error {
+	const op errors.Op = "database.Service.UpdateQsoContext"
 	if err := checkService(op, s); err != nil {
 		return errors.New(op).Err(err)
 	}
@@ -20,16 +26,16 @@ func (s *Service) UpdateQso(qso types.Qso) error {
 
 	switch s.DatabaseConfig.Driver {
 	case SqliteDriver:
-		return s.sqliteUpdateQso(qso)
+		return s.sqliteUpdateQsoContext(ctx, qso)
 	case PostgresDriver:
-		return s.postgresUpdateQso(qso)
+		return s.postgresUpdateQsoContext(ctx, qso)
 	default:
 		return errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
 	}
 }
 
-func (s *Service) sqliteUpdateQso(qso types.Qso) error {
-	const op errors.Op = "database.Service.sqliteUpdateQso"
+func (s *Service) sqliteUpdateQsoContext(ctx context.Context, qso types.Qso) error {
+	const op errors.Op = "database.Service.sqliteUpdateQsoContext"
 	if err := checkService(op, s); err != nil {
 		return errors.New(op).Err(err)
 	}
@@ -43,8 +49,11 @@ func (s *Service) sqliteUpdateQso(qso types.Qso) error {
 		return errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	ctx, cancel := s.withDefaultTimeout(nil)
-	defer cancel()
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
 
 	tx, txCancel, err := s.BeginTxContext(ctx)
 	if err != nil {
@@ -52,7 +61,6 @@ func (s *Service) sqliteUpdateQso(qso types.Qso) error {
 	}
 	defer txCancel()
 
-	// Cached adapter
 	s.initAdapters()
 	adapter := s.adapterToModel
 
@@ -62,7 +70,6 @@ func (s *Service) sqliteUpdateQso(qso types.Qso) error {
 		return errors.New(op).Err(err)
 	}
 
-	// Ensure primary key is set
 	model.ID = qso.ID
 
 	rows, err := model.Update(ctx, tx, boil.Infer())
@@ -79,12 +86,11 @@ func (s *Service) sqliteUpdateQso(qso types.Qso) error {
 		_ = tx.Rollback()
 		return errors.New(op).Err(err)
 	}
-
 	return nil
 }
 
-func (s *Service) postgresUpdateQso(qso types.Qso) error {
-	const op errors.Op = "database.Service.postgresUpdateQso"
+func (s *Service) postgresUpdateQsoContext(ctx context.Context, qso types.Qso) error {
+	const op errors.Op = "database.Service.postgresUpdateQsoContext"
 	if err := checkService(op, s); err != nil {
 		return errors.New(op).Err(err)
 	}
@@ -98,8 +104,11 @@ func (s *Service) postgresUpdateQso(qso types.Qso) error {
 		return errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	ctx, cancel := s.withDefaultTimeout(nil)
-	defer cancel()
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
 
 	tx, txCancel, err := s.BeginTxContext(ctx)
 	if err != nil {
@@ -107,7 +116,6 @@ func (s *Service) postgresUpdateQso(qso types.Qso) error {
 	}
 	defer txCancel()
 
-	// Cached adapter
 	s.initAdapters()
 	adapter := s.adapterToModel
 
@@ -133,6 +141,5 @@ func (s *Service) postgresUpdateQso(qso types.Qso) error {
 		_ = tx.Rollback()
 		return errors.New(op).Err(err)
 	}
-
 	return nil
 }
