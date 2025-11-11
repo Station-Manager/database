@@ -1,7 +1,6 @@
 package database
 
 import (
-	"github.com/Station-Manager/adapters"
 	pgmodels "github.com/Station-Manager/database/postgres/models"
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
@@ -40,7 +39,8 @@ func (s *Service) sqliteInsertLogbook(logbook types.Logbook) (types.Logbook, err
 		return logbook, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	adapter := adapters.New()
+	s.initAdapters()
+	adapter := s.adapterToModel
 
 	model := &sqmodels.Logbook{}
 	if err := adapter.Adapt(&logbook, model); err != nil {
@@ -74,7 +74,8 @@ func (s *Service) postgresInsertLogbook(logbook types.Logbook) (types.Logbook, e
 		return logbook, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	adapter := adapters.New()
+	s.initAdapters()
+	adapter := s.adapterToModel
 
 	model := &pgmodels.Logbook{}
 	if err := adapter.Adapt(&logbook, model); err != nil {

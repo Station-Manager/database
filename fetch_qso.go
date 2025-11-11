@@ -1,10 +1,6 @@
 package database
 
 import (
-	"github.com/Station-Manager/adapters"
-	"github.com/Station-Manager/adapters/converters/common"
-	"github.com/Station-Manager/adapters/converters/postgres"
-	"github.com/Station-Manager/adapters/converters/sqlite"
 	pgmodels "github.com/Station-Manager/database/postgres/models"
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
@@ -55,12 +51,9 @@ func (s *Service) sqliteFetchQso(id int64) (types.Qso, error) {
 		return emptyRetVal, errors.New(op).Err(err)
 	}
 
-	adapter := adapters.New()
-	adapter.RegisterConverter("Freq", common.ModelToTypeFreqConverter)
-	adapter.RegisterConverter("Country", common.ModelToTypeStringConverter)
-	adapter.RegisterConverter("QsoDate", sqlite.ModelToTypeDateConverter)
-	adapter.RegisterConverter("TimeOn", sqlite.ModelToTypeTimeConverter)
-	adapter.RegisterConverter("TimeOff", sqlite.ModelToTypeTimeConverter)
+	// Use cached adapter for model -> type conversion
+	s.initAdapters()
+	adapter := s.adapterFromModel
 
 	typeQso := types.Qso{}
 	if err = adapter.Adapt(model, &typeQso); err != nil {
@@ -97,12 +90,9 @@ func (s *Service) postgresFetchQso(id int64) (types.Qso, error) {
 		return emptyRetVal, errors.New(op).Err(err)
 	}
 
-	adapter := adapters.New()
-	adapter.RegisterConverter("Freq", common.ModelToTypeFreqConverter)
-	adapter.RegisterConverter("Country", common.ModelToTypeStringConverter)
-	adapter.RegisterConverter("QsoDate", postgres.ModelToTypeDateConverter)
-	adapter.RegisterConverter("TimeOn", postgres.ModelToTypeTimeConverter)
-	adapter.RegisterConverter("TimeOff", postgres.ModelToTypeTimeConverter)
+	// Cached adapter
+	s.initAdapters()
+	adapter := s.adapterFromModel
 
 	typeQso := types.Qso{}
 	if err = adapter.Adapt(model, &typeQso); err != nil {

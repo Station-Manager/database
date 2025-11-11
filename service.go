@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	stderr "errors"
+	"github.com/Station-Manager/adapters"
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
@@ -22,6 +23,10 @@ type Service struct {
 	mu            sync.RWMutex
 	isInitialized atomic.Bool
 	isOpen        atomic.Bool
+
+	adapterToModel   *adapters.Adapter
+	adapterFromModel *adapters.Adapter
+	adaptersOnce     sync.Once
 }
 
 // Initialize initializes the database service. No constructor is provided as this service is to be
