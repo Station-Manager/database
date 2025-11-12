@@ -24,5 +24,7 @@ func validateConfig(cfg *types.DatastoreConfig) error {
 		return errors.New(op).Err(err).Msg(errMsgConfigInvalid)
 	}
 
+	// Rely on struct tags for validation; additional driver-specific policies are not enforced here
+	// to stay aligned with shared types and allow environment-specific tuning.
 	return nil
 }

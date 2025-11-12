@@ -3,14 +3,17 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"path/filepath"
 	"testing"
 
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database"
+	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"os"
 )
 
 func setupSvcAndDefaultLogbook(t *testing.T) (*database.Service, int64) {
@@ -18,24 +21,27 @@ func setupSvcAndDefaultLogbook(t *testing.T) (*database.Service, int64) {
 	tmpDir := t.TempDir()
 	dbPath := filepath.Join(tmpDir, "test.db")
 
-	cfg := types.AppConfig{
-		DatastoreConfig: types.DatastoreConfig{
-			Driver:                    database.SqliteDriver,
-			Path:                      dbPath,
-			Options:                   map[string]string{},
-			MaxOpenConns:              1,
-			MaxIdleConns:              1,
-			ConnMaxLifetime:           1,
-			ConnMaxIdleTime:           1,
-			ContextTimeout:            5,
-			TransactionContextTimeout: 5,
-		},
-	}
+	app := types.AppConfig{DatastoreConfig: types.DatastoreConfig{
+		Driver:                    database.SqliteDriver,
+		Path:                      dbPath,
+		Options:                   map[string]string{},
+		MaxOpenConns:              1,
+		MaxIdleConns:              1,
+		ConnMaxLifetime:           1,
+		ConnMaxIdleTime:           1,
+		ContextTimeout:            5,
+		TransactionContextTimeout: 5,
+	}, LoggingConfig: types.LoggingConfig{Level: "info", ConsoleLogging: true, FileLogging: false, RelLogFileDir: "logs"}}
+	b, _ := json.MarshalIndent(app, "", "  ")
+	_ = os.WriteFile(filepath.Join(tmpDir, "config.json"), b, 0o640)
 
-	cfgSvc := &config.Service{WorkingDir: "", AppConfig: cfg}
+	cfgSvc := &config.Service{WorkingDir: tmpDir, AppConfig: app}
 	require.NoError(t, cfgSvc.Initialize())
 
-	svc := &database.Service{ConfigService: cfgSvc}
+	logSvc := &logging.Service{ConfigService: cfgSvc, WorkingDir: tmpDir}
+	require.NoError(t, logSvc.Initialize())
+
+	svc := &database.Service{ConfigService: cfgSvc, Logger: logSvc}
 	require.NoError(t, svc.Initialize())
 	require.NoError(t, svc.Open())
 	// Ensure closed on test cleanup

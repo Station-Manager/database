@@ -1,14 +1,18 @@
 package database
 
 import (
+	"encoding/json"
 	"github.com/Station-Manager/config"
+	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
-func getServiceForInternalTest(cfg *types.DatastoreConfig) *Service {
+func getServiceForInternalTest(cfg *types.DatastoreConfig, tb testing.TB) *Service {
 	// Fill in required fields if not set
 	if cfg.MaxOpenConns == 0 {
 		cfg.MaxOpenConns = 10
@@ -28,7 +32,6 @@ func getServiceForInternalTest(cfg *types.DatastoreConfig) *Service {
 	if cfg.TransactionContextTimeout == 0 {
 		cfg.TransactionContextTimeout = 10
 	}
-	// Fill in fields required for validation but not used by getDsn for SQLite
 	if cfg.Host == "" {
 		cfg.Host = "localhost"
 	}
@@ -48,13 +51,22 @@ func getServiceForInternalTest(cfg *types.DatastoreConfig) *Service {
 		cfg.SSLMode = "disable"
 	}
 
-	cfgSvc := &config.Service{
-		AppConfig: types.AppConfig{
-			DatastoreConfig: *cfg,
-		},
+	wd := tb.TempDir()
+	appCfg := types.AppConfig{
+		DatastoreConfig: *cfg,
+		LoggingConfig:   types.LoggingConfig{Level: "info", ConsoleLogging: true, FileLogging: false, RelLogFileDir: "logs"},
 	}
+	// Pre-write config.json so config.Initialize reads our desired config
+	data, _ := json.MarshalIndent(appCfg, "", "  ")
+	_ = os.WriteFile(filepath.Join(wd, "config.json"), data, 0o640)
+
+	cfgSvc := &config.Service{WorkingDir: wd, AppConfig: appCfg}
 	_ = cfgSvc.Initialize()
-	svc := &Service{ConfigService: cfgSvc}
+
+	logSvc := &logging.Service{ConfigService: cfgSvc, WorkingDir: wd}
+	_ = logSvc.Initialize()
+
+	svc := &Service{ConfigService: cfgSvc, Logger: logSvc}
 	_ = svc.Initialize()
 	return svc
 }
@@ -71,7 +83,7 @@ func TestService_getDsn(t *testing.T) {
 			Password: "testpass",
 			SSLMode:  "disable",
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -94,7 +106,7 @@ func TestService_getDsn(t *testing.T) {
 			Password: "p@ss:w/rd!#",
 			SSLMode:  "require",
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -112,7 +124,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "/tmp/test.db",
 			Options: map[string]string{},
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -130,7 +142,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "/tmp/test.db",
 			Options: map[string]string{"cache": "shared", "mode": "memory"},
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -146,7 +158,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "test_options.db",
 			Options: map[string]string{"cache": "shared"},
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -162,7 +174,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "test_question.db",
 			Options: map[string]string{},
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -178,7 +190,7 @@ func TestService_getDsn(t *testing.T) {
 			Path:    "test_file.db",
 			Options: map[string]string{},
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -260,7 +272,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Password: "pass",
 			SSLMode:  "disable",
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -280,7 +292,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Password: "pass",
 			SSLMode:  "disable",
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -294,7 +306,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Path:    "./relative/path/db.sqlite",
 			Options: map[string]string{},
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -308,7 +320,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Path:    "/absolute/path/db.sqlite",
 			Options: map[string]string{},
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -326,7 +338,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Password: "",
 			SSLMode:  "disable",
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -349,7 +361,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 				Password: "pass",
 				SSLMode:  mode,
 			}
-			svc := getServiceForInternalTest(cfg)
+			svc := getServiceForInternalTest(cfg, t)
 
 			dsn, err := svc.getDsn()
 			require.NoError(t, err)
@@ -364,7 +376,7 @@ func TestService_getDsn_EdgeCases(t *testing.T) {
 			Path:    "test_complex.db",
 			Options: map[string]string{"_busy_timeout": "10000", "_journal_mode": "DELETE", "_synchronous": "FULL", "cache": "private"},
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, t)
 
 		dsn, err := svc.getDsn()
 		require.NoError(t, err)
@@ -389,7 +401,7 @@ func BenchmarkService_getDsn(b *testing.B) {
 			Password: "testpass",
 			SSLMode:  "disable",
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, b)
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -403,7 +415,7 @@ func BenchmarkService_getDsn(b *testing.B) {
 			Path:    "test_bench.db",
 			Options: map[string]string{},
 		}
-		svc := getServiceForInternalTest(cfg)
+		svc := getServiceForInternalTest(cfg, b)
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

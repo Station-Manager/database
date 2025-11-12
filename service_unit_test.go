@@ -3,7 +3,9 @@ package database
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"github.com/Station-Manager/config"
+	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,34 +63,41 @@ func getValidSqliteConfig(t *testing.T) *types.DatastoreConfig {
 
 func getServiceWithPostgresConfig() *Service {
 	cfg := getValidPostgresConfig()
-	cfgSvc := &config.Service{
-		AppConfig: types.AppConfig{
-			DatastoreConfig: *cfg,
-		},
-	}
+	app := types.AppConfig{DatastoreConfig: *cfg, LoggingConfig: types.LoggingConfig{Level: "info", ConsoleLogging: true, FileLogging: false, RelLogFileDir: "logs"}}
+	wd, _ := os.MkdirTemp("", "dbtest-")
+	b, _ := json.MarshalIndent(app, "", "  ")
+	_ = os.WriteFile(filepath.Join(wd, "config.json"), b, 0o640)
+	cfgSvc := &config.Service{WorkingDir: wd, AppConfig: app}
 	_ = cfgSvc.Initialize()
-	return &Service{ConfigService: cfgSvc}
+	logSvc := &logging.Service{ConfigService: cfgSvc, WorkingDir: wd}
+	_ = logSvc.Initialize()
+	return &Service{ConfigService: cfgSvc, Logger: logSvc}
 }
 
 func getServiceWithSqliteConfig(t *testing.T) *Service {
 	cfg := getValidSqliteConfig(t)
-	cfgSvc := &config.Service{
-		AppConfig: types.AppConfig{
-			DatastoreConfig: *cfg,
-		},
-	}
+	app := types.AppConfig{DatastoreConfig: *cfg, LoggingConfig: types.LoggingConfig{Level: "info", ConsoleLogging: true, FileLogging: false, RelLogFileDir: "logs"}}
+	wd := t.TempDir()
+	b, _ := json.MarshalIndent(app, "", "  ")
+	_ = os.WriteFile(filepath.Join(wd, "config.json"), b, 0o640)
+	cfgSvc := &config.Service{WorkingDir: wd, AppConfig: app}
 	_ = cfgSvc.Initialize()
-	return &Service{ConfigService: cfgSvc}
+	logSvc := &logging.Service{ConfigService: cfgSvc, WorkingDir: wd}
+	_ = logSvc.Initialize()
+	return &Service{ConfigService: cfgSvc, Logger: logSvc}
 }
 
 func getServiceWithConfig(cfg *types.DatastoreConfig) *Service {
-	cfgSvc := &config.Service{
-		AppConfig: types.AppConfig{
-			DatastoreConfig: *cfg,
-		},
-	}
+	app := types.AppConfig{DatastoreConfig: *cfg, LoggingConfig: types.LoggingConfig{Level: "info", ConsoleLogging: true, FileLogging: false, RelLogFileDir: "logs"}}
+	wd, _ := os.MkdirTemp("", "dbtest-")
+	b, _ := json.MarshalIndent(app, "", "  ")
+	_ = os.WriteFile(filepath.Join(wd, "config.json"), b, 0o640)
+	cfgSvc := &config.Service{WorkingDir: wd, AppConfig: app}
 	_ = cfgSvc.Initialize()
-	return &Service{ConfigService: cfgSvc}
+	logSvc := &logging.Service{ConfigService: cfgSvc, WorkingDir: wd}
+	_ = logSvc.Initialize()
+
+	return &Service{ConfigService: cfgSvc, Logger: logSvc}
 }
 
 // TestService_Initialize tests the Initialize method
@@ -466,7 +475,8 @@ func TestService_ExecContext(t *testing.T) {
 			_ = svc.Close()
 		}(svc)
 
-		res, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)")
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
+		res, err := svc.ExecContext(context.Background(), "CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT)")
 		assert.NoError(t, err)
 		assert.NotNil(t, res)
 	})
@@ -479,7 +489,8 @@ func TestService_ExecContext(t *testing.T) {
 			_ = svc.Close()
 		}(svc)
 
-		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)")
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
+		_, err := svc.ExecContext(context.Background(), "CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY, name TEXT)")
 		require.NoError(t, err)
 
 		res, err := svc.ExecContext(context.Background(), "INSERT INTO test (name) VALUES (?)", "Alice")
@@ -501,7 +512,8 @@ func TestService_ExecContext(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
-		res, err := svc.ExecContext(ctx, "CREATE TABLE test (id INTEGER PRIMARY KEY)")
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
+		res, err := svc.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS test (id INTEGER PRIMARY KEY)")
 		assert.NoError(t, err)
 		assert.NotNil(t, res)
 	})

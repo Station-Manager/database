@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database"
+	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,10 +46,22 @@ func getSqliteService(t *testing.T) *database.Service {
 	cfgSvc := &config.Service{
 		AppConfig: types.AppConfig{
 			DatastoreConfig: *cfg,
+			LoggingConfig: types.LoggingConfig{
+				Level:          "info",
+				WithTimestamp:  false,
+				ConsoleLogging: true,
+				FileLogging:    false,
+				RelLogFileDir:  "logs",
+			},
 		},
 	}
 	_ = cfgSvc.Initialize()
-	return &database.Service{ConfigService: cfgSvc}
+
+	// Initialize a real logger with the same config service and temp working dir
+	logSvc := &logging.Service{ConfigService: cfgSvc, WorkingDir: t.TempDir()}
+	require.NoError(t, logSvc.Initialize())
+
+	return &database.Service{ConfigService: cfgSvc, Logger: logSvc}
 }
 
 // TestSQLiteIntegration tests actual SQLite database operations
@@ -77,7 +90,8 @@ func TestSQLiteIntegration(t *testing.T) {
 		err = svc.Ping()
 		assert.NoError(t, err)
 
-		// Create table
+		// Create table (fresh)
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS users")
 		_, err = svc.ExecContext(context.Background(), "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
 		require.NoError(t, err)
 
@@ -132,6 +146,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		}(svc)
 
 		// Create table
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)")
 		require.NoError(t, err)
 
@@ -196,6 +211,10 @@ func TestSQLiteIntegration(t *testing.T) {
 		}
 		_ = cfgSvc.Initialize()
 		svc := &database.Service{ConfigService: cfgSvc}
+		logSvc := &logging.Service{ConfigService: cfgSvc, WorkingDir: t.TempDir()}
+		require.NoError(t, logSvc.Initialize())
+		svc.Logger = logSvc
+
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer func(svc *database.Service) {
@@ -219,6 +238,10 @@ func TestSQLiteIntegration(t *testing.T) {
 		}
 		_ = cfgSvc.Initialize()
 		svc := &database.Service{ConfigService: cfgSvc}
+		logSvc := &logging.Service{ConfigService: cfgSvc, WorkingDir: t.TempDir()}
+		require.NoError(t, logSvc.Initialize())
+		svc.Logger = logSvc
+
 		require.NoError(t, svc.Initialize())
 		require.NoError(t, svc.Open())
 		defer func(svc *database.Service) {
@@ -227,6 +250,7 @@ func TestSQLiteIntegration(t *testing.T) {
 
 		// Simple exec should succeed within timeout
 		ctx := context.Background()
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
 		_, err := svc.ExecContext(ctx, "CREATE TABLE test (id INTEGER)")
 		require.NoError(t, err)
 	})
@@ -240,6 +264,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		}(svc)
 
 		// Create table
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)")
 		require.NoError(t, err)
 
@@ -263,6 +288,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		defer svc.Close()
 
 		// Create table
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)")
 		require.NoError(t, err)
 
@@ -290,6 +316,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		defer svc.Close()
 
 		// Create and populate table
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)")
 		require.NoError(t, err)
 		for i := 1; i <= 5; i++ {
@@ -320,6 +347,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		defer svc.Close()
 
 		// Create table
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)")
 		require.NoError(t, err)
 
@@ -339,6 +367,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		defer svc.Close()
 
 		// Create empty table
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY)")
 		require.NoError(t, err)
 
@@ -357,6 +386,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		defer svc.Close()
 
 		// Create and populate table
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)")
 		require.NoError(t, err)
 		_, err = svc.ExecContext(context.Background(), "INSERT INTO test (value) VALUES (100)")
@@ -388,6 +418,7 @@ func TestSQLiteIntegration(t *testing.T) {
 		defer svc.Close()
 
 		// Create and populate table
+		_, _ = svc.ExecContext(context.Background(), "DROP TABLE IF EXISTS test")
 		_, err := svc.ExecContext(context.Background(), "CREATE TABLE test (id INTEGER PRIMARY KEY, value INTEGER)")
 		require.NoError(t, err)
 		for i := 1; i <= 3; i++ {

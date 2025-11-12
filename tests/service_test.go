@@ -3,6 +3,7 @@ package database_test
 import (
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database"
+	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -50,10 +51,13 @@ func TestConfigValidation(t *testing.T) {
 		cfgSvc := &config.Service{
 			AppConfig: types.AppConfig{
 				DatastoreConfig: *cfg,
+				LoggingConfig:   types.LoggingConfig{Level: "info", ConsoleLogging: true, FileLogging: false, RelLogFileDir: "logs"},
 			},
 		}
 		_ = cfgSvc.Initialize()
-		svc := &database.Service{ConfigService: cfgSvc}
+		logSvc := &logging.Service{ConfigService: cfgSvc}
+		_ = logSvc.Initialize()
+		svc := &database.Service{ConfigService: cfgSvc, Logger: logSvc}
 		err := svc.Initialize()
 		assert.NoError(t, err)
 	})

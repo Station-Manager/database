@@ -11,6 +11,7 @@ import (
 
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database"
+	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -70,6 +71,13 @@ func (s *TestSuitePG) SetupSuite() {
 			ContextTimeout:            30, // increased for integration test
 			TransactionContextTimeout: 30, // increased for integration test
 		},
+		LoggingConfig: types.LoggingConfig{
+			Level:          "info",
+			WithTimestamp:  false,
+			ConsoleLogging: true,
+			FileLogging:    false,
+			RelLogFileDir:  "logs",
+		},
 	}
 	cfgService := &config.Service{
 		WorkingDir: "",
@@ -78,8 +86,13 @@ func (s *TestSuitePG) SetupSuite() {
 	err := cfgService.Initialize()
 	require.NoError(s.T(), err)
 
+	// Initialize logging service for database
+	logSvc := &logging.Service{ConfigService: cfgService, WorkingDir: s.T().TempDir()}
+	require.NoError(s.T(), logSvc.Initialize())
+
 	s.service = database.Service{
 		ConfigService: cfgService,
+		Logger:        logSvc,
 	}
 	err = s.service.Initialize()
 	require.NoError(s.T(), err)
@@ -118,10 +131,11 @@ func (s *TestSuitePG) SetupSuite() {
 	// Create a test logbook for FK usage. Use a unique name to avoid conflicts.
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
-	name := "test_logbook_it" // <= 20 chars to satisfy VARCHAR(20)
+	name := "test_logbook_it"
 	callsign := "SMTEST"
 	desc := "integration test logbook"
-	_, err = s.service.ExecContext(ctx, "INSERT INTO logbook (name, callsign, description) VALUES ($1, $2, $3) ON CONFLICT (name) DO NOTHING", name, callsign, desc)
+	apiKey := "PGKEY-" + time.Now().Format("20060102-150405.000")
+	_, err = s.service.ExecContext(ctx, "INSERT INTO logbook (name, callsign, api_key, description) VALUES ($1, $2, $3, $4) ON CONFLICT (name) DO NOTHING", name, callsign, apiKey, desc)
 	if err != nil {
 		// Fail early rather than silently skipping so underlying issue is visible
 		s.T().Fatal("Postgres insert failed: " + err.Error())

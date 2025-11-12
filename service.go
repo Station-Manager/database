@@ -18,8 +18,8 @@ import (
 )
 
 type Service struct {
-	ConfigService  *config.Service  `inject:"configservice"`
-	Logger         *logging.Service `inject:"loggingservice"`
+	ConfigService  *config.Service  `di.inject:"configservice"`
+	Logger         *logging.Service `di.inject:"loggingservice"`
 	DatabaseConfig *types.DatastoreConfig
 	handle         *sql.DB
 
@@ -59,7 +59,7 @@ func (s *Service) Initialize() error {
 	}
 
 	if err = validateConfig(&dbCfg); err != nil {
-		return errors.New(op).Err(err)
+		return errors.New(op).Err(err).Msg("Invalid database config")
 	}
 	s.DatabaseConfig = &dbCfg
 

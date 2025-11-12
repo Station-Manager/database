@@ -7,6 +7,7 @@ import (
 
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/errors"
+	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,10 +33,15 @@ func newSqliteService(t *testing.T) *Service {
 		Database:                  "d",
 		SSLMode:                   "disable",
 	}
-	appCfg := types.AppConfig{DatastoreConfig: cfg}
+	appCfg := types.AppConfig{DatastoreConfig: cfg, LoggingConfig: types.LoggingConfig{Level: "info", ConsoleLogging: true, FileLogging: false, RelLogFileDir: "logs"}}
 	cfgSvc := &config.Service{AppConfig: appCfg}
 	require.NoError(t, cfgSvc.Initialize())
-	svc := &Service{ConfigService: cfgSvc}
+
+	// Initialize logging service for database
+	logSvc := &logging.Service{ConfigService: cfgSvc, WorkingDir: t.TempDir()}
+	require.NoError(t, logSvc.Initialize())
+
+	svc := &Service{ConfigService: cfgSvc, Logger: logSvc}
 	require.NoError(t, svc.Initialize())
 	require.NoError(t, svc.Open())
 	t.Cleanup(func() { _ = svc.Close() })
@@ -47,9 +53,10 @@ func TestContextCRUD_InsertFetchUpdateDelete(t *testing.T) {
 	svc := newSqliteService(t)
 	// Create logbook to satisfy FK (manually include api_key)
 	ctx := context.Background()
-	_, err := svc.ExecContext(ctx, "INSERT INTO logbook (name, callsign, api_key, description) VALUES (?,?,?,?)", "ctxlb", "CALL", "CTXKEY1", "descr")
+	name := "ctxlb-" + time.Now().Format("150405.000")
+	_, err := svc.ExecContext(ctx, "INSERT INTO logbook (name, callsign, api_key, description) VALUES (?,?,?,?)", name, "CALL", "CTXKEY1-"+time.Now().Format("150405.000"), "descr")
 	require.NoError(t, err)
-	rows, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", "ctxlb")
+	rows, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", name)
 	require.NoError(t, err)
 	defer rows.Close()
 	var lbID int64
@@ -91,9 +98,10 @@ func TestContextCRUD_InsertFetchUpdateDelete(t *testing.T) {
 func TestContextCRUD_CancelledContext(t *testing.T) {
 	svc := newSqliteService(t)
 	ctx := context.Background()
-	_, err := svc.ExecContext(ctx, "INSERT INTO logbook (name, callsign, api_key, description) VALUES (?,?,?,?)", "ctxlb2", "CALL2", "CTXKEY2", "descr")
+	name := "ctxlb2-" + time.Now().Format("150405.000")
+	_, err := svc.ExecContext(ctx, "INSERT INTO logbook (name, callsign, api_key, description) VALUES (?,?,?,?)", name, "CALL2", "CTXKEY2-"+time.Now().Format("150405.000"), "descr")
 	require.NoError(t, err)
-	rows, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", "ctxlb2")
+	rows, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", name)
 	require.NoError(t, err)
 	defer rows.Close()
 	var lbID int64
@@ -116,9 +124,10 @@ func TestContextCRUD_CancelledContext(t *testing.T) {
 func TestContextCRUD_TimeoutApplied(t *testing.T) {
 	svc := newSqliteService(t)
 	ctx := context.Background()
-	_, err := svc.ExecContext(ctx, "INSERT INTO logbook (name, callsign, api_key, description) VALUES (?,?,?,?)", "ctxlb3", "CALL3", "CTXKEY3", "descr")
+	name := "ctxlb3-" + time.Now().Format("150405.000")
+	_, err := svc.ExecContext(ctx, "INSERT INTO logbook (name, callsign, api_key, description) VALUES (?,?,?,?)", name, "CALL3", "CTXKEY3-"+time.Now().Format("150405.000"), "descr")
 	require.NoError(t, err)
-	rows, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", "ctxlb3")
+	rows, err := svc.QueryContext(ctx, "SELECT id FROM logbook WHERE name = ?", name)
 	require.NoError(t, err)
 	defer rows.Close()
 	var lbID int64
