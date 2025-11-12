@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	stderr "errors"
+	"fmt"
 	"github.com/Station-Manager/adapters"
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/errors"
+	"github.com/Station-Manager/logging" // added for structured logging
 	"github.com/Station-Manager/types"
 	_ "github.com/lib/pq"
 	_ "modernc.org/sqlite"
@@ -16,7 +18,8 @@ import (
 )
 
 type Service struct {
-	ConfigService  *config.Service `inject:"configservice"`
+	ConfigService  *config.Service  `inject:"configservice"`
+	Logger         *logging.Service `inject:"loggingservice"`
 	DatabaseConfig *types.DatastoreConfig
 	handle         *sql.DB
 
@@ -43,6 +46,11 @@ func (s *Service) Initialize() error {
 
 	if s.ConfigService == nil {
 		return errors.New(op).Msg(errMsgAppConfigNil)
+	}
+
+	// Logger must be injected
+	if s.Logger == nil {
+		return errors.New(op).Msg(errMsgLoggerNil)
 	}
 
 	dbCfg, err := s.ConfigService.DatastoreConfig()
@@ -252,6 +260,47 @@ func (s *Service) BeginTxContext(ctx context.Context) (*sql.Tx, context.CancelFu
 		return nil, nil, errors.New(op).Errorf("creating new transaction: %w", err)
 	}
 
+	// If using Postgres, set a local statement_timeout so long-running queries inside the
+	// transaction are bounded by the transaction timeout. This ensures the DB will cancel
+	// server-side statements (when supported) rather than leaving the client waiting.
+	if s.DatabaseConfig != nil && s.DatabaseConfig.Driver == PostgresDriver {
+		// Prefer the actual remaining deadline on txCtx if present so server-side timeout
+		// matches the client-side remaining time. Fallback to the configured value.
+		var ms int
+		if dl, ok := txCtx.Deadline(); ok {
+			remain := time.Until(dl)
+			if remain <= 0 {
+				ms = 1
+			} else {
+				ms = int(remain.Milliseconds())
+			}
+		} else if to := s.DatabaseConfig.TransactionContextTimeout; to > 0 {
+			ms = int(to) * 1000
+		} else {
+			ms = 0
+		}
+		if ms > 0 {
+			if _, err := tx.ExecContext(txCtx, fmt.Sprintf("SET LOCAL statement_timeout = %d", ms)); err != nil {
+				_ = tx.Rollback()
+				cancel()
+				if stderr.Is(err, context.DeadlineExceeded) {
+					return nil, nil, errors.New(op).Err(err).Msg("Transaction context timed out while setting statement_timeout.")
+				}
+				return nil, nil, errors.New(op).Errorf("setting local statement_timeout: %w", err)
+			}
+			// Also set a lock_timeout to a fraction of the statement timeout so waits on locks fail sooner.
+			lockMs := ms / 2
+			if lockMs < 100 {
+				lockMs = 100
+			}
+			if _, err := tx.ExecContext(txCtx, fmt.Sprintf("SET LOCAL lock_timeout = %d", lockMs)); err != nil {
+				_ = tx.Rollback()
+				cancel()
+				return nil, nil, errors.New(op).Errorf("setting local lock_timeout: %w", err)
+			}
+		}
+	}
+
 	return tx, cancel, nil
 }
 
@@ -323,4 +372,47 @@ func (s *Service) QueryContext(ctx context.Context, query string, args ...interf
 	}
 
 	return res, nil
+}
+
+// logPostgresActivity logs a short snapshot of active Postgres queries and waits.
+// It uses a short background timeout so it's safe to call from a deadline-failed path.
+func (s *Service) logPostgresActivity() {
+	if s == nil || s.DatabaseConfig == nil || s.DatabaseConfig.Driver != PostgresDriver || s.handle == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	//noinspection SqlNoDataSourceInspection,SqlResolve
+	rows, err := s.handle.QueryContext(ctx, `SELECT pid, usename, state, wait_event_type, wait_event, CURRENT_TIMESTAMP - query_start AS duration, query FROM pg_stat_activity WHERE state <> 'idle' ORDER BY duration DESC LIMIT 10`)
+	if err != nil {
+		// Internal diagnostic only (error not returned to caller)
+		s.Logger.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity query error")
+		return
+	}
+	defer func() { _ = rows.Close() }()
+	for rows.Next() {
+		var pid int
+		var usename, state, waitType, waitEvent, duration, query string
+		if err := rows.Scan(&pid, &usename, &state, &waitType, &waitEvent, &duration, &query); err != nil {
+			s.Logger.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity row scan error")
+			continue
+		}
+		s.Logger.DebugWith().Str("component", "db").Str("sub", "activity").Int("pid", pid).Str("user", usename).Str("state", state).Str("wait_type", waitType).Str("wait_event", waitEvent).Str("duration", duration).Str("query", query).Msg("active query")
+	}
+}
+
+func (s *Service) LogStats(prefix string) {
+	// Snapshot handle under read lock to avoid races with Close()/Open()
+	if s == nil {
+		return
+	}
+	s.mu.RLock()
+	h := s.handle
+	s.mu.RUnlock()
+	if h == nil {
+		return
+	}
+	st := h.Stats()
+	// Structured, non-error diagnostic (not returned to caller)
+	s.Logger.DebugWith().Str("component", "db").Str("metric", "pool").Str("phase", prefix).Int("open", st.OpenConnections).Int("in_use", st.InUse).Int("idle", st.Idle).Int64("wait_count", st.WaitCount).Dur("wait_duration", st.WaitDuration).Int("max_open", st.MaxOpenConnections).Msg("db pool stats")
 }
