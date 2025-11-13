@@ -135,7 +135,17 @@ func (s *Service) missingCoreTables() ([]string, error) {
 		return nil, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	required := []string{"logbook", "api_keys", "qso"}
+	var required []string
+	switch s.DatabaseConfig.Driver {
+	case PostgresDriver:
+		required = []string{"logbook", "api_keys", "qso"}
+	case SqliteDriver:
+		// Client-side schema: no api_keys table (full key stored on logbook)
+		required = []string{"logbook", "qso"}
+	default:
+		return nil, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+
 	missing := make([]string, 0, len(required))
 
 	switch s.DatabaseConfig.Driver {
@@ -177,8 +187,6 @@ func (s *Service) missingCoreTables() ([]string, error) {
 				missing = append(missing, r)
 			}
 		}
-	default:
-		return nil, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
 	}
 	return missing, nil
 }

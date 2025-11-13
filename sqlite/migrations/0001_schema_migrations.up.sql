@@ -7,19 +7,28 @@ CREATE TABLE IF NOT EXISTS logbook
     modified_at DATETIME,
     deleted_at  DATETIME,
 
-    name        TEXT     NOT NULL UNIQUE CHECK (length(name) <= 20),
+    -- Human metadata
+    name        TEXT     NOT NULL UNIQUE CHECK (length(name) <= 64),
     /*
         The callsign associated with the logbook. This should be treated as the 'station_callsign' according to the
         ADIF standard (the one used 'on the air').
     */
-    callsign    TEXT     NOT NULL CHECK (length(callsign) <= 20),
-    api_key     TEXT     NOT NULL UNIQUE CHECK (length(api_key) <= 20),
+    callsign    TEXT     NOT NULL CHECK (length(callsign) <= 32),
+
+    -- Client-side storage for server linkage and credentials
+    uid         TEXT,  -- server-issued opaque UID; may be NULL until registered
+    api_key     TEXT,  -- full API key (prefix.secretHex); optional; stored client-side only
+
     description TEXT
 );
 
+-- Ensure uid and api_key are unique when present
+CREATE UNIQUE INDEX IF NOT EXISTS uq_logbook_uid ON logbook(uid) WHERE uid IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_logbook_api_key ON logbook(api_key) WHERE api_key IS NOT NULL;
+
 -- Seed a default logbook so newly initialized databases have a usable logbook.
 -- Use INSERT OR IGNORE so migrations are idempotent.
-INSERT OR IGNORE INTO logbook (name, callsign, description) VALUES ('default', 'NOCALL', 'Default logbook created by migrations');
+-- INSERT OR IGNORE INTO logbook (name, callsign, description) VALUES ('default', 'NOCALL', 'Default logbook created by migrations');
 
 CREATE TABLE IF NOT EXISTS qso
 (
@@ -70,7 +79,7 @@ CREATE TABLE IF NOT EXISTS qso
         json_extract(additional_data, '$.rst_rcvd') IS NULL AND
         json_extract(additional_data, '$.country') IS NULL
         ),
-    -- Explicit foreign key behavior: prevent deleting a logbook that still has QSOs. Change to ON DELETE CASCADE if you prefer automatic cleanup.
+    -- Client uses soft deletes; prevent deleting a logbook that still has QSOs
     CONSTRAINT fk_qso_logbook FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 
@@ -81,16 +90,9 @@ CREATE INDEX IF NOT EXISTS idx_qso_date_time ON qso (qso_date, time_on);
 -- Index on the FK column for joins/deletes
 CREATE INDEX IF NOT EXISTS idx_qso_logbook_id ON qso (logbook_id);
 
--- Optional: index freq if you query by frequency often
-/*
-CREATE INDEX IF NOT EXISTS idx_qso_freq ON qso (freq);
-*/
-
--- Optional: partial indexes to speed queries that ignore soft-deleted rows
-/*
+-- Optional partial indexes to speed queries that ignore soft-deleted rows
 CREATE INDEX IF NOT EXISTS idx_qso_active_call ON qso (call) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_qso_active_date_time ON qso (qso_date, time_on) WHERE deleted_at IS NULL;
-*/
 
 -- Optional: enforce uniqueness for active QSOs (example — adjust columns to your deduplication rules)
 -- CREATE UNIQUE INDEX IF NOT EXISTS uq_qso_active_unique ON qso (call, qso_date, time_on, freq) WHERE deleted_at IS NULL;
