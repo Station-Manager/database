@@ -1,45 +1,67 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database"
 	"github.com/Station-Manager/logging"
+	"github.com/Station-Manager/types"
+	"os"
 	"path/filepath"
 )
 
 func main() {
-	fp, err := filepath.Abs("../build")
-	if err != nil {
-		panic(err)
+	// Use a temp working dir and in-memory style settings for speed
+	tmp, _ := os.MkdirTemp("", "sm-sqlite-example-")
+	defer func() { _ = os.RemoveAll(tmp) }()
+
+	cfg := types.AppConfig{
+		DatastoreConfig: types.DatastoreConfig{
+			Driver:                    database.SqliteDriver,
+			Path:                      filepath.Join(tmp, "example.db"),
+			Options:                   map[string]string{"_foreign_keys": "on", "_journal_mode": "WAL", "_busy_timeout": "2000"},
+			MaxOpenConns:              1,
+			MaxIdleConns:              1,
+			ConnMaxLifetime:           1,
+			ConnMaxIdleTime:           1,
+			ContextTimeout:            5,
+			TransactionContextTimeout: 5,
+		},
+		LoggingConfig: types.LoggingConfig{
+			Level:                  "info",
+			WithTimestamp:          false,
+			ConsoleLogging:         true,
+			FileLogging:            false,
+			RelLogFileDir:          "logs",
+			ShutdownTimeoutMS:      100,
+			ShutdownTimeoutWarning: false,
+		},
 	}
-	cfgService := &config.Service{
-		WorkingDir: fp,
-		//		AppConfig:  cfg,
-	}
-	if err = cfgService.Initialize(); err != nil {
+	b, _ := json.MarshalIndent(cfg, "", "  ")
+	_ = os.WriteFile(filepath.Join(tmp, "config.json"), b, 0o640)
+
+	cfgService := &config.Service{WorkingDir: tmp}
+	if err := cfgService.Initialize(); err != nil {
 		panic(err)
 	}
 
-	loggingService := &logging.Service{ConfigService: cfgService}
-	if err = loggingService.Initialize(); err != nil {
+	logService := &logging.Service{ConfigService: cfgService}
+	if err := logService.Initialize(); err != nil {
 		panic(err)
 	}
-	defer func() { _ = loggingService.Close() }()
+	defer func() { _ = logService.Close() }()
 
-	dbService := database.Service{ConfigService: cfgService, Logger: loggingService}
-	if err = dbService.Initialize(); err != nil {
+	dbService := database.Service{ConfigService: cfgService, Logger: logService}
+	if err := dbService.Initialize(); err != nil {
 		panic(err)
 	}
-
-	if err = dbService.Open(); err != nil {
+	if err := dbService.Open(); err != nil {
 		panic(err)
 	}
-
-	if err = dbService.Migrate(); err != nil {
+	if err := dbService.Migrate(); err != nil {
 		panic(err)
 	}
-
-	if err = dbService.Close(); err != nil {
+	if err := dbService.Close(); err != nil {
 		panic(err)
 	}
 }

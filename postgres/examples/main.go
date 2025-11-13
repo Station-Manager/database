@@ -30,14 +30,30 @@ func main() {
 		TransactionContextTimeout: 5,
 	}
 
-	cfgService := &config.Service{WorkingDir: ""}
+	// Pre-seed a lightweight logging config to keep example runs snappy
+	fastLog := types.LoggingConfig{
+		Level:                  "info",
+		WithTimestamp:          false,
+		ConsoleLogging:         true,
+		FileLogging:            false,
+		RelLogFileDir:          "logs",
+		SkipFrameCount:         0,
+		LogFileMaxSizeMB:       10,
+		LogFileMaxAgeDays:      7,
+		LogFileMaxBackups:      2,
+		ShutdownTimeoutMS:      100,
+		ShutdownTimeoutWarning: false,
+	}
+
+	cfg := types.AppConfig{DatastoreConfig: desired, LoggingConfig: fastLog}
+	cfgService := &config.Service{WorkingDir: "", AppConfig: cfg}
 	if err := cfgService.Initialize(); err != nil {
 		panic(err)
 	}
-	// Force Postgres config in case a prior config.json exists with sqlite
-	cfg := cfgService.AppConfig
-	cfg.DatastoreConfig = desired
-	cfgService.AppConfig = cfg
+	// Ensure our desired datastore settings are applied even if a config.json exists
+	ac := cfgService.AppConfig
+	ac.DatastoreConfig = desired
+	cfgService.AppConfig = ac
 
 	loggingService := &logging.Service{ConfigService: cfgService}
 	if err := loggingService.Initialize(); err != nil {
