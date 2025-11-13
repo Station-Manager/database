@@ -95,3 +95,19 @@ func (s *Service) AdaptPostgresModelToTypeLogbook(m *pgmodels.Logbook) (types.Lo
 	out, err := adapters.Make[types.Logbook](s.adapterFromModel, m)
 	return out, err
 }
+
+func (s *Service) AdaptPostgresModelToTypeUser(m *pgmodels.User) (types.User, error) {
+	if s == nil || s.adapterFromModel == nil {
+		return types.User{}, errors.New("adapt").Msg("service or adapter nil")
+	}
+	out, err := adapters.Make[types.User](s.adapterFromModel, m)
+	return out, err
+}
+
+func (s *Service) AdaptTypeToPostgresModelUser(u types.User) (*pgmodels.User, error) {
+	if s == nil || s.adapterToModel == nil {
+		return nil, errors.New("adapt").Msg("service or adapter nil")
+	}
+	m, err := adapters.AdaptTo[pgmodels.User](s.adapterToModel, &u)
+	return m, err
+}
