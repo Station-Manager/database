@@ -26,6 +26,7 @@ import (
 // APIKey is an object representing the database table.
 type APIKey struct {
 	ID         int64             `boil:"id" json:"id" toml:"id" yaml:"id"`
+	LogbookID  int64             `boil:"logbook_id" json:"logbook_id" toml:"logbook_id" yaml:"logbook_id"`
 	KeyName    string            `boil:"key_name" json:"key_name" toml:"key_name" yaml:"key_name"`
 	KeyHash    string            `boil:"key_hash" json:"key_hash" toml:"key_hash" yaml:"key_hash"`
 	KeyPrefix  string            `boil:"key_prefix" json:"key_prefix" toml:"key_prefix" yaml:"key_prefix"`
@@ -45,6 +46,7 @@ type APIKey struct {
 
 var APIKeyColumns = struct {
 	ID         string
+	LogbookID  string
 	KeyName    string
 	KeyHash    string
 	KeyPrefix  string
@@ -59,6 +61,7 @@ var APIKeyColumns = struct {
 	UseCount   string
 }{
 	ID:         "id",
+	LogbookID:  "logbook_id",
 	KeyName:    "key_name",
 	KeyHash:    "key_hash",
 	KeyPrefix:  "key_prefix",
@@ -75,6 +78,7 @@ var APIKeyColumns = struct {
 
 var APIKeyTableColumns = struct {
 	ID         string
+	LogbookID  string
 	KeyName    string
 	KeyHash    string
 	KeyPrefix  string
@@ -89,6 +93,7 @@ var APIKeyTableColumns = struct {
 	UseCount   string
 }{
 	ID:         "api_keys.id",
+	LogbookID:  "api_keys.logbook_id",
 	KeyName:    "api_keys.key_name",
 	KeyHash:    "api_keys.key_hash",
 	KeyPrefix:  "api_keys.key_prefix",
@@ -326,6 +331,7 @@ func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIs
 
 var APIKeyWhere = struct {
 	ID         whereHelperint64
+	LogbookID  whereHelperint64
 	KeyName    whereHelperstring
 	KeyHash    whereHelperstring
 	KeyPrefix  whereHelperstring
@@ -340,6 +346,7 @@ var APIKeyWhere = struct {
 	UseCount   whereHelpernull_Int64
 }{
 	ID:         whereHelperint64{field: "\"api_keys\".\"id\""},
+	LogbookID:  whereHelperint64{field: "\"api_keys\".\"logbook_id\""},
 	KeyName:    whereHelperstring{field: "\"api_keys\".\"key_name\""},
 	KeyHash:    whereHelperstring{field: "\"api_keys\".\"key_hash\""},
 	KeyPrefix:  whereHelperstring{field: "\"api_keys\".\"key_prefix\""},
@@ -356,10 +363,14 @@ var APIKeyWhere = struct {
 
 // APIKeyRels is where relationship names are stored.
 var APIKeyRels = struct {
-}{}
+	Logbook string
+}{
+	Logbook: "Logbook",
+}
 
 // apiKeyR is where relationships are stored.
 type apiKeyR struct {
+	Logbook *Logbook `boil:"Logbook" json:"Logbook" toml:"Logbook" yaml:"Logbook"`
 }
 
 // NewStruct creates a new relationship struct
@@ -367,12 +378,28 @@ func (*apiKeyR) NewStruct() *apiKeyR {
 	return &apiKeyR{}
 }
 
+func (o *APIKey) GetLogbook() *Logbook {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetLogbook()
+}
+
+func (r *apiKeyR) GetLogbook() *Logbook {
+	if r == nil {
+		return nil
+	}
+
+	return r.Logbook
+}
+
 // apiKeyL is where Load methods for each relationship are stored.
 type apiKeyL struct{}
 
 var (
-	apiKeyAllColumns            = []string{"id", "key_name", "key_hash", "key_prefix", "scopes", "allowed_ips", "created_at", "last_used_at", "expires_at", "revoked_at", "created_by", "revoked_by", "use_count"}
-	apiKeyColumnsWithoutDefault = []string{"key_name", "key_hash", "key_prefix"}
+	apiKeyAllColumns            = []string{"id", "logbook_id", "key_name", "key_hash", "key_prefix", "scopes", "allowed_ips", "created_at", "last_used_at", "expires_at", "revoked_at", "created_by", "revoked_by", "use_count"}
+	apiKeyColumnsWithoutDefault = []string{"logbook_id", "key_name", "key_hash", "key_prefix"}
 	apiKeyColumnsWithDefault    = []string{"id", "scopes", "allowed_ips", "created_at", "last_used_at", "expires_at", "revoked_at", "created_by", "revoked_by", "use_count"}
 	apiKeyPrimaryKeyColumns     = []string{"id"}
 	apiKeyGeneratedColumns      = []string{}
@@ -467,6 +494,176 @@ func (q apiKeyQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (boo
 	}
 
 	return count > 0, nil
+}
+
+// Logbook pointed to by the foreign key.
+func (o *APIKey) Logbook(mods ...qm.QueryMod) logbookQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.LogbookID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Logbooks(queryMods...)
+}
+
+// LoadLogbook allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (apiKeyL) LoadLogbook(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAPIKey interface{}, mods queries.Applicator) error {
+	var slice []*APIKey
+	var object *APIKey
+
+	if singular {
+		var ok bool
+		object, ok = maybeAPIKey.(*APIKey)
+		if !ok {
+			object = new(APIKey)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeAPIKey)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeAPIKey))
+			}
+		}
+	} else {
+		s, ok := maybeAPIKey.(*[]*APIKey)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeAPIKey)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeAPIKey))
+			}
+		}
+	}
+
+	args := make(map[interface{}]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &apiKeyR{}
+		}
+		args[object.LogbookID] = struct{}{}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &apiKeyR{}
+			}
+
+			args[obj.LogbookID] = struct{}{}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]interface{}, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`logbook`),
+		qm.WhereIn(`logbook.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Logbook")
+	}
+
+	var resultSlice []*Logbook
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Logbook")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for logbook")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for logbook")
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Logbook = foreign
+		if foreign.R == nil {
+			foreign.R = &logbookR{}
+		}
+		foreign.R.APIKey = object
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.LogbookID == foreign.ID {
+				local.R.Logbook = foreign
+				if foreign.R == nil {
+					foreign.R = &logbookR{}
+				}
+				foreign.R.APIKey = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// SetLogbook of the apiKey to the related item.
+// Sets o.R.Logbook to related.
+// Adds o to related.R.APIKey.
+func (o *APIKey) SetLogbook(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Logbook) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"api_keys\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"logbook_id"}),
+		strmangle.WhereClause("\"", "\"", 2, apiKeyPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.LogbookID = related.ID
+	if o.R == nil {
+		o.R = &apiKeyR{
+			Logbook: related,
+		}
+	} else {
+		o.R.Logbook = related
+	}
+
+	if related.R == nil {
+		related.R = &logbookR{
+			APIKey: o,
+		}
+	} else {
+		related.R.APIKey = o
+	}
+
+	return nil
 }
 
 // APIKeys retrieves all the records using an executor.

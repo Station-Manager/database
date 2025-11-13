@@ -22,7 +22,7 @@ func TestValidateConfig_SqliteDefaults(t *testing.T) {
 	}
 }
 
-func TestValidateConfig_PostgresSmallPools(t *testing.T) {
+func TestValidateConfig_PostgresMinOpenConns_Fail(t *testing.T) {
 	cfg := &types.DatastoreConfig{
 		Driver:                    PostgresDriver,
 		Host:                      "localhost",
@@ -31,14 +31,35 @@ func TestValidateConfig_PostgresSmallPools(t *testing.T) {
 		User:                      "testuser",
 		Password:                  "testpass",
 		SSLMode:                   "disable",
-		MaxOpenConns:              2, // allowed by tags (min=1)
-		MaxIdleConns:              2, // allowed by tags (min=1)
+		MaxOpenConns:              2, // now invalid
+		MaxIdleConns:              2,
+		ConnMaxLifetime:           30,
+		ConnMaxIdleTime:           5,
+		ContextTimeout:            5,
+		TransactionContextTimeout: 15,
+	}
+	if err := validateConfig(cfg); err == nil {
+		t.Fatalf("expected error for MaxOpenConns < 5, got nil")
+	}
+}
+
+func TestValidateConfig_PostgresMinOpenConns_Pass(t *testing.T) {
+	cfg := &types.DatastoreConfig{
+		Driver:                    PostgresDriver,
+		Host:                      "localhost",
+		Port:                      5432,
+		Database:                  "testdb",
+		User:                      "testuser",
+		Password:                  "testpass",
+		SSLMode:                   "disable",
+		MaxOpenConns:              5, // minimum allowed
+		MaxIdleConns:              2,
 		ConnMaxLifetime:           30,
 		ConnMaxIdleTime:           5,
 		ContextTimeout:            5,
 		TransactionContextTimeout: 15,
 	}
 	if err := validateConfig(cfg); err != nil {
-		t.Fatalf("validateConfig(postgres) returned error: %v", err)
+		t.Fatalf("validateConfig(postgres, min ok) returned error: %v", err)
 	}
 }

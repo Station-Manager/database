@@ -25,6 +25,7 @@ import (
 // APIKeysStatus is an object representing the database table.
 type APIKeysStatus struct {
 	ID         null.Int64  `boil:"id" json:"id,omitempty" toml:"id" yaml:"id,omitempty"`
+	LogbookID  null.Int64  `boil:"logbook_id" json:"logbook_id,omitempty" toml:"logbook_id" yaml:"logbook_id,omitempty"`
 	KeyName    null.String `boil:"key_name" json:"key_name,omitempty" toml:"key_name" yaml:"key_name,omitempty"`
 	KeyPrefix  null.String `boil:"key_prefix" json:"key_prefix,omitempty" toml:"key_prefix" yaml:"key_prefix,omitempty"`
 	CreatedAt  null.Time   `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
@@ -36,6 +37,7 @@ type APIKeysStatus struct {
 
 var APIKeysStatusColumns = struct {
 	ID         string
+	LogbookID  string
 	KeyName    string
 	KeyPrefix  string
 	CreatedAt  string
@@ -45,6 +47,7 @@ var APIKeysStatusColumns = struct {
 	IsActive   string
 }{
 	ID:         "id",
+	LogbookID:  "logbook_id",
 	KeyName:    "key_name",
 	KeyPrefix:  "key_prefix",
 	CreatedAt:  "created_at",
@@ -56,6 +59,7 @@ var APIKeysStatusColumns = struct {
 
 var APIKeysStatusTableColumns = struct {
 	ID         string
+	LogbookID  string
 	KeyName    string
 	KeyPrefix  string
 	CreatedAt  string
@@ -65,6 +69,7 @@ var APIKeysStatusTableColumns = struct {
 	IsActive   string
 }{
 	ID:         "api_keys_status.id",
+	LogbookID:  "api_keys_status.logbook_id",
 	KeyName:    "api_keys_status.key_name",
 	KeyPrefix:  "api_keys_status.key_prefix",
 	CreatedAt:  "api_keys_status.created_at",
@@ -102,6 +107,7 @@ func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsN
 
 var APIKeysStatusWhere = struct {
 	ID         whereHelpernull_Int64
+	LogbookID  whereHelpernull_Int64
 	KeyName    whereHelpernull_String
 	KeyPrefix  whereHelpernull_String
 	CreatedAt  whereHelpernull_Time
@@ -111,6 +117,7 @@ var APIKeysStatusWhere = struct {
 	IsActive   whereHelpernull_Bool
 }{
 	ID:         whereHelpernull_Int64{field: "\"api_keys_status\".\"id\""},
+	LogbookID:  whereHelpernull_Int64{field: "\"api_keys_status\".\"logbook_id\""},
 	KeyName:    whereHelpernull_String{field: "\"api_keys_status\".\"key_name\""},
 	KeyPrefix:  whereHelpernull_String{field: "\"api_keys_status\".\"key_prefix\""},
 	CreatedAt:  whereHelpernull_Time{field: "\"api_keys_status\".\"created_at\""},
@@ -121,9 +128,9 @@ var APIKeysStatusWhere = struct {
 }
 
 var (
-	apiKeysStatusAllColumns            = []string{"id", "key_name", "key_prefix", "created_at", "last_used_at", "expires_at", "revoked_at", "is_active"}
+	apiKeysStatusAllColumns            = []string{"id", "logbook_id", "key_name", "key_prefix", "created_at", "last_used_at", "expires_at", "revoked_at", "is_active"}
 	apiKeysStatusColumnsWithoutDefault = []string{}
-	apiKeysStatusColumnsWithDefault    = []string{"id", "key_name", "key_prefix", "created_at", "last_used_at", "expires_at", "revoked_at", "is_active"}
+	apiKeysStatusColumnsWithDefault    = []string{"id", "logbook_id", "key_name", "key_prefix", "created_at", "last_used_at", "expires_at", "revoked_at", "is_active"}
 	apiKeysStatusPrimaryKeyColumns     = []string{}
 	apiKeysStatusGeneratedColumns      = []string{}
 )

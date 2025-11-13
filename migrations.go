@@ -37,20 +37,57 @@ func (s *Service) doMigrations() error {
 		_ = srcDriver.Close()
 		return errors.New(op).Errorf("migrate.NewWithInstance: %w", err)
 	}
-	// Do NOT call m.Close() because many database drivers close the shared *sql.DB handle.
-	// We explicitly close the source driver to free resources.
-	defer func() {
-		_ = srcDriver.Close()
-	}()
+	defer func() { _ = srcDriver.Close() }()
 
-	err = m.Up()
-	if err != nil && !stderr.Is(err, migrate.ErrNoChange) {
-		return errors.New(op).Errorf("m.Up: %w", err)
+	if s.Logger != nil {
+		s.Logger.InfoWith().Str("driver", s.DatabaseConfig.Driver).Msg("starting migrations")
 	}
 
-	if stderr.Is(err, migrate.ErrNoChange) {
+	upErr := m.Up()
+	if upErr != nil && !stderr.Is(upErr, migrate.ErrNoChange) {
+		if s.Logger != nil {
+			s.Logger.ErrorWith().Err(upErr).Msg("m.Up failed")
+		}
+		return errors.New(op).Errorf("m.Up: %w", upErr)
+	}
+	if s.Logger != nil {
+		s.Logger.InfoWith().Msg("m.Up completed or no change")
+	}
+
+	missing, chkErr := s.missingCoreTables()
+	if chkErr != nil {
+		if s.Logger != nil {
+			s.Logger.ErrorWith().Err(chkErr).Msg("schema verification failed")
+		}
+		return errors.New(op).Err(chkErr).Msg("schema verification failed")
+	}
+	if len(missing) == 0 {
+		if s.Logger != nil {
+			s.Logger.InfoWith().Msg("schema verified")
+		}
 		return nil
 	}
 
-	return err
+	// Fallback: apply initial schema directly if core tables are missing.
+	if s.DatabaseConfig.Driver == PostgresDriver {
+		if s.Logger != nil {
+			s.Logger.WarnWith().Strs("missing", missing).Msg("applying initial schema via fallback")
+		}
+		if err := postgres.ApplyInitialSchemaSimple(s.handle); err != nil {
+			return errors.New(op).Err(err).Msg("fallback initial schema failed")
+		}
+		missing, chkErr = s.missingCoreTables()
+		if chkErr != nil {
+			return errors.New(op).Err(chkErr).Msg("schema verification failed (post-fallback)")
+		}
+		if len(missing) > 0 {
+			return errors.New(op).Errorf("schema still missing after fallback: %v", missing)
+		}
+		if s.Logger != nil {
+			s.Logger.InfoWith().Msg("schema created via fallback")
+		}
+		return nil
+	}
+
+	return errors.New(op).Errorf("schema missing after migrations and no fallback for driver %s: %v", s.DatabaseConfig.Driver, missing)
 }

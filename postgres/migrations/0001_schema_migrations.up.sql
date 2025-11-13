@@ -1,14 +1,11 @@
 -- Initialization schema for Station Manager (PostgreSQL)
 -- High-level design: sequential internal IDs, opaque external UIDs, API keys per logbook
 
--- Enable UUID generation for opaque logbook UIDs
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
 -- Logbook: internal PK for joins + opaque UID for external reference
 CREATE TABLE IF NOT EXISTS logbook
 (
     id          BIGSERIAL   PRIMARY KEY,
-    uid         UUID        NOT NULL DEFAULT gen_random_uuid(),
+    uid         UUID        NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     modified_at TIMESTAMPTZ,
 

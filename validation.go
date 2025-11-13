@@ -24,7 +24,12 @@ func validateConfig(cfg *types.DatastoreConfig) error {
 		return errors.New(op).Err(err).Msg(errMsgConfigInvalid)
 	}
 
-	// Rely on struct tags for validation; additional driver-specific policies are not enforced here
-	// to stay aligned with shared types and allow environment-specific tuning.
+	// Driver-specific policies
+	if cfg.Driver == PostgresDriver {
+		if cfg.MaxOpenConns < 5 {
+			return errors.New(op).Msg("Postgres MaxOpenConns must be at least 5")
+		}
+	}
+
 	return nil
 }

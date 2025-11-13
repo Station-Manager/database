@@ -124,3 +124,61 @@ func (s *Service) checkDatabaseDir(dbFilePath string) error {
 
 	return nil
 }
+
+// missingCoreTables checks the existence of required core tables and returns any missing names.
+func (s *Service) missingCoreTables() ([]string, error) {
+	const op errors.Op = "database.Service.missingCoreTables"
+	if s == nil {
+		return nil, errors.New(op).Msg(errMsgNilService)
+	}
+	if s.handle == nil {
+		return nil, errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	required := []string{"logbook", "api_keys", "qso"}
+	missing := make([]string, 0, len(required))
+
+	switch s.DatabaseConfig.Driver {
+	case PostgresDriver:
+		rows, err := s.handle.Query(`SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema()`)
+		if err != nil {
+			return nil, errors.New(op).Errorf("information_schema.tables query: %w", err)
+		}
+		defer func() { _ = rows.Close() }()
+		existing := map[string]struct{}{}
+		for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				return nil, errors.New(op).Errorf("tables scan: %w", err)
+			}
+			existing[name] = struct{}{}
+		}
+		for _, r := range required {
+			if _, ok := existing[r]; !ok {
+				missing = append(missing, r)
+			}
+		}
+	case SqliteDriver:
+		rows, err := s.handle.Query(`SELECT name FROM sqlite_master WHERE type='table'`)
+		if err != nil {
+			return nil, errors.New(op).Errorf("sqlite_master query: %w", err)
+		}
+		defer func() { _ = rows.Close() }()
+		existing := map[string]struct{}{}
+		for rows.Next() {
+			var name string
+			if err := rows.Scan(&name); err != nil {
+				return nil, errors.New(op).Errorf("sqlite_master scan: %w", err)
+			}
+			existing[name] = struct{}{}
+		}
+		for _, r := range required {
+			if _, ok := existing[r]; !ok {
+				missing = append(missing, r)
+			}
+		}
+	default:
+		return nil, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+	return missing, nil
+}
