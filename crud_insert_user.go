@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"github.com/Station-Manager/adapters"
+	"github.com/Station-Manager/database/postgres/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/sqlboiler/v4/boil"
@@ -36,8 +38,9 @@ func (s *Service) InsertUserContext(ctx context.Context, user types.User) (types
 		defer cancel()
 	}
 
-	s.initAdapters()
-	model, err := s.AdaptTypeToPostgresModelUser(user)
+	var model models.User
+	adapter := adapters.New()
+	err := adapters.Copy[models.User](adapter, &model, &user)
 	if err != nil {
 		return user, errors.New(op).Err(err)
 	}
