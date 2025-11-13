@@ -6,54 +6,24 @@ import (
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database"
 	"github.com/Station-Manager/logging"
-	"github.com/Station-Manager/types"
 	"os"
 )
 
+func mustGetwd() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return wd
+}
+
 func main() {
-	// Hint config/env if used; not required for migrations path but harmless
 	_ = os.Setenv("SM_DEFAULT_DB", "pg")
 
-	desired := types.DatastoreConfig{
-		Driver:                    database.PostgresDriver,
-		Host:                      "localhost",
-		Port:                      5432,
-		Database:                  "station_manager",
-		User:                      "smuser",
-		Password:                  "1q2w3e4r",
-		SSLMode:                   "disable",
-		MaxOpenConns:              10, // must be >= 5 per validation
-		MaxIdleConns:              5,
-		ConnMaxLifetime:           1,
-		ConnMaxIdleTime:           1,
-		ContextTimeout:            5,
-		TransactionContextTimeout: 5,
-	}
-
-	// Pre-seed a lightweight logging config to keep example runs snappy
-	fastLog := types.LoggingConfig{
-		Level:                  "info",
-		WithTimestamp:          false,
-		ConsoleLogging:         true,
-		FileLogging:            false,
-		RelLogFileDir:          "logs",
-		SkipFrameCount:         0,
-		LogFileMaxSizeMB:       10,
-		LogFileMaxAgeDays:      7,
-		LogFileMaxBackups:      2,
-		ShutdownTimeoutMS:      100,
-		ShutdownTimeoutWarning: false,
-	}
-
-	cfg := types.AppConfig{DatastoreConfig: desired, LoggingConfig: fastLog}
-	cfgService := &config.Service{WorkingDir: "", AppConfig: cfg}
+	cfgService := &config.Service{WorkingDir: mustGetwd()}
 	if err := cfgService.Initialize(); err != nil {
 		panic(err)
 	}
-	// Ensure our desired datastore settings are applied even if a config.json exists
-	ac := cfgService.AppConfig
-	ac.DatastoreConfig = desired
-	cfgService.AppConfig = ac
 
 	loggingService := &logging.Service{ConfigService: cfgService}
 	if err := loggingService.Initialize(); err != nil {
@@ -82,7 +52,11 @@ func main() {
 
 	fmt.Println("Listing tables...")
 	ctx := context.Background()
-	rows, err := dbService.QueryContext(ctx, `SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() ORDER BY table_name`)
+	rows, err := dbService.QueryContext(ctx, `
+		SELECT table_name
+		FROM information_schema.tables
+		WHERE table_schema = current_schema()
+		ORDER BY table_name`)
 	if err != nil {
 		fmt.Println("failed to list tables:", err)
 	} else {
@@ -95,6 +69,9 @@ func main() {
 				break
 			}
 			names = append(names, name)
+		}
+		if err := rows.Err(); err != nil {
+			fmt.Println("rows error:", err)
 		}
 		fmt.Println("current schema tables:", names)
 	}

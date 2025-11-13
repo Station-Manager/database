@@ -7,8 +7,10 @@ var TableNames = struct {
 	APIKeys string
 	Logbook string
 	Qso     string
+	Users   string
 }{
 	APIKeys: "api_keys",
 	Logbook: "logbook",
 	Qso:     "qso",
+	Users:   "users",
 }

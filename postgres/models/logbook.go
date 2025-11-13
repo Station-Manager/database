@@ -28,6 +28,7 @@ type Logbook struct {
 	UID         string      `boil:"uid" json:"uid" toml:"uid" yaml:"uid"`
 	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	ModifiedAt  null.Time   `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
+	UserID      int64       `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
 	Name        string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Callsign    string      `boil:"callsign" json:"callsign" toml:"callsign" yaml:"callsign"`
 	Description null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
@@ -41,6 +42,7 @@ var LogbookColumns = struct {
 	UID         string
 	CreatedAt   string
 	ModifiedAt  string
+	UserID      string
 	Name        string
 	Callsign    string
 	Description string
@@ -49,6 +51,7 @@ var LogbookColumns = struct {
 	UID:         "uid",
 	CreatedAt:   "created_at",
 	ModifiedAt:  "modified_at",
+	UserID:      "user_id",
 	Name:        "name",
 	Callsign:    "callsign",
 	Description: "description",
@@ -59,6 +62,7 @@ var LogbookTableColumns = struct {
 	UID         string
 	CreatedAt   string
 	ModifiedAt  string
+	UserID      string
 	Name        string
 	Callsign    string
 	Description string
@@ -67,6 +71,7 @@ var LogbookTableColumns = struct {
 	UID:         "logbook.uid",
 	CreatedAt:   "logbook.created_at",
 	ModifiedAt:  "logbook.modified_at",
+	UserID:      "logbook.user_id",
 	Name:        "logbook.name",
 	Callsign:    "logbook.callsign",
 	Description: "logbook.description",
@@ -79,6 +84,7 @@ var LogbookWhere = struct {
 	UID         whereHelperstring
 	CreatedAt   whereHelpertime_Time
 	ModifiedAt  whereHelpernull_Time
+	UserID      whereHelperint64
 	Name        whereHelperstring
 	Callsign    whereHelperstring
 	Description whereHelpernull_String
@@ -87,6 +93,7 @@ var LogbookWhere = struct {
 	UID:         whereHelperstring{field: "\"logbook\".\"uid\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"logbook\".\"created_at\""},
 	ModifiedAt:  whereHelpernull_Time{field: "\"logbook\".\"modified_at\""},
+	UserID:      whereHelperint64{field: "\"logbook\".\"user_id\""},
 	Name:        whereHelperstring{field: "\"logbook\".\"name\""},
 	Callsign:    whereHelperstring{field: "\"logbook\".\"callsign\""},
 	Description: whereHelpernull_String{field: "\"logbook\".\"description\""},
@@ -94,15 +101,18 @@ var LogbookWhere = struct {
 
 // LogbookRels is where relationship names are stored.
 var LogbookRels = struct {
+	User   string
 	APIKey string
 	Qsos   string
 }{
+	User:   "User",
 	APIKey: "APIKey",
 	Qsos:   "Qsos",
 }
 
 // logbookR is where relationships are stored.
 type logbookR struct {
+	User   *User    `boil:"User" json:"User" toml:"User" yaml:"User"`
 	APIKey *APIKey  `boil:"APIKey" json:"APIKey" toml:"APIKey" yaml:"APIKey"`
 	Qsos   QsoSlice `boil:"Qsos" json:"Qsos" toml:"Qsos" yaml:"Qsos"`
 }
@@ -110,6 +120,22 @@ type logbookR struct {
 // NewStruct creates a new relationship struct
 func (*logbookR) NewStruct() *logbookR {
 	return &logbookR{}
+}
+
+func (o *Logbook) GetUser() *User {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetUser()
+}
+
+func (r *logbookR) GetUser() *User {
+	if r == nil {
+		return nil
+	}
+
+	return r.User
 }
 
 func (o *Logbook) GetAPIKey() *APIKey {
@@ -148,8 +174,8 @@ func (r *logbookR) GetQsos() QsoSlice {
 type logbookL struct{}
 
 var (
-	logbookAllColumns            = []string{"id", "uid", "created_at", "modified_at", "name", "callsign", "description"}
-	logbookColumnsWithoutDefault = []string{"uid", "name", "callsign"}
+	logbookAllColumns            = []string{"id", "uid", "created_at", "modified_at", "user_id", "name", "callsign", "description"}
+	logbookColumnsWithoutDefault = []string{"uid", "user_id", "name", "callsign"}
 	logbookColumnsWithDefault    = []string{"id", "created_at", "modified_at", "description"}
 	logbookPrimaryKeyColumns     = []string{"id"}
 	logbookGeneratedColumns      = []string{}
@@ -246,6 +272,17 @@ func (q logbookQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bo
 	return count > 0, nil
 }
 
+// User pointed to by the foreign key.
+func (o *Logbook) User(mods ...qm.QueryMod) userQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.UserID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Users(queryMods...)
+}
+
 // APIKey pointed to by the foreign key.
 func (o *Logbook) APIKey(mods ...qm.QueryMod) apiKeyQuery {
 	queryMods := []qm.QueryMod{
@@ -269,6 +306,118 @@ func (o *Logbook) Qsos(mods ...qm.QueryMod) qsoQuery {
 	)
 
 	return Qsos(queryMods...)
+}
+
+// LoadUser allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (logbookL) LoadUser(ctx context.Context, e boil.ContextExecutor, singular bool, maybeLogbook interface{}, mods queries.Applicator) error {
+	var slice []*Logbook
+	var object *Logbook
+
+	if singular {
+		var ok bool
+		object, ok = maybeLogbook.(*Logbook)
+		if !ok {
+			object = new(Logbook)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeLogbook)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeLogbook))
+			}
+		}
+	} else {
+		s, ok := maybeLogbook.(*[]*Logbook)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeLogbook)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeLogbook))
+			}
+		}
+	}
+
+	args := make(map[interface{}]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &logbookR{}
+		}
+		args[object.UserID] = struct{}{}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &logbookR{}
+			}
+
+			args[obj.UserID] = struct{}{}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]interface{}, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`users`),
+		qm.WhereIn(`users.id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load User")
+	}
+
+	var resultSlice []*User
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice User")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for users")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for users")
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.User = foreign
+		if foreign.R == nil {
+			foreign.R = &userR{}
+		}
+		foreign.R.Logbooks = append(foreign.R.Logbooks, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.UserID == foreign.ID {
+				local.R.User = foreign
+				if foreign.R == nil {
+					foreign.R = &userR{}
+				}
+				foreign.R.Logbooks = append(foreign.R.Logbooks, local)
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadAPIKey allows an eager lookup of values, cached into the
@@ -481,6 +630,53 @@ func (logbookL) LoadQsos(ctx context.Context, e boil.ContextExecutor, singular b
 				break
 			}
 		}
+	}
+
+	return nil
+}
+
+// SetUser of the logbook to the related item.
+// Sets o.R.User to related.
+// Adds o to related.R.Logbooks.
+func (o *Logbook) SetUser(ctx context.Context, exec boil.ContextExecutor, insert bool, related *User) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"logbook\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"user_id"}),
+		strmangle.WhereClause("\"", "\"", 2, logbookPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.UserID = related.ID
+	if o.R == nil {
+		o.R = &logbookR{
+			User: related,
+		}
+	} else {
+		o.R.User = related
+	}
+
+	if related.R == nil {
+		related.R = &userR{
+			Logbooks: LogbookSlice{o},
+		}
+	} else {
+		related.R.Logbooks = append(related.R.Logbooks, o)
 	}
 
 	return nil
