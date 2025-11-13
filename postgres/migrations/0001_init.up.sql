@@ -4,23 +4,29 @@
 -- Logbook: internal PK for joins + opaque UID for external reference
 CREATE TABLE IF NOT EXISTS logbook
 (
-    id          BIGSERIAL   PRIMARY KEY,
+    id          BIGSERIAL PRIMARY KEY,
     uid         UUID        NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     modified_at TIMESTAMPTZ,
 
-    name        VARCHAR(64)  NOT NULL UNIQUE,
-    callsign    VARCHAR(32)  NOT NULL,
+    user_id     BIGINT      NOT NULL,
+
+    name        VARCHAR(64) NOT NULL,
+    callsign    VARCHAR(32) NOT NULL,
     description VARCHAR(255),
 
-    CONSTRAINT logbook_uid_unique UNIQUE (uid)
+    CONSTRAINT logbook_uid_unique UNIQUE (uid),
+    CONSTRAINT logbook_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT logbook_user_name_unique UNIQUE (user_id, name)
 );
+
+CREATE INDEX IF NOT EXISTS idx_logbook_user_id ON logbook (user_id);
 
 -- API keys: per-logbook keys with independent random prefix and hashed secret
 CREATE TABLE IF NOT EXISTS api_keys
 (
-    id           BIGSERIAL   PRIMARY KEY,
-    logbook_id   BIGINT      NOT NULL,
+    id           BIGSERIAL PRIMARY KEY,
+    logbook_id   BIGINT       NOT NULL,
 
     key_name     VARCHAR(255) NOT NULL,
     key_hash     VARCHAR(128) NOT NULL,
@@ -45,7 +51,7 @@ CREATE TABLE IF NOT EXISTS api_keys
     CONSTRAINT api_keys_name_per_logbook UNIQUE (logbook_id, key_name),
 
     -- explicit FK for clarity
-    CONSTRAINT api_keys_logbook_fk FOREIGN KEY (logbook_id) REFERENCES logbook(id) ON DELETE CASCADE
+    CONSTRAINT api_keys_logbook_fk FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE CASCADE
 );
 
 -- Helpful indexes for API key lookups and status
@@ -54,13 +60,13 @@ CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys (revoked_at) WHERE re
 CREATE INDEX IF NOT EXISTS idx_api_keys_expires_at ON api_keys (expires_at) WHERE expires_at IS NOT NULL;
 -- Enforce only one active (non-revoked) key per logbook
 CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_one_active_per_logbook
-  ON api_keys (logbook_id)
-  WHERE revoked_at IS NULL;
+    ON api_keys (logbook_id)
+    WHERE revoked_at IS NULL;
 
 -- QSO: linked to logbook; key integrity enforced at application layer
 CREATE TABLE IF NOT EXISTS qso
 (
-    id              BIGSERIAL   PRIMARY KEY,
+    id              BIGSERIAL PRIMARY KEY,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     modified_at     TIMESTAMPTZ,
 
@@ -106,3 +112,53 @@ SELECT id,
        revoked_at,
        (revoked_at IS NULL AND (expires_at IS NULL OR expires_at > now())) AS is_active
 FROM api_keys;
+
+CREATE TABLE IF NOT EXISTS users
+(
+    id                   BIGSERIAL PRIMARY KEY,
+    created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    modified_at          TIMESTAMPTZ,
+
+    username             VARCHAR(256) NOT NULL UNIQUE,
+    pass_hash            VARCHAR(255),
+
+    -- Optional external identity (all nullable)
+    issuer               TEXT,
+    subject              TEXT,
+    email                VARCHAR(256),
+
+    -- One-time bootstrap secret (all nullable; cleared after first use)
+    bootstrap_hash       TEXT,
+    bootstrap_expires_at TIMESTAMPTZ,
+    bootstrap_used_at    TIMESTAMPTZ,
+
+    -- External identity must be fully NULL or fully present
+    CONSTRAINT users_issuer_subject_pair CHECK (
+        (issuer IS NULL AND subject IS NULL) OR
+        (issuer IS NOT NULL AND subject IS NOT NULL)
+        ),
+
+    -- Uniqueness for external identities (PostgreSQL treats NULLs as distinct)
+    CONSTRAINT users_external_identity_unique UNIQUE (issuer, subject),
+
+    -- Bootstrap hash/expires pair integrity (both NULL or both set)
+    CONSTRAINT users_bootstrap_pair CHECK (
+        (bootstrap_hash IS NULL AND bootstrap_expires_at IS NULL) OR
+        (bootstrap_hash IS NOT NULL AND bootstrap_expires_at IS NOT NULL)
+        ),
+
+    -- If used_at is set, hash and expires must be NULL (wiped after use)
+    CONSTRAINT users_bootstrap_used_wiped CHECK (
+        (bootstrap_used_at IS NULL) OR
+        (bootstrap_used_at IS NOT NULL AND bootstrap_hash IS NULL AND bootstrap_expires_at IS NULL)
+        )
+);
+
+-- Index for external identity lookups
+CREATE INDEX IF NOT EXISTS idx_users_issuer_subject
+    ON users (issuer, subject);
+
+-- Active (unused + not expired) bootstrap lookup optimization
+CREATE INDEX IF NOT EXISTS idx_users_bootstrap_active
+    ON users (bootstrap_expires_at)
+    WHERE bootstrap_used_at IS NULL AND bootstrap_hash IS NOT NULL;
