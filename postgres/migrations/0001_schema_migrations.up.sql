@@ -1,9 +1,33 @@
+-- Initialization schema for Station Manager (PostgreSQL)
+-- High-level design: sequential internal IDs, opaque external UIDs, API keys per logbook
+
+-- Enable UUID generation for opaque logbook UIDs
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Logbook: internal PK for joins + opaque UID for external reference
+CREATE TABLE IF NOT EXISTS logbook
+(
+    id          BIGSERIAL   PRIMARY KEY,
+    uid         UUID        NOT NULL DEFAULT gen_random_uuid(),
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    modified_at TIMESTAMPTZ,
+
+    name        VARCHAR(64)  NOT NULL UNIQUE,
+    callsign    VARCHAR(32)  NOT NULL,
+    description VARCHAR(255),
+
+    CONSTRAINT logbook_uid_unique UNIQUE (uid)
+);
+
+-- API keys: per-logbook keys with independent random prefix and hashed secret
 CREATE TABLE IF NOT EXISTS api_keys
 (
-    id           BIGSERIAL PRIMARY KEY,
-    key_name     VARCHAR(255) NOT NULL UNIQUE,
+    id           BIGSERIAL   PRIMARY KEY,
+    logbook_id   BIGINT      NOT NULL,
+
+    key_name     VARCHAR(255) NOT NULL,
     key_hash     VARCHAR(128) NOT NULL,
-    key_prefix   VARCHAR(10)  NOT NULL,
+    key_prefix   VARCHAR(16)  NOT NULL,
 
     scopes       TEXT[]                DEFAULT '{}',
     allowed_ips  INET[],
@@ -18,31 +42,30 @@ CREATE TABLE IF NOT EXISTS api_keys
     use_count    BIGINT                DEFAULT 0,
 
     CONSTRAINT api_keys_revoked_before_or_at_expires
-        CHECK (revoked_at IS NULL OR expires_at IS NULL OR revoked_at <= expires_at)
+        CHECK (revoked_at IS NULL OR expires_at IS NULL OR revoked_at <= expires_at),
+
+    -- key names are unique within a logbook (not globally)
+    CONSTRAINT api_keys_name_per_logbook UNIQUE (logbook_id, key_name),
+
+    -- explicit FK for clarity
+    CONSTRAINT api_keys_logbook_fk FOREIGN KEY (logbook_id) REFERENCES logbook(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_api_keys_key_prefix ON api_keys (key_prefix);
+-- Helpful indexes for API key lookups and status
+CREATE INDEX IF NOT EXISTS idx_api_keys_logbook_prefix ON api_keys (logbook_id, key_prefix);
 CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys (revoked_at) WHERE revoked_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_api_keys_expires_at ON api_keys (expires_at) WHERE expires_at IS NOT NULL;
+-- Enforce only one active (non-revoked) key per logbook
+CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_one_active_per_logbook
+  ON api_keys (logbook_id)
+  WHERE revoked_at IS NULL;
 
-CREATE TABLE IF NOT EXISTS logbook
-(
-    id          BIGSERIAL PRIMARY KEY,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    modified_at TIMESTAMPTZ,
-    deleted_at  TIMESTAMPTZ,
-
-    name VARCHAR(20) NOT NULL UNIQUE,
-    callsign VARCHAR(20) NOT NULL,
-    description VARCHAR(255)
-);
-
+-- QSO: linked to logbook; key integrity enforced at application layer
 CREATE TABLE IF NOT EXISTS qso
 (
-    id              BIGSERIAL PRIMARY KEY,
+    id              BIGSERIAL   PRIMARY KEY,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     modified_at     TIMESTAMPTZ,
-    deleted_at      TIMESTAMPTZ,
 
     call            VARCHAR(20) NOT NULL,
     band            VARCHAR(10) NOT NULL,
@@ -65,7 +88,7 @@ CREATE TABLE IF NOT EXISTS qso
             'time_on','time_off','rst_sent','rst_rcvd','country'
             ])
         ),
-    CONSTRAINT qso_logbook_fk FOREIGN KEY (logbook_id) REFERENCES logbook (id)
+    CONSTRAINT qso_logbook_fk FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_qso_call ON qso (call);
@@ -74,8 +97,10 @@ CREATE INDEX IF NOT EXISTS idx_qso_country ON qso (country);
 CREATE INDEX IF NOT EXISTS idx_qso_date_time ON qso (qso_date, time_on);
 CREATE INDEX IF NOT EXISTS idx_qso_additional_gin ON qso USING gin (additional_data);
 
+-- Status view for API keys (includes per-logbook context)
 CREATE OR REPLACE VIEW api_keys_status AS
 SELECT id,
+       logbook_id,
        key_name,
        key_prefix,
        created_at,

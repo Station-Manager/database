@@ -1,8 +1,11 @@
+-- Rollback initialization schema for Station Manager (PostgreSQL)
+
 -- Drop view first
 DROP VIEW IF EXISTS api_keys_status;
 
 -- Drop api_keys indexes then table
-DROP INDEX IF EXISTS idx_api_keys_key_prefix;
+DROP INDEX IF EXISTS idx_api_keys_one_active_per_logbook;
+DROP INDEX IF EXISTS idx_api_keys_logbook_prefix;
 DROP INDEX IF EXISTS idx_api_keys_active;
 DROP INDEX IF EXISTS idx_api_keys_expires_at;
 DROP TABLE IF EXISTS api_keys;
