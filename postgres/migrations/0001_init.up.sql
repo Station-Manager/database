@@ -57,7 +57,7 @@ CREATE INDEX IF NOT EXISTS idx_users_bootstrap_active
 CREATE TABLE IF NOT EXISTS logbook
 (
     id          BIGSERIAL PRIMARY KEY,
-    uid         UUID        NOT NULL,
+--    uid         UUID        NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     modified_at TIMESTAMPTZ,
 
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS logbook
     callsign    VARCHAR(32) NOT NULL,
     description VARCHAR(255),
 
-    CONSTRAINT logbook_uid_unique UNIQUE (uid),
+--    CONSTRAINT logbook_uid_unique UNIQUE (uid),
     CONSTRAINT logbook_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     CONSTRAINT logbook_user_name_unique UNIQUE (user_id, name)
 );

@@ -25,7 +25,6 @@ import (
 // Logbook is an object representing the database table.
 type Logbook struct {
 	ID          int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	UID         string      `boil:"uid" json:"uid" toml:"uid" yaml:"uid"`
 	CreatedAt   time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	ModifiedAt  null.Time   `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
 	UserID      int64       `boil:"user_id" json:"user_id" toml:"user_id" yaml:"user_id"`
@@ -39,7 +38,6 @@ type Logbook struct {
 
 var LogbookColumns = struct {
 	ID          string
-	UID         string
 	CreatedAt   string
 	ModifiedAt  string
 	UserID      string
@@ -48,7 +46,6 @@ var LogbookColumns = struct {
 	Description string
 }{
 	ID:          "id",
-	UID:         "uid",
 	CreatedAt:   "created_at",
 	ModifiedAt:  "modified_at",
 	UserID:      "user_id",
@@ -59,7 +56,6 @@ var LogbookColumns = struct {
 
 var LogbookTableColumns = struct {
 	ID          string
-	UID         string
 	CreatedAt   string
 	ModifiedAt  string
 	UserID      string
@@ -68,7 +64,6 @@ var LogbookTableColumns = struct {
 	Description string
 }{
 	ID:          "logbook.id",
-	UID:         "logbook.uid",
 	CreatedAt:   "logbook.created_at",
 	ModifiedAt:  "logbook.modified_at",
 	UserID:      "logbook.user_id",
@@ -81,7 +76,6 @@ var LogbookTableColumns = struct {
 
 var LogbookWhere = struct {
 	ID          whereHelperint64
-	UID         whereHelperstring
 	CreatedAt   whereHelpertime_Time
 	ModifiedAt  whereHelpernull_Time
 	UserID      whereHelperint64
@@ -90,7 +84,6 @@ var LogbookWhere = struct {
 	Description whereHelpernull_String
 }{
 	ID:          whereHelperint64{field: "\"logbook\".\"id\""},
-	UID:         whereHelperstring{field: "\"logbook\".\"uid\""},
 	CreatedAt:   whereHelpertime_Time{field: "\"logbook\".\"created_at\""},
 	ModifiedAt:  whereHelpernull_Time{field: "\"logbook\".\"modified_at\""},
 	UserID:      whereHelperint64{field: "\"logbook\".\"user_id\""},
@@ -174,8 +167,8 @@ func (r *logbookR) GetQsos() QsoSlice {
 type logbookL struct{}
 
 var (
-	logbookAllColumns            = []string{"id", "uid", "created_at", "modified_at", "user_id", "name", "callsign", "description"}
-	logbookColumnsWithoutDefault = []string{"uid", "user_id", "name", "callsign"}
+	logbookAllColumns            = []string{"id", "created_at", "modified_at", "user_id", "name", "callsign", "description"}
+	logbookColumnsWithoutDefault = []string{"user_id", "name", "callsign"}
 	logbookColumnsWithDefault    = []string{"id", "created_at", "modified_at", "description"}
 	logbookPrimaryKeyColumns     = []string{"id"}
 	logbookGeneratedColumns      = []string{}

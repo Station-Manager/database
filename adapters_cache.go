@@ -16,6 +16,7 @@ func (s *Service) initAdapters() {
 		// Shared converters
 		aToModel.RegisterConverter("Freq", common.TypeToModelFreqConverter)
 		aToModel.RegisterConverter("Country", common.TypeToModelStringConverter)
+		aToModel.RegisterConverter("Description", common.TypeToModelStringConverter)
 		if s.DatabaseConfig.Driver == SqliteDriver {
 			aToModel.RegisterConverter("QsoDate", sqlite.TypeToModelDateConverter)
 			aToModel.RegisterConverter("TimeOn", sqlite.TypeToModelTimeConverter)
@@ -31,6 +32,7 @@ func (s *Service) initAdapters() {
 		aFromModel := adapters.New()
 		aFromModel.RegisterConverter("Freq", common.ModelToTypeFreqConverter)
 		aFromModel.RegisterConverter("Country", common.ModelToTypeStringConverter)
+		aFromModel.RegisterConverter("Description", common.ModelToTypeStringConverter)
 		if s.DatabaseConfig.Driver == SqliteDriver {
 			aFromModel.RegisterConverter("QsoDate", sqlite.ModelToTypeDateConverter)
 			aFromModel.RegisterConverter("TimeOn", sqlite.ModelToTypeTimeConverter)
