@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS users
     issuer               TEXT,
     subject              TEXT,
     email                VARCHAR(256),
+    email_confirmed      BOOLEAN               DEFAULT FALSE,
 
     -- One-time bootstrap secret (all nullable; cleared after first use)
     bootstrap_hash       TEXT,

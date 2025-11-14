@@ -3,11 +3,11 @@ module github.com/Station-Manager/database
 go 1.25
 
 require (
-	github.com/Station-Manager/adapters v0.0.7
+	github.com/Station-Manager/adapters v0.0.8
 	github.com/Station-Manager/config v0.0.7
 	github.com/Station-Manager/errors v0.0.4
 	github.com/Station-Manager/logging v0.0.4
-	github.com/Station-Manager/types v0.0.12
+	github.com/Station-Manager/types v0.0.14
 	github.com/Station-Manager/utils v0.0.2
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
@@ -45,7 +45,7 @@ require (
 	github.com/spf13/cast v1.10.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.44.0 // indirect
-	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
+	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect

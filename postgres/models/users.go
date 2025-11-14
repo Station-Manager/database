@@ -32,6 +32,7 @@ type User struct {
 	Issuer             null.String `boil:"issuer" json:"issuer,omitempty" toml:"issuer" yaml:"issuer,omitempty"`
 	Subject            null.String `boil:"subject" json:"subject,omitempty" toml:"subject" yaml:"subject,omitempty"`
 	Email              null.String `boil:"email" json:"email,omitempty" toml:"email" yaml:"email,omitempty"`
+	EmailConfirmed     null.Bool   `boil:"email_confirmed" json:"email_confirmed,omitempty" toml:"email_confirmed" yaml:"email_confirmed,omitempty"`
 	BootstrapHash      null.String `boil:"bootstrap_hash" json:"bootstrap_hash,omitempty" toml:"bootstrap_hash" yaml:"bootstrap_hash,omitempty"`
 	BootstrapExpiresAt null.Time   `boil:"bootstrap_expires_at" json:"bootstrap_expires_at,omitempty" toml:"bootstrap_expires_at" yaml:"bootstrap_expires_at,omitempty"`
 	BootstrapUsedAt    null.Time   `boil:"bootstrap_used_at" json:"bootstrap_used_at,omitempty" toml:"bootstrap_used_at" yaml:"bootstrap_used_at,omitempty"`
@@ -49,6 +50,7 @@ var UserColumns = struct {
 	Issuer             string
 	Subject            string
 	Email              string
+	EmailConfirmed     string
 	BootstrapHash      string
 	BootstrapExpiresAt string
 	BootstrapUsedAt    string
@@ -61,6 +63,7 @@ var UserColumns = struct {
 	Issuer:             "issuer",
 	Subject:            "subject",
 	Email:              "email",
+	EmailConfirmed:     "email_confirmed",
 	BootstrapHash:      "bootstrap_hash",
 	BootstrapExpiresAt: "bootstrap_expires_at",
 	BootstrapUsedAt:    "bootstrap_used_at",
@@ -75,6 +78,7 @@ var UserTableColumns = struct {
 	Issuer             string
 	Subject            string
 	Email              string
+	EmailConfirmed     string
 	BootstrapHash      string
 	BootstrapExpiresAt string
 	BootstrapUsedAt    string
@@ -87,12 +91,37 @@ var UserTableColumns = struct {
 	Issuer:             "users.issuer",
 	Subject:            "users.subject",
 	Email:              "users.email",
+	EmailConfirmed:     "users.email_confirmed",
 	BootstrapHash:      "users.bootstrap_hash",
 	BootstrapExpiresAt: "users.bootstrap_expires_at",
 	BootstrapUsedAt:    "users.bootstrap_used_at",
 }
 
 // Generated where
+
+type whereHelpernull_Bool struct{ field string }
+
+func (w whereHelpernull_Bool) EQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Bool) NEQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Bool) LT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Bool) LTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Bool) GT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Bool) GTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
+func (w whereHelpernull_Bool) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var UserWhere = struct {
 	ID                 whereHelperint64
@@ -103,6 +132,7 @@ var UserWhere = struct {
 	Issuer             whereHelpernull_String
 	Subject            whereHelpernull_String
 	Email              whereHelpernull_String
+	EmailConfirmed     whereHelpernull_Bool
 	BootstrapHash      whereHelpernull_String
 	BootstrapExpiresAt whereHelpernull_Time
 	BootstrapUsedAt    whereHelpernull_Time
@@ -115,6 +145,7 @@ var UserWhere = struct {
 	Issuer:             whereHelpernull_String{field: "\"users\".\"issuer\""},
 	Subject:            whereHelpernull_String{field: "\"users\".\"subject\""},
 	Email:              whereHelpernull_String{field: "\"users\".\"email\""},
+	EmailConfirmed:     whereHelpernull_Bool{field: "\"users\".\"email_confirmed\""},
 	BootstrapHash:      whereHelpernull_String{field: "\"users\".\"bootstrap_hash\""},
 	BootstrapExpiresAt: whereHelpernull_Time{field: "\"users\".\"bootstrap_expires_at\""},
 	BootstrapUsedAt:    whereHelpernull_Time{field: "\"users\".\"bootstrap_used_at\""},
@@ -157,9 +188,9 @@ func (r *userR) GetLogbooks() LogbookSlice {
 type userL struct{}
 
 var (
-	userAllColumns            = []string{"id", "created_at", "modified_at", "username", "pass_hash", "issuer", "subject", "email", "bootstrap_hash", "bootstrap_expires_at", "bootstrap_used_at"}
+	userAllColumns            = []string{"id", "created_at", "modified_at", "username", "pass_hash", "issuer", "subject", "email", "email_confirmed", "bootstrap_hash", "bootstrap_expires_at", "bootstrap_used_at"}
 	userColumnsWithoutDefault = []string{"username"}
-	userColumnsWithDefault    = []string{"id", "created_at", "modified_at", "pass_hash", "issuer", "subject", "email", "bootstrap_hash", "bootstrap_expires_at", "bootstrap_used_at"}
+	userColumnsWithDefault    = []string{"id", "created_at", "modified_at", "pass_hash", "issuer", "subject", "email", "email_confirmed", "bootstrap_hash", "bootstrap_expires_at", "bootstrap_used_at"}
 	userPrimaryKeyColumns     = []string{"id"}
 	userGeneratedColumns      = []string{}
 )

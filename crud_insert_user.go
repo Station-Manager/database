@@ -44,6 +44,7 @@ func (s *Service) InsertUserContext(ctx context.Context, user types.User) (types
 	adapter.RegisterConverter("Issuer", common.TypeToModelStringConverter)
 	adapter.RegisterConverter("Subject", common.TypeToModelStringConverter)
 	adapter.RegisterConverter("Email", common.TypeToModelStringConverter)
+	adapter.RegisterConverter("EmailConfirmed", common.TypeToModelBoolConverter)
 	adapter.RegisterConverter("BootstrapHash", common.TypeToModelStringConverter)
 	adapter.RegisterConverter("BootstrapExpiresAt", common.TypeToModelTimeConverter)
 
