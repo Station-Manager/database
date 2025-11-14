@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS api_keys
     id           BIGSERIAL PRIMARY KEY,
     logbook_id   BIGINT       NOT NULL,
 
-    key_name     VARCHAR(255) NOT NULL,
+    key_name     VARCHAR(255) NOT NULL, -- The name of the logbook associated with this key
     key_hash     VARCHAR(128) NOT NULL,
     key_prefix   VARCHAR(16)  NOT NULL,
 

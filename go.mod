@@ -7,7 +7,7 @@ require (
 	github.com/Station-Manager/config v0.0.7
 	github.com/Station-Manager/errors v0.0.4
 	github.com/Station-Manager/logging v0.0.4
-	github.com/Station-Manager/types v0.0.14
+	github.com/Station-Manager/types v0.0.15
 	github.com/Station-Manager/utils v0.0.2
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
