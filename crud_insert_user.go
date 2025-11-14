@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"github.com/Station-Manager/adapters"
+	"github.com/Station-Manager/adapters/converters/common"
 	"github.com/Station-Manager/database/postgres/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
@@ -38,9 +39,16 @@ func (s *Service) InsertUserContext(ctx context.Context, user types.User) (types
 		defer cancel()
 	}
 
-	var model models.User
 	adapter := adapters.New()
-	err := adapters.Copy[models.User](adapter, &model, &user)
+	adapter.RegisterConverter("PassHash", common.TypeToModelStringConverter)
+	adapter.RegisterConverter("Issuer", common.TypeToModelStringConverter)
+	adapter.RegisterConverter("Subject", common.TypeToModelStringConverter)
+	adapter.RegisterConverter("Email", common.TypeToModelStringConverter)
+	adapter.RegisterConverter("BootstrapHash", common.TypeToModelStringConverter)
+	adapter.RegisterConverter("BootstrapExpiresAt", common.TypeToModelTimeConverter)
+
+	var model models.User
+	err := adapter.Into(&model, &user)
 	if err != nil {
 		return user, errors.New(op).Err(err)
 	}
