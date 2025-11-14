@@ -27,7 +27,7 @@ type User struct {
 	ID                 int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
 	CreatedAt          time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 	ModifiedAt         null.Time   `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
-	Username           string      `boil:"username" json:"username" toml:"username" yaml:"username"`
+	Callsign           string      `boil:"callsign" json:"callsign" toml:"callsign" yaml:"callsign"`
 	PassHash           null.String `boil:"pass_hash" json:"pass_hash,omitempty" toml:"pass_hash" yaml:"pass_hash,omitempty"`
 	Issuer             null.String `boil:"issuer" json:"issuer,omitempty" toml:"issuer" yaml:"issuer,omitempty"`
 	Subject            null.String `boil:"subject" json:"subject,omitempty" toml:"subject" yaml:"subject,omitempty"`
@@ -45,7 +45,7 @@ var UserColumns = struct {
 	ID                 string
 	CreatedAt          string
 	ModifiedAt         string
-	Username           string
+	Callsign           string
 	PassHash           string
 	Issuer             string
 	Subject            string
@@ -58,7 +58,7 @@ var UserColumns = struct {
 	ID:                 "id",
 	CreatedAt:          "created_at",
 	ModifiedAt:         "modified_at",
-	Username:           "username",
+	Callsign:           "callsign",
 	PassHash:           "pass_hash",
 	Issuer:             "issuer",
 	Subject:            "subject",
@@ -73,7 +73,7 @@ var UserTableColumns = struct {
 	ID                 string
 	CreatedAt          string
 	ModifiedAt         string
-	Username           string
+	Callsign           string
 	PassHash           string
 	Issuer             string
 	Subject            string
@@ -86,7 +86,7 @@ var UserTableColumns = struct {
 	ID:                 "users.id",
 	CreatedAt:          "users.created_at",
 	ModifiedAt:         "users.modified_at",
-	Username:           "users.username",
+	Callsign:           "users.callsign",
 	PassHash:           "users.pass_hash",
 	Issuer:             "users.issuer",
 	Subject:            "users.subject",
@@ -127,7 +127,7 @@ var UserWhere = struct {
 	ID                 whereHelperint64
 	CreatedAt          whereHelpertime_Time
 	ModifiedAt         whereHelpernull_Time
-	Username           whereHelperstring
+	Callsign           whereHelperstring
 	PassHash           whereHelpernull_String
 	Issuer             whereHelpernull_String
 	Subject            whereHelpernull_String
@@ -140,7 +140,7 @@ var UserWhere = struct {
 	ID:                 whereHelperint64{field: "\"users\".\"id\""},
 	CreatedAt:          whereHelpertime_Time{field: "\"users\".\"created_at\""},
 	ModifiedAt:         whereHelpernull_Time{field: "\"users\".\"modified_at\""},
-	Username:           whereHelperstring{field: "\"users\".\"username\""},
+	Callsign:           whereHelperstring{field: "\"users\".\"callsign\""},
 	PassHash:           whereHelpernull_String{field: "\"users\".\"pass_hash\""},
 	Issuer:             whereHelpernull_String{field: "\"users\".\"issuer\""},
 	Subject:            whereHelpernull_String{field: "\"users\".\"subject\""},
@@ -188,8 +188,8 @@ func (r *userR) GetLogbooks() LogbookSlice {
 type userL struct{}
 
 var (
-	userAllColumns            = []string{"id", "created_at", "modified_at", "username", "pass_hash", "issuer", "subject", "email", "email_confirmed", "bootstrap_hash", "bootstrap_expires_at", "bootstrap_used_at"}
-	userColumnsWithoutDefault = []string{"username"}
+	userAllColumns            = []string{"id", "created_at", "modified_at", "callsign", "pass_hash", "issuer", "subject", "email", "email_confirmed", "bootstrap_hash", "bootstrap_expires_at", "bootstrap_used_at"}
+	userColumnsWithoutDefault = []string{"callsign"}
 	userColumnsWithDefault    = []string{"id", "created_at", "modified_at", "pass_hash", "issuer", "subject", "email", "email_confirmed", "bootstrap_hash", "bootstrap_expires_at", "bootstrap_used_at"}
 	userPrimaryKeyColumns     = []string{"id"}
 	userGeneratedColumns      = []string{}

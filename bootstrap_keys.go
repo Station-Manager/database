@@ -44,7 +44,7 @@ func (s *Service) StoreBootstrap(userID int64, hash string, expires time.Time) e
 	defer cancel()
 
 	model, err := models.FindUser(ctx, h, userID)
-	if err != nil && stderr.Is(err, sql.ErrNoRows) {
+	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
 		return errors.New(op).Err(err)
 	}
 

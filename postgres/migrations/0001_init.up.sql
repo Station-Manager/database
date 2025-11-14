@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS users
     created_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     modified_at          TIMESTAMPTZ,
 
-    username             VARCHAR(256) NOT NULL UNIQUE,
+    callsign             VARCHAR(32) NOT NULL UNIQUE,
     pass_hash            VARCHAR(255),
 
     -- Optional external identity (all nullable)
