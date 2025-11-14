@@ -134,23 +134,50 @@ func (s *TestSuitePG) SetupSuite() {
 		s.T().Skip("Probe SELECT 1 failed: " + probeErr.Error())
 	}
 
-	// Create a test logbook for FK usage. Use a unique name to avoid conflicts.
+	// Create a test user and logbook for FK usage. Use stable values to keep tests idempotent.
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
+
+	// Ensure a test user exists
+	var userID int64
+	username := "it_test_user"
+	// Insert-or-get pattern for user
+	_, err = s.service.ExecContext(ctx,
+		"INSERT INTO users (username) VALUES ($1) ON CONFLICT (username) DO NOTHING",
+		username,
+	)
+	if err != nil {
+		s.T().Fatal("Postgres user insert failed: " + err.Error())
+	}
+	userRow, err := s.service.QueryContext(ctx, "SELECT id FROM users WHERE username = $1", username)
+	if err != nil {
+		s.T().Fatal("Postgres user select failed: " + err.Error())
+	}
+	defer func(rows *sql.Rows) { _ = rows.Close() }(userRow)
+	if userRow.Next() {
+		require.NoError(s.T(), userRow.Scan(&userID))
+	} else {
+		s.T().Fatal("failed to ensure test user for Postgres integration tests")
+	}
+
+	// Ensure a test logbook exists for this user
 	u := uuid.New()
 	name := "test_logbook_it"
 	callsign := "SMTEST"
 	desc := "integration test logbook"
-	_, err = s.service.ExecContext(ctx, "INSERT INTO logbook (uid, name, callsign, description) VALUES ($1, $2, $3, $4) ON CONFLICT (name) DO NOTHING", u, name, callsign, desc)
+	_, err = s.service.ExecContext(ctx,
+		"INSERT INTO logbook (uid, user_id, name, callsign, description) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id, name) DO NOTHING",
+		u, userID, name, callsign, desc,
+	)
 	if err != nil {
 		// Fail early rather than silently skipping so underlying issue is visible
-		s.T().Fatal("Postgres insert failed: " + err.Error())
+		s.T().Fatal("Postgres logbook insert failed: " + err.Error())
 	}
 
 	// Query its ID
-	rows, err := s.service.QueryContext(ctx, "SELECT id FROM logbook WHERE name = $1", name)
+	rows, err := s.service.QueryContext(ctx, "SELECT id FROM logbook WHERE user_id = $1 AND name = $2", userID, name)
 	if err != nil {
-		s.T().Fatal("Postgres query failed: " + err.Error())
+		s.T().Fatal("Postgres logbook query failed: " + err.Error())
 	}
 	defer func(rows *sql.Rows) { _ = rows.Close() }(rows)
 	if rows.Next() {

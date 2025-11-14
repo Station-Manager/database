@@ -3,7 +3,7 @@ module github.com/Station-Manager/database
 go 1.25
 
 require (
-	github.com/Station-Manager/adapters v0.0.8
+	github.com/Station-Manager/adapters v0.0.9
 	github.com/Station-Manager/config v0.0.7
 	github.com/Station-Manager/errors v0.0.4
 	github.com/Station-Manager/logging v0.0.4

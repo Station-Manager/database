@@ -12,6 +12,7 @@ import (
 	"github.com/Station-Manager/types"
 	_ "github.com/lib/pq"
 	_ "modernc.org/sqlite"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -186,20 +187,33 @@ func (s *Service) Ping() error {
 		return errors.New(op).Msg(errMsgNilService)
 	}
 
+	// Snapshot state under read lock to minimize lock hold time during network call.
 	s.mu.RLock()
-	defer s.mu.RUnlock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
 
-	if s.handle == nil || !s.isOpen.Load() {
+	if h == nil || !isOpen {
 		return errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	ctx, cancel := s.withDefaultTimeout(context.Background())
-	defer cancel()
-	if err := s.handle.PingContext(ctx); err != nil {
-		return errors.New(op).Err(err).Msg(errMsgPingFailed)
+	var lastErr error
+	// Up to 2 attempts for transient failures (e.g., brief network hiccup, SQLITE_BUSY)
+	for attempt := 0; attempt < 2; attempt++ {
+		ctx, cancel := s.withDefaultTimeout(context.Background())
+		err := h.PingContext(ctx)
+		cancel()
+		if err == nil {
+			return nil
+		}
+		lastErr = err
+		if !isTransientPingError(err) {
+			return errors.New(op).Err(err).Msg(errMsgPingFailed)
+		}
+		// Small backoff before retrying transient failure
+		time.Sleep(10 * time.Millisecond)
 	}
-
-	return nil
+	return errors.New(op).Err(lastErr).Msg(errMsgPingFailed)
 }
 
 // Migrate runs the database migrations.
@@ -415,4 +429,22 @@ func (s *Service) LogStats(prefix string) {
 	st := h.Stats()
 	// Structured, non-error diagnostic (not returned to caller)
 	s.Logger.DebugWith().Str("component", "db").Str("metric", "pool").Str("phase", prefix).Int("open", st.OpenConnections).Int("in_use", st.InUse).Int("idle", st.Idle).Int64("wait_count", st.WaitCount).Dur("wait_duration", st.WaitDuration).Int("max_open", st.MaxOpenConnections).Msg("db pool stats")
+}
+
+// isTransientPingError returns true if the error message indicates a transient condition worth a short retry.
+func isTransientPingError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	// Common transient indicators across drivers
+	if strings.Contains(msg, "timeout") ||
+		strings.Contains(msg, "deadline") ||
+		strings.Contains(msg, "busy") ||
+		strings.Contains(msg, "locked") ||
+		strings.Contains(msg, "connection reset") ||
+		strings.Contains(msg, "broken pipe") {
+		return true
+	}
+	return false
 }

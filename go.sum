@@ -4,8 +4,8 @@ github.com/DATA-DOG/go-sqlmock v1.4.1 h1:ThlnYciV1iM/V0OSF/dtkqWb6xo5qITT1TJBG1M
 github.com/DATA-DOG/go-sqlmock v1.4.1/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
-github.com/Station-Manager/adapters v0.0.8 h1:YGAUKmkssZeVwWvR7QgJNrlgc9LTJVzpyJiIBvu+9FY=
-github.com/Station-Manager/adapters v0.0.8/go.mod h1:P32RStoECtzACi6uvUGetwqSmp/kIJQ/Fs6e5WBuO9w=
+github.com/Station-Manager/adapters v0.0.9 h1:etRCu+Ioh+ikG2QXwKWyczbxbE88dJskO8GBHAA6G6c=
+github.com/Station-Manager/adapters v0.0.9/go.mod h1:xDGbUWZe26Stlo6X4rIxM8eQzjaCmWxJFWjsH/pwVmk=
 github.com/Station-Manager/config v0.0.7 h1:OGRlvI4tea4FdPzL9rfjlM73Fxlv+7pys7KkcZY6sT0=
 github.com/Station-Manager/config v0.0.7/go.mod h1:zftXGjmxNlBz5VckmqS17+3N7+n6sbI0YZG7TfvTayw=
 github.com/Station-Manager/errors v0.0.4 h1:O96R3XeyXR920rsr64DF/FwZnKtb+4tLkZ66QY+7FsQ=

@@ -346,6 +346,27 @@ func TestService_Ping(t *testing.T) {
 
 		wg.Wait()
 	})
+
+	t.Run("many concurrent pings succeed", func(t *testing.T) {
+		svc := getServiceWithSqliteConfig(t)
+		require.NoError(t, svc.Initialize())
+		require.NoError(t, svc.Open())
+		defer func() { _ = svc.Close() }()
+
+		var wg sync.WaitGroup
+		const goroutines = 50
+		for i := 0; i < goroutines; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				// Perform multiple sequential pings per goroutine
+				for k := 0; k < 5; k++ {
+					assert.NoError(t, svc.Ping())
+				}
+			}()
+		}
+		wg.Wait()
+	})
 }
 
 // TestService_BeginTxContext tests the BeginTxContext method
