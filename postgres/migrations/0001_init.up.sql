@@ -9,18 +9,13 @@ CREATE TABLE IF NOT EXISTS users
     modified_at          TIMESTAMPTZ,
 
     callsign             VARCHAR(32) NOT NULL UNIQUE,
-    pass_hash            VARCHAR(255),
+    pass_hash            VARCHAR(255), -- Log in password hash
 
     -- Optional external identity (all nullable)
     issuer               TEXT,
     subject              TEXT,
     email                VARCHAR(256),
     email_confirmed      BOOLEAN               DEFAULT FALSE,
-
-    -- One-time bootstrap secret (all nullable; cleared after first use)
-    bootstrap_hash       TEXT,
-    bootstrap_expires_at TIMESTAMPTZ,
-    bootstrap_used_at    TIMESTAMPTZ,
 
     -- External identity must be fully NULL or fully present
     CONSTRAINT users_issuer_subject_pair CHECK (
@@ -29,45 +24,26 @@ CREATE TABLE IF NOT EXISTS users
         ),
 
     -- Uniqueness for external identities (PostgreSQL treats NULLs as distinct)
-    CONSTRAINT users_external_identity_unique UNIQUE (issuer, subject),
-
-    -- Bootstrap hash/expires pair integrity (both NULL or both set)
-    CONSTRAINT users_bootstrap_pair CHECK (
-        (bootstrap_hash IS NULL AND bootstrap_expires_at IS NULL) OR
-        (bootstrap_hash IS NOT NULL AND bootstrap_expires_at IS NOT NULL)
-        ),
-
-    -- If used_at is set, hash and expires must be NULL (wiped after use)
-    CONSTRAINT users_bootstrap_used_wiped CHECK (
-        (bootstrap_used_at IS NULL) OR
-        (bootstrap_used_at IS NOT NULL AND bootstrap_hash IS NULL AND bootstrap_expires_at IS NULL)
-        )
+    CONSTRAINT users_external_identity_unique UNIQUE (issuer, subject)
 );
 
 -- Index for external identity lookups
 CREATE INDEX IF NOT EXISTS idx_users_issuer_subject
     ON users (issuer, subject);
 
--- Active (unused + not expired) bootstrap lookup optimization
-CREATE INDEX IF NOT EXISTS idx_users_bootstrap_active
-    ON users (bootstrap_expires_at)
-    WHERE bootstrap_used_at IS NULL AND bootstrap_hash IS NOT NULL;
 
 -- Logbook references users
 CREATE TABLE IF NOT EXISTS logbook
 (
     id          BIGSERIAL PRIMARY KEY,
---    uid         UUID        NOT NULL,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     modified_at TIMESTAMPTZ,
 
-    user_id     BIGINT      NOT NULL,
-
-    name        VARCHAR(64) NOT NULL,
-    callsign    VARCHAR(32) NOT NULL,
+    user_id     BIGINT      NOT NULL, -- FK to users
+    name        VARCHAR(64) NOT NULL, -- Name of the logbook
+    callsign    VARCHAR(32) NOT NULL, -- Callsign associated with the logbook
     description VARCHAR(255),
 
---    CONSTRAINT logbook_uid_unique UNIQUE (uid),
     CONSTRAINT logbook_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
     CONSTRAINT logbook_user_name_unique UNIQUE (user_id, name)
 );
@@ -78,7 +54,7 @@ CREATE INDEX IF NOT EXISTS idx_logbook_user_id ON logbook (user_id);
 CREATE TABLE IF NOT EXISTS api_keys
 (
     id           BIGSERIAL PRIMARY KEY,
-    logbook_id   BIGINT       NOT NULL,
+    logbook_id   BIGINT       NOT NULL, -- FK to logbook
 
     key_name     VARCHAR(255) NOT NULL, -- The name of the logbook associated with this key
     key_hash     VARCHAR(128) NOT NULL,

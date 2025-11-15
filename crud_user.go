@@ -20,6 +20,7 @@ func (s *Service) InsertUser(user types.User) (types.User, error) {
 	if err := checkService(op, s); err != nil {
 		return user, errors.New(op).Err(err)
 	}
+	//TODO: validate user struct
 	ctx := context.Background()
 	return s.InsertUserContext(ctx, user)
 }
@@ -77,7 +78,7 @@ func (s *Service) FetchUserByCallsign(callsign string) (types.User, error) {
 	}
 
 	if callsign == emptyString {
-		return emptyRetVal, errors.New(op).Msg("Callsign cannot be empty")
+		return emptyRetVal, errors.New(op).Msg("Callsign is empty")
 	}
 
 	var mods []qm.QueryMod
