@@ -71,6 +71,15 @@ func (s *Service) InsertUserContext(ctx context.Context, user types.User) (types
 
 // FetchUserByCallsign returns a user by its callsign or an empty user if no user was found.
 func (s *Service) FetchUserByCallsign(callsign string) (types.User, error) {
+	const op errors.Op = "database.Service.InsertUser"
+	if err := checkService(op, s); err != nil {
+		return types.User{}, errors.New(op).Err(err)
+	}
+	ctx := context.Background()
+	return s.FetchUserByCallsignContext(ctx, callsign)
+}
+
+func (s *Service) FetchUserByCallsignContext(ctx context.Context, callsign string) (types.User, error) {
 	const op errors.Op = "database.Service.FetchUserByCallsign"
 	emptyRetVal := types.User{}
 	if err := checkService(op, s); err != nil {
@@ -81,9 +90,15 @@ func (s *Service) FetchUserByCallsign(callsign string) (types.User, error) {
 		return emptyRetVal, errors.New(op).Msg("Callsign is empty")
 	}
 
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
 	var mods []qm.QueryMod
 	mods = append(mods, models.UserWhere.Callsign.EQ(callsign))
-	model, err := models.Users(mods...).One(context.Background(), s.handle)
+	model, err := models.Users(mods...).One(ctx, s.handle)
 	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
 		return emptyRetVal, errors.New(op).Err(err)
 	}
@@ -133,12 +148,6 @@ func (s *Service) UpdateUserContext(ctx context.Context, user types.User) error 
 		return errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
-		var cancel context.CancelFunc
-		ctx, cancel = s.withDefaultTimeout(ctx)
-		defer cancel()
-	}
-
 	adapter := adapters.New()
 	adapter.RegisterConverter("PassHash", common.TypeToModelStringConverter)
 	adapter.RegisterConverter("Issuer", common.TypeToModelStringConverter)
@@ -152,6 +161,12 @@ func (s *Service) UpdateUserContext(ctx context.Context, user types.User) error 
 	err := adapter.Into(&model, &user)
 	if err != nil {
 		return errors.New(op).Err(err)
+	}
+
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
 	}
 
 	if _, err = model.Update(ctx, h, boil.Infer()); err != nil {
