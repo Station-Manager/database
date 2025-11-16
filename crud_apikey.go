@@ -57,6 +57,47 @@ func (s *Service) InsertAPIKeyContext(ctx context.Context, name, prefix, hash st
 	return nil
 }
 
+// InsertAPIKeyWithTxContext inserts the API key using the provided transaction and context.
+// It mirrors InsertAPIKeyContext but uses the given ContextExecutor instead of the shared handle
+// so callers can coordinate it with other changes in a single atomic transaction.
+func (s *Service) InsertAPIKeyWithTxContext(ctx context.Context, tx boil.ContextExecutor, name, prefix, hash string, logbookID int64) error {
+	const op errors.Op = "database.Service.InsertAPIKeyWithTxContext"
+	if err := checkService(op, s); err != nil {
+		return errors.New(op).Err(err)
+	}
+
+	if name == "" || prefix == "" || hash == "" {
+		return errors.New(op).Msg("Name, prefix, and hash are required")
+	}
+
+	if logbookID < 1 {
+		return errors.New(op).Msg("Logbook ID not set")
+	}
+
+	if tx == nil {
+		return errors.New(op).Msg("transaction is nil")
+	}
+
+	model := models.APIKey{
+		LogbookID: logbookID,
+		KeyName:   name,
+		KeyHash:   hash,
+		KeyPrefix: prefix,
+	}
+
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	if err := model.Insert(ctx, tx, boil.Infer()); err != nil {
+		return errors.New(op).Err(err)
+	}
+
+	return nil
+}
+
 func (s *Service) FetchAPIKeyByPrefix(prefix string) (types.ApiKey, error) {
 	const op errors.Op = "database.Service.FetchAPIKeyByPrefix"
 	ctx := context.Background()

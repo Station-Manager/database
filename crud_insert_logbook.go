@@ -29,6 +29,24 @@ func (s *Service) InsertLogbookContext(ctx context.Context, logbook types.Logboo
 	}
 }
 
+// InsertLogbookWithTxContext performs a logbook insert using the provided transaction and context.
+// This is used by higher-level operations that need to coordinate multiple writes atomically.
+func (s *Service) InsertLogbookWithTxContext(ctx context.Context, tx boil.ContextExecutor, logbook types.Logbook) (types.Logbook, error) {
+	const op errors.Op = "database.Service.InsertLogbookWithTxContext"
+	if err := checkService(op, s); err != nil {
+		return logbook, errors.New(op).Err(err)
+	}
+
+	switch s.DatabaseConfig.Driver {
+	case SqliteDriver:
+		return s.sqliteInsertLogbookWithTxContext(ctx, tx, logbook)
+	case PostgresDriver:
+		return s.postgresInsertLogbookWithTxContext(ctx, tx, logbook)
+	default:
+		return logbook, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+}
+
 func (s *Service) sqliteInsertLogbookContext(ctx context.Context, logbook types.Logbook) (types.Logbook, error) {
 	const op errors.Op = "database.Service.sqliteInsertLogbookContext"
 	if err := checkService(op, s); err != nil {
@@ -64,6 +82,39 @@ func (s *Service) sqliteInsertLogbookContext(ctx context.Context, logbook types.
 	}
 
 	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
+		return logbook, errors.New(op).Err(err)
+	}
+
+	logbook.ID = model.ID
+	return logbook, nil
+}
+
+// sqliteInsertLogbookWithTxContext mirrors sqliteInsertLogbookContext but uses the
+// provided transaction instead of the shared handle. It assumes the caller has already
+// begun the transaction and applied any desired timeouts to ctx.
+func (s *Service) sqliteInsertLogbookWithTxContext(ctx context.Context, tx boil.ContextExecutor, logbook types.Logbook) (types.Logbook, error) {
+	const op errors.Op = "database.Service.sqliteInsertLogbookWithTxContext"
+	if err := checkService(op, s); err != nil {
+		return logbook, errors.New(op).Err(err)
+	}
+
+	if tx == nil {
+		return logbook, errors.New(op).Msg("transaction is nil")
+	}
+
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	s.initAdapters()
+	model, err := s.AdaptTypeToSqliteModelLogbook(logbook)
+	if err != nil {
+		return logbook, errors.New(op).Err(err)
+	}
+
+	if err = model.Insert(ctx, tx, boil.Infer()); err != nil {
 		return logbook, errors.New(op).Err(err)
 	}
 
@@ -143,6 +194,39 @@ func (s *Service) postgresInsertLogbookContext(ctx context.Context, logbook type
 	}
 
 	s.Logger.DebugWith().Str("component", "db").Str("driver", "postgres").Str("op", "insert_logbook").Time("at", time.Now()).Interface("ctx_err", txCtx.Err()).Msg("insert completed")
+
+	logbook.ID = model.ID
+	return logbook, nil
+}
+
+// postgresInsertLogbookWithTxContext mirrors postgresInsertLogbookContext but uses the
+// provided transaction instead of creating a new one. This is intended for higher-level
+// operations that already manage the transaction boundaries.
+func (s *Service) postgresInsertLogbookWithTxContext(ctx context.Context, tx boil.ContextExecutor, logbook types.Logbook) (types.Logbook, error) {
+	const op errors.Op = "database.Service.postgresInsertLogbookWithTxContext"
+	if err := checkService(op, s); err != nil {
+		return logbook, errors.New(op).Err(err)
+	}
+
+	if tx == nil {
+		return logbook, errors.New(op).Msg("transaction is nil")
+	}
+
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	s.initAdapters()
+	model, err := s.AdaptTypeToPostgresModelLogbook(logbook)
+	if err != nil {
+		return logbook, errors.New(op).Err(err)
+	}
+
+	if err = model.Insert(ctx, tx, boil.Infer()); err != nil {
+		return logbook, errors.New(op).Err(err)
+	}
 
 	logbook.ID = model.ID
 	return logbook, nil
