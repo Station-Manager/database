@@ -9,10 +9,12 @@ import (
 	"time"
 )
 
+// InsertLogbook creates and stores a new logbook entry in the database, returning the created logbook or an error.
 func (s *Service) InsertLogbook(logbook types.Logbook) (types.Logbook, error) {
 	return s.InsertLogbookContext(context.Background(), logbook)
 }
 
+// InsertLogbookContext inserts a new logbook into the database within the provided context and returns the created logbook or an error.
 func (s *Service) InsertLogbookContext(ctx context.Context, logbook types.Logbook) (types.Logbook, error) {
 	const op errors.Op = "database.Service.InsertLogbookContext"
 	if err := checkService(op, s); err != nil {
@@ -47,6 +49,9 @@ func (s *Service) InsertLogbookWithTxContext(ctx context.Context, tx boil.Contex
 	}
 }
 
+// sqliteInsertLogbookContext inserts a Logbook record into an SQLite database, ensuring service validity and context deadlines.
+// It adapts the input Logbook to an internal SQLite model, performs the database operation, and returns the updated Logbook.
+// Errors encountered during validation, adaptation, insertion, or service checks are wrapped with operation metadata and returned.
 func (s *Service) sqliteInsertLogbookContext(ctx context.Context, logbook types.Logbook) (types.Logbook, error) {
 	const op errors.Op = "database.Service.sqliteInsertLogbookContext"
 	if err := checkService(op, s); err != nil {
@@ -122,6 +127,9 @@ func (s *Service) sqliteInsertLogbookWithTxContext(ctx context.Context, tx boil.
 	return logbook, nil
 }
 
+// postgresInsertLogbookContext inserts a new logbook record into the database within a transactional context.
+// It ensures appropriate context deadlines, adapts the logbook to the Postgres model, and commits the transaction.
+// Returns the inserted logbook with its assigned ID or an error if the operation fails.
 func (s *Service) postgresInsertLogbookContext(ctx context.Context, logbook types.Logbook) (types.Logbook, error) {
 	const op errors.Op = "database.Service.postgresInsertLogbookContext"
 	if err := checkService(op, s); err != nil {

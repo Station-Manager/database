@@ -11,6 +11,8 @@ import (
 	"github.com/aarondl/sqlboiler/v4/boil"
 )
 
+// InsertAPIKey inserts a new API key into the database with the given name, prefix, hash, and associated logbook ID.
+// Returns an error if the service is uninitialized, not open, or if insertion fails.
 func (s *Service) InsertAPIKey(name, prefix, hash string, logbookID int64) error {
 	const op errors.Op = "database.Service.InsertAPIKey"
 	if err := checkService(op, s); err != nil {
@@ -20,6 +22,8 @@ func (s *Service) InsertAPIKey(name, prefix, hash string, logbookID int64) error
 	return s.InsertAPIKeyContext(ctx, name, prefix, hash, logbookID)
 }
 
+// InsertAPIKeyContext inserts a new API key into the database with the given name, prefix, hash, and associated logbook ID.
+// Returns an error if insertion fails.
 func (s *Service) InsertAPIKeyContext(ctx context.Context, name, prefix, hash string, logbookID int64) error {
 	const op errors.Op = "database.Service.InsertAPIKeyContext"
 	if name == "" || prefix == "" || hash == "" {
@@ -98,12 +102,19 @@ func (s *Service) InsertAPIKeyWithTxContext(ctx context.Context, tx boil.Context
 	return nil
 }
 
+// FetchAPIKeyByPrefix retrieves an API key from the database by matching the given prefix.
+// Returns the corresponding ApiKey and an error if the operation fails.
 func (s *Service) FetchAPIKeyByPrefix(prefix string) (types.ApiKey, error) {
 	const op errors.Op = "database.Service.FetchAPIKeyByPrefix"
+	if err := checkService(op, s); err != nil {
+		return types.ApiKey{}, errors.New(op).Err(err)
+	}
 	ctx := context.Background()
 	return s.FetchAPIKeyByPrefixContext(ctx, prefix)
 }
 
+// FetchAPIKeyByPrefixContext retrieves an API key matching the specified prefix within the provided context.
+// Returns types.ApiKey if found or an error if not found or if an issue occurs during execution.
 func (s *Service) FetchAPIKeyByPrefixContext(ctx context.Context, prefix string) (types.ApiKey, error) {
 	const op errors.Op = "database.Service.FetchAPIKeyByPrefix"
 	emptyRetVal := types.ApiKey{}

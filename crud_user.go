@@ -79,6 +79,9 @@ func (s *Service) FetchUserByCallsign(callsign string) (types.User, error) {
 	return s.FetchUserByCallsignContext(ctx, callsign)
 }
 
+// FetchUserByCallsignContext retrieves a user by their callsign from the database with the provided context.
+// Returns an error if the database service is uninitialized, callsign is empty, or the user is not found.
+// Uses a default timeout if no deadline is set in the given context.
 func (s *Service) FetchUserByCallsignContext(ctx context.Context, callsign string) (types.User, error) {
 	const op errors.Op = "database.Service.FetchUserByCallsign"
 	emptyRetVal := types.User{}
@@ -125,6 +128,7 @@ func (s *Service) FetchUserByCallsignContext(ctx context.Context, callsign strin
 	return user, nil
 }
 
+// UpdateUser updates the provided user in the database using the given service instance and context.
 func (s *Service) UpdateUser(user types.User) error {
 	const op errors.Op = "database.Service.UpdateUser"
 	if err := checkService(op, s); err != nil {
@@ -134,6 +138,9 @@ func (s *Service) UpdateUser(user types.User) error {
 	return s.UpdateUserContext(ctx, user)
 }
 
+// UpdateUserContext updates the database with the provided user data using a database handle and adapter for conversions.
+// It ensures the database service is open, applies model converters, and validates context timeout before updating.
+// Returns an error if the service is not operational, converters fail, or the update operation encounters an issue.
 func (s *Service) UpdateUserContext(ctx context.Context, user types.User) error {
 	const op errors.Op = "database.Service.UpdateUserContext"
 	if err := checkService(op, s); err != nil {
