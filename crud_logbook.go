@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	stderr "errors"
+	pgmodels "github.com/Station-Manager/database/postgres/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/sqlboiler/v4/boil"
@@ -238,4 +240,75 @@ func (s *Service) postgresInsertLogbookWithTxContext(ctx context.Context, tx boi
 
 	logbook.ID = model.ID
 	return logbook, nil
+}
+
+// FetchLogbookByID retrieves a logbook by its ID from the database and returns it along with possible errors.
+func (s *Service) FetchLogbookByID(id int64) (types.Logbook, error) {
+	const op errors.Op = "database.Service.FetchLogbookByID"
+	if err := checkService(op, s); err != nil {
+		return types.Logbook{}, errors.New(op).Err(err)
+	}
+	ctx := context.Background()
+	return s.FetchLogbookByIDContext(ctx, id)
+}
+
+// FetchLogbookByIDContext retrieves a logbook by its ID within the provided context from the configured database.
+func (s *Service) FetchLogbookByIDContext(ctx context.Context, id int64) (types.Logbook, error) {
+	const op errors.Op = "database.Service.FetchLogbookByIDContext"
+	emptyRetVal := types.Logbook{}
+	if err := checkService(op, s); err != nil {
+		return types.Logbook{}, errors.New(op).Err(err)
+	}
+
+	switch s.DatabaseConfig.Driver {
+	case SqliteDriver:
+		//		return s.sqliteInsertLogbookContext(ctx, logbook)
+		panic("implement me")
+	case PostgresDriver:
+		return s.postgresFetchLogbookByIDContext(ctx, id)
+	default:
+		return emptyRetVal, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+}
+
+// postgresFetchLogbookByIDContext fetches a logbook by its ID using PostgreSQL within the provided context.
+// It returns the logbook or an error if the database service is unavailable, uninitialized, or not open.
+func (s *Service) postgresFetchLogbookByIDContext(ctx context.Context, id int64) (types.Logbook, error) {
+	const op errors.Op = "database.Service.postgresFetchLogbookByIDContext"
+	emptyRetVal := types.Logbook{}
+	if err := checkService(op, s); err != nil {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	s.mu.RLock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
+
+	if h == nil || !isOpen {
+		return emptyRetVal, errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	model, err := pgmodels.FindLogbook(ctx, h, id)
+	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	if model == nil || err != nil {
+		return emptyRetVal, errors.New(op).Err(err).Errorf("logbook not found: %d", id)
+	}
+
+	s.initAdapters()
+	logbokType, err := s.AdaptPostgresModelToTypeLogbook(model)
+	if err != nil {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	return logbokType, nil
 }
