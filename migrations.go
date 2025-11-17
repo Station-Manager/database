@@ -68,7 +68,7 @@ func (s *Service) doMigrations() error {
 		return nil
 	}
 
-	// Fallback: apply initial schema directly if core tables are missing.
+	// Fallback: apply the initial schema directly if core tables are missing.
 	if s.DatabaseConfig.Driver == PostgresDriver {
 		if s.Logger != nil {
 			s.Logger.WarnWith().Strs("missing", missing).Msg("applying initial schema via fallback")
