@@ -13,6 +13,10 @@ import (
 
 // InsertLogbook creates and stores a new logbook entry in the database, returning the created logbook or an error.
 func (s *Service) InsertLogbook(logbook types.Logbook) (types.Logbook, error) {
+	const op errors.Op = "database.Service.InsertLogbook"
+	if s == nil {
+		return logbook, errors.New(op).Msg(errMsgNilService)
+	}
 	return s.InsertLogbookContext(context.Background(), logbook)
 }
 
