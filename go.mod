@@ -3,11 +3,11 @@ module github.com/Station-Manager/database
 go 1.25
 
 require (
-	github.com/Station-Manager/adapters v0.0.9
+	github.com/Station-Manager/adapters v0.0.10
 	github.com/Station-Manager/config v0.0.8
 	github.com/Station-Manager/errors v0.0.4
-	github.com/Station-Manager/logging v0.0.5
-	github.com/Station-Manager/types v0.0.19
+	github.com/Station-Manager/logging v0.0.7
+	github.com/Station-Manager/types v0.0.20
 	github.com/Station-Manager/utils v0.0.2
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
@@ -18,7 +18,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.11.1
-	modernc.org/sqlite v1.40.0
+	modernc.org/sqlite v1.40.1
 )
 
 require (
