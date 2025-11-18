@@ -97,7 +97,7 @@ func (s *Service) postgresInsertQsoContext(ctx context.Context, qso types.Qso) (
 		return qso, errors.New(op).Err(err)
 	}
 
-	if err := model.Insert(ctx, h, boil.Infer()); err != nil {
+	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
 	qso.ID = model.ID
