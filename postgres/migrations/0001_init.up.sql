@@ -1,7 +1,23 @@
+-- sql
 -- 0001 up: Initialization schema for Station Manager (PostgreSQL)
--- Order: users -> logbook -> api_keys -> qso -> views
 
--- Users must be created first (referenced by logbook)
+-- Ensure required extensions
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+-- Helper function must be IMMUTABLE for use in index/exclusion constraint
+CREATE OR REPLACE FUNCTION qso_time_range(qso_date date, time_on time, time_off time)
+    RETURNS tstzrange
+    LANGUAGE sql
+    IMMUTABLE
+AS $$
+SELECT tstzrange(
+               (qso_date::timestamp + time_on),
+               (qso_date::timestamp + time_off),
+               '[)'
+       );
+$$;
+
+-- Users
 CREATE TABLE IF NOT EXISTS users
 (
     id                   BIGSERIAL PRIMARY KEY,
@@ -9,39 +25,34 @@ CREATE TABLE IF NOT EXISTS users
     modified_at          TIMESTAMPTZ,
 
     callsign             VARCHAR(32) NOT NULL UNIQUE,
-    pass_hash            VARCHAR(255), -- Log in password hash
+    pass_hash            VARCHAR(255),
 
-    -- Optional external identity (all nullable)
     issuer               TEXT,
     subject              TEXT,
     email                VARCHAR(256),
     email_confirmed      BOOLEAN               DEFAULT FALSE,
 
-    -- External identity must be fully NULL or fully present
     CONSTRAINT users_issuer_subject_pair CHECK (
         (issuer IS NULL AND subject IS NULL) OR
         (issuer IS NOT NULL AND subject IS NOT NULL)
         ),
 
-    -- Uniqueness for external identities (PostgreSQL treats NULLs as distinct)
     CONSTRAINT users_external_identity_unique UNIQUE (issuer, subject)
 );
 
--- Index for external identity lookups
 CREATE INDEX IF NOT EXISTS idx_users_issuer_subject
     ON users (issuer, subject);
 
-
--- Logbook references users
+-- Logbook
 CREATE TABLE IF NOT EXISTS logbook
 (
     id          BIGSERIAL PRIMARY KEY,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     modified_at TIMESTAMPTZ,
 
-    user_id     BIGINT      NOT NULL, -- FK to users
-    name        VARCHAR(64) NOT NULL, -- Name of the logbook
-    callsign    VARCHAR(32) NOT NULL, -- Callsign associated with the logbook
+    user_id     BIGINT      NOT NULL,
+    name        VARCHAR(64) NOT NULL,
+    callsign    VARCHAR(32) NOT NULL,
     description VARCHAR(255),
 
     CONSTRAINT logbook_user_fk FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
@@ -50,13 +61,13 @@ CREATE TABLE IF NOT EXISTS logbook
 
 CREATE INDEX IF NOT EXISTS idx_logbook_user_id ON logbook (user_id);
 
--- API keys reference logbook
+-- API keys
 CREATE TABLE IF NOT EXISTS api_keys
 (
     id           BIGSERIAL PRIMARY KEY,
-    logbook_id   BIGINT       NOT NULL, -- FK to logbook
+    logbook_id   BIGINT       NOT NULL,
 
-    key_name     VARCHAR(255) NOT NULL, -- The name of the logbook associated with this key
+    key_name     VARCHAR(255) NOT NULL,
     key_hash     VARCHAR(128) NOT NULL,
     key_prefix   VARCHAR(16)  NOT NULL,
 
@@ -75,24 +86,25 @@ CREATE TABLE IF NOT EXISTS api_keys
     CONSTRAINT api_keys_revoked_before_or_at_expires
         CHECK (revoked_at IS NULL OR expires_at IS NULL OR revoked_at <= expires_at),
 
-    -- key names are unique within a logbook (not globally)
     CONSTRAINT api_keys_name_per_logbook UNIQUE (logbook_id, key_name),
 
-    -- explicit FK for clarity
     CONSTRAINT api_keys_logbook_fk FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE CASCADE
 );
 
--- Helpful indexes for API key lookups and status
-CREATE INDEX IF NOT EXISTS idx_api_keys_logbook_prefix ON api_keys (logbook_id, key_prefix);
-CREATE INDEX IF NOT EXISTS idx_api_keys_active ON api_keys (revoked_at) WHERE revoked_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_api_keys_expires_at ON api_keys (expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_api_keys_logbook_prefix
+    ON api_keys (logbook_id, key_prefix);
 
--- Enforce only one active (non-revoked) key per logbook
+CREATE INDEX IF NOT EXISTS idx_api_keys_active
+    ON api_keys (revoked_at) WHERE revoked_at IS NULL;
+
+CREATE INDEX IF NOT EXISTS idx_api_keys_expires_at
+    ON api_keys (expires_at) WHERE expires_at IS NOT NULL;
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_api_keys_one_active_per_logbook
     ON api_keys (logbook_id)
     WHERE revoked_at IS NULL;
 
--- QSO references logbook
+-- QSO
 CREATE TABLE IF NOT EXISTS qso
 (
     id              BIGSERIAL PRIMARY KEY,
@@ -113,14 +125,33 @@ CREATE TABLE IF NOT EXISTS qso
 
     logbook_id      BIGINT      NOT NULL,
 
-    -- Ensure additional_data does not duplicate main columns
     CONSTRAINT qso_additional_no_overlap CHECK (
-        NOT (additional_data ?| array [
+        NOT (additional_data ?| ARRAY[
             'call','band','mode','freq','qso_date',
             'time_on','time_off','rst_sent','rst_rcvd','country'
             ])
         ),
-    CONSTRAINT qso_logbook_fk FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE CASCADE
+
+    CONSTRAINT qso_logbook_fk FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE CASCADE,
+
+    -- No fully identical QSO records in the same logbook on same date and times
+    CONSTRAINT qso_unique_time_per_logbook_and_date
+        UNIQUE (logbook_id, qso_date, time_on, time_off),
+
+    -- No overlapping intervals for same QSO key on same date and logbook
+    CONSTRAINT qso_no_overlap_per_key_and_date
+        EXCLUDE USING gist (
+        logbook_id WITH =,
+        qso_date   WITH =,
+        call       WITH =,
+        band       WITH =,
+        mode       WITH =,
+        freq       WITH =,
+        rst_sent   WITH =,
+        rst_rcvd   WITH =,
+        country    WITH =,
+        qso_time_range(qso_date, time_on, time_off) WITH &&
+        )
 );
 
 CREATE INDEX IF NOT EXISTS idx_qso_call ON qso (call);
@@ -129,7 +160,6 @@ CREATE INDEX IF NOT EXISTS idx_qso_country ON qso (country);
 CREATE INDEX IF NOT EXISTS idx_qso_date_time ON qso (qso_date, time_on);
 CREATE INDEX IF NOT EXISTS idx_qso_additional_gin ON qso USING gin (additional_data);
 
--- Status view for API keys (includes per-logbook context)
 CREATE OR REPLACE VIEW api_keys_status AS
 SELECT id,
        logbook_id,
