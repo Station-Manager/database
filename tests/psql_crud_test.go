@@ -13,7 +13,6 @@ import (
 	"github.com/Station-Manager/database"
 	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -138,18 +137,18 @@ func (s *TestSuitePG) SetupSuite() {
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
-	// Ensure a test user exists
+	// Ensure a test user exists (users table uses callsign as unique identifier)
 	var userID int64
-	username := "it_test_user"
-	// Insert-or-get pattern for user
+	callsign := "ITTEST"
+	// Insert-or-get pattern for user based on callsign
 	_, err = s.service.ExecContext(ctx,
-		"INSERT INTO users (username) VALUES ($1) ON CONFLICT (username) DO NOTHING",
-		username,
+		"INSERT INTO users (callsign) VALUES ($1) ON CONFLICT (callsign) DO NOTHING",
+		callsign,
 	)
 	if err != nil {
 		s.T().Fatal("Postgres user insert failed: " + err.Error())
 	}
-	userRow, err := s.service.QueryContext(ctx, "SELECT id FROM users WHERE username = $1", username)
+	userRow, err := s.service.QueryContext(ctx, "SELECT id FROM users WHERE callsign = $1", callsign)
 	if err != nil {
 		s.T().Fatal("Postgres user select failed: " + err.Error())
 	}
@@ -161,13 +160,12 @@ func (s *TestSuitePG) SetupSuite() {
 	}
 
 	// Ensure a test logbook exists for this user
-	u := uuid.New()
 	name := "test_logbook_it"
-	callsign := "SMTEST"
+	callsignLog := "SMTEST"
 	desc := "integration test logbook"
 	_, err = s.service.ExecContext(ctx,
-		"INSERT INTO logbook (uid, user_id, name, callsign, description) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (user_id, name) DO NOTHING",
-		u, userID, name, callsign, desc,
+		"INSERT INTO logbook (user_id, name, callsign, description) VALUES ($1, $2, $3, $4) ON CONFLICT (user_id, name) DO NOTHING",
+		userID, name, callsignLog, desc,
 	)
 	if err != nil {
 		// Fail early rather than silently skipping so underlying issue is visible
