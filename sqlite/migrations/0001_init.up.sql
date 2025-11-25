@@ -16,19 +16,17 @@ CREATE TABLE IF NOT EXISTS logbook
     callsign    TEXT     NOT NULL CHECK (length(callsign) <= 32),
 
     -- Client-side storage for server linkage and credentials
-    uid         TEXT,  -- server-issued opaque UID; may be NULL until registered
     api_key     TEXT,  -- full API key (prefix.secretHex); optional; stored client-side only
 
     description TEXT
 );
 
--- Ensure uid and api_key are unique when present
-CREATE UNIQUE INDEX IF NOT EXISTS uq_logbook_uid ON logbook(uid) WHERE uid IS NOT NULL;
+-- Ensure api_key is unique when present
 CREATE UNIQUE INDEX IF NOT EXISTS uq_logbook_api_key ON logbook(api_key) WHERE api_key IS NOT NULL;
 
 -- Seed a default logbook so newly initialized databases have a usable logbook.
 -- Use INSERT OR IGNORE so migrations are idempotent.
--- INSERT OR IGNORE INTO logbook (name, callsign, description) VALUES ('default', 'NOCALL', 'Default logbook created by migrations');
+INSERT OR IGNORE INTO logbook (name, callsign, description) VALUES ('Default', '7Q5MLV', 'Default logbook created by migrations');
 
 CREATE TABLE IF NOT EXISTS qso
 (
