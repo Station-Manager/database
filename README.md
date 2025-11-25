@@ -1,4 +1,4 @@
-# Station Manager: database module
+# Station Manager: database package
 
 ## Regenerating the database models
 
