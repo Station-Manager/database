@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	stderr "errors"
 	pgmodels "github.com/Station-Manager/database/postgres/models"
+	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/sqlboiler/v4/boil"
@@ -266,8 +267,7 @@ func (s *Service) FetchLogbookByIDContext(ctx context.Context, id int64) (types.
 
 	switch s.DatabaseConfig.Driver {
 	case SqliteDriver:
-		//		return s.sqliteInsertLogbookContext(ctx, logbook)
-		panic("implement me")
+		return s.sqliteFetchLogbookByIDContext(ctx, id)
 	case PostgresDriver:
 		return s.postgresFetchLogbookByIDContext(ctx, id)
 	default:
@@ -310,6 +310,46 @@ func (s *Service) postgresFetchLogbookByIDContext(ctx context.Context, id int64)
 
 	s.initAdapters()
 	logbokType, err := s.AdaptPostgresModelToTypeLogbook(model)
+	if err != nil {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	return logbokType, nil
+}
+
+func (s *Service) sqliteFetchLogbookByIDContext(ctx context.Context, id int64) (types.Logbook, error) {
+	const op errors.Op = "database.Service.sqliteFetchLogbookByIDContext"
+	emptyRetVal := types.Logbook{}
+	if err := checkService(op, s); err != nil {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	s.mu.RLock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
+
+	if h == nil || !isOpen {
+		return emptyRetVal, errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	model, err := sqmodels.FindLogbook(ctx, h, id)
+	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	if model == nil || err != nil {
+		return emptyRetVal, errors.New(op).Err(err).Errorf("logbook not found: %d", id)
+	}
+
+	s.initAdapters()
+	logbokType, err := s.AdaptSqliteModelToTypeLogbook(model)
 	if err != nil {
 		return emptyRetVal, errors.New(op).Err(err)
 	}
