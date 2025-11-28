@@ -30,6 +30,7 @@ type Logbook struct {
 	DeletedAt   null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
 	Name        string      `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Callsign    string      `boil:"callsign" json:"callsign" toml:"callsign" yaml:"callsign"`
+	APIKey      null.String `boil:"api_key" json:"api_key,omitempty" toml:"api_key" yaml:"api_key,omitempty"`
 	Description null.String `boil:"description" json:"description,omitempty" toml:"description" yaml:"description,omitempty"`
 
 	R *logbookR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,6 +44,7 @@ var LogbookColumns = struct {
 	DeletedAt   string
 	Name        string
 	Callsign    string
+	APIKey      string
 	Description string
 }{
 	ID:          "id",
@@ -51,6 +53,7 @@ var LogbookColumns = struct {
 	DeletedAt:   "deleted_at",
 	Name:        "name",
 	Callsign:    "callsign",
+	APIKey:      "api_key",
 	Description: "description",
 }
 
@@ -61,6 +64,7 @@ var LogbookTableColumns = struct {
 	DeletedAt   string
 	Name        string
 	Callsign    string
+	APIKey      string
 	Description string
 }{
 	ID:          "logbook.id",
@@ -69,147 +73,11 @@ var LogbookTableColumns = struct {
 	DeletedAt:   "logbook.deleted_at",
 	Name:        "logbook.name",
 	Callsign:    "logbook.callsign",
+	APIKey:      "logbook.api_key",
 	Description: "logbook.description",
 }
 
 // Generated where
-
-type whereHelperint64 struct{ field string }
-
-func (w whereHelperint64) EQ(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperint64) NEQ(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperint64) LT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperint64) LTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperint64) GT(x int64) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperint64) GTE(x int64) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperint64) IN(slice []int64) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelperint64) NIN(slice []int64) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-type whereHelpertime_Time struct{ field string }
-
-func (w whereHelpertime_Time) EQ(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.EQ, x)
-}
-func (w whereHelpertime_Time) NEQ(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.NEQ, x)
-}
-func (w whereHelpertime_Time) LT(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpertime_Time) LTE(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpertime_Time) GT(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
-type whereHelpernull_Time struct{ field string }
-
-func (w whereHelpernull_Time) EQ(x null.Time) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Time) NEQ(x null.Time) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Time) LT(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Time) LTE(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Time) GT(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
-func (w whereHelpernull_Time) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Time) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-
-type whereHelperstring struct{ field string }
-
-func (w whereHelperstring) EQ(x string) qm.QueryMod    { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperstring) NEQ(x string) qm.QueryMod   { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperstring) LT(x string) qm.QueryMod    { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperstring) LTE(x string) qm.QueryMod   { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperstring) GT(x string) qm.QueryMod    { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperstring) GTE(x string) qm.QueryMod   { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperstring) LIKE(x string) qm.QueryMod  { return qm.Where(w.field+" LIKE ?", x) }
-func (w whereHelperstring) NLIKE(x string) qm.QueryMod { return qm.Where(w.field+" NOT LIKE ?", x) }
-func (w whereHelperstring) IN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-type whereHelpernull_String struct{ field string }
-
-func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-func (w whereHelpernull_String) LIKE(x null.String) qm.QueryMod {
-	return qm.Where(w.field+" LIKE ?", x)
-}
-func (w whereHelpernull_String) NLIKE(x null.String) qm.QueryMod {
-	return qm.Where(w.field+" NOT LIKE ?", x)
-}
-func (w whereHelpernull_String) IN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelpernull_String) NIN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
 
 var LogbookWhere = struct {
 	ID          whereHelperint64
@@ -218,6 +86,7 @@ var LogbookWhere = struct {
 	DeletedAt   whereHelpernull_Time
 	Name        whereHelperstring
 	Callsign    whereHelperstring
+	APIKey      whereHelpernull_String
 	Description whereHelpernull_String
 }{
 	ID:          whereHelperint64{field: "\"logbook\".\"id\""},
@@ -226,6 +95,7 @@ var LogbookWhere = struct {
 	DeletedAt:   whereHelpernull_Time{field: "\"logbook\".\"deleted_at\""},
 	Name:        whereHelperstring{field: "\"logbook\".\"name\""},
 	Callsign:    whereHelperstring{field: "\"logbook\".\"callsign\""},
+	APIKey:      whereHelpernull_String{field: "\"logbook\".\"api_key\""},
 	Description: whereHelpernull_String{field: "\"logbook\".\"description\""},
 }
 
@@ -266,9 +136,9 @@ func (r *logbookR) GetQsos() QsoSlice {
 type logbookL struct{}
 
 var (
-	logbookAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "name", "callsign", "description"}
+	logbookAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "name", "callsign", "api_key", "description"}
 	logbookColumnsWithoutDefault = []string{"name", "callsign"}
-	logbookColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "description"}
+	logbookColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "api_key", "description"}
 	logbookPrimaryKeyColumns     = []string{"id"}
 	logbookGeneratedColumns      = []string{"id"}
 )
