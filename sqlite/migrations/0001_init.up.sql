@@ -16,17 +16,18 @@ CREATE TABLE IF NOT EXISTS logbook
     callsign    TEXT     NOT NULL CHECK (length(callsign) <= 32),
 
     -- Client-side storage for server linkage and credentials
-    api_key     TEXT,  -- full API key (prefix.secretHex); optional; stored client-side only
+    api_key     TEXT, -- full API key (prefix.secretHex); optional; stored client-side only
 
     description TEXT
 );
 
 -- Ensure api_key is unique when present
-CREATE UNIQUE INDEX IF NOT EXISTS uq_logbook_api_key ON logbook(api_key) WHERE api_key IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_logbook_api_key ON logbook (api_key) WHERE api_key IS NOT NULL;
 
 -- Seed a default logbook so newly initialized databases have a usable logbook.
 -- Use INSERT OR IGNORE so migrations are idempotent.
-INSERT OR IGNORE INTO logbook (name, callsign, description) VALUES ('Default', '7Q5MLV', 'Default logbook created by migrations');
+INSERT OR IGNORE INTO logbook (name, callsign, description)
+VALUES ('Default', '7Q5MLV', 'Default logbook created by migrations');
 
 CREATE TABLE IF NOT EXISTS qso
 (
@@ -104,3 +105,25 @@ CREATE TRIGGER IF NOT EXISTS trg_qso_set_modified_at
 BEGIN
     UPDATE qso SET modified_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
+
+CREATE TABLE IF NOT EXISTS contacted_station
+(
+    id              INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+    created_at      DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+    modified_at     DATETIME,
+    deleted_at      DATETIME,
+    name            TEXT     NOT NULL,
+    callsign        TEXT     NOT NULL UNIQUE CHECK (length(callsign) <= 20),
+    country         TEXT CHECK (length(country) <= 50),
+    time_offset     TEXT     NOT NULL,
+    additional_data JSON     NOT NULL DEFAULT ('{}') CHECK (json_valid(additional_data)),
+
+    CONSTRAINT qso_data_no_duplicates CHECK (
+        json_extract(additional_data, '$.name') IS NULL AND
+        json_extract(additional_data, '$.callsign') IS NULL AND
+        json_extract(additional_data, '$.country') IS NULL AND
+        json_extract(additional_data, '$.time_offset') IS NULL
+        )
+);
+
+CREATE INDEX IF NOT EXISTS idx_contacted_station_callsign ON contacted_station (callsign);

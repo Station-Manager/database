@@ -12,11 +12,14 @@ DROP INDEX IF EXISTS idx_qso_country;
 DROP INDEX IF EXISTS idx_qso_band;
 DROP INDEX IF EXISTS idx_qso_call;
 
--- Drop unique indexes on logbook
+-- Drop indexes created on logbook
 DROP INDEX IF EXISTS uq_logbook_api_key;
-DROP INDEX IF EXISTS uq_logbook_uid;
+
+-- Drop indexes created on contacted_station
+DROP INDEX IF EXISTS idx_contacted_station_callsign;
 
 -- Drop tables
+DROP TABLE IF EXISTS contacted_station;
 DROP TABLE IF EXISTS qso;
 DROP TABLE IF EXISTS logbook;
 
