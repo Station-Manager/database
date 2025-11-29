@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS qso
     modified_at     DATETIME,
     deleted_at      DATETIME,
 
-    call            TEXT     NOT NULL CHECK (length(call) <= 20),
+    call            TEXT     NOT NULL CHECK (length(trim(call)) BETWEEN 1 AND 20),
     band            TEXT     NOT NULL CHECK (length(band) <= 10),
     mode            TEXT     NOT NULL CHECK (length(mode) <= 10),
     /* freq is in kHz, thus app MUST multiply by 1000 for MHz */
