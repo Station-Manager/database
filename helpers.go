@@ -111,3 +111,11 @@ func (s *Service) AdaptTypeToPostgresModelUser(u types.User) (*pgmodels.User, er
 	m, err := adapters.AdaptTo[pgmodels.User](s.adapterToModel, &u)
 	return m, err
 }
+
+func (s *Service) AdaptSqliteModelToTypeContactedStation(m *sqmodels.ContactedStation) (types.ContactedStation, error) {
+	if s == nil || s.adapterFromModel == nil {
+		return types.ContactedStation{}, errors.New("adapt").Msg("service or adapter nil")
+	}
+	out, err := adapters.Make[types.ContactedStation](s.adapterFromModel, m)
+	return out, err
+}

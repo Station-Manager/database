@@ -9,8 +9,7 @@ import (
 
 // InsertQso inserts a QSO using a background context with default timeout semantics.
 func (s *Service) InsertQso(qso types.Qso) (types.Qso, error) {
-	ctx := context.Background()
-	return s.InsertQsoContext(ctx, qso)
+	return s.InsertQsoContext(context.Background(), qso)
 }
 
 // InsertQsoContext inserts a QSO with caller-provided context.
