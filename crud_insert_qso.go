@@ -60,7 +60,7 @@ func (s *Service) sqliteInsertQsoContext(ctx context.Context, qso types.Qso) (ty
 		return qso, errors.New(op).Err(err)
 	}
 
-	if err := model.Insert(ctx, h, boil.Infer()); err != nil {
+	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
 	qso.ID = model.ID
