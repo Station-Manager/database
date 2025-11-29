@@ -29,6 +29,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_logbook_api_key ON logbook (api_key) WHERE 
 INSERT OR IGNORE INTO logbook (name, callsign, description)
 VALUES ('Default', '7Q5MLV', 'Default logbook created by migrations');
 
+CREATE TABLE IF NOT EXISTS session
+(
+    id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    created_at  DATETIME,
+    deleted_at  DATETIME,
+    modified_at DATETIME
+);
+
 CREATE TABLE IF NOT EXISTS qso
 (
     id              INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -65,6 +73,7 @@ CREATE TABLE IF NOT EXISTS qso
     additional_data JSON     NOT NULL DEFAULT ('{}') CHECK (json_valid(additional_data)),
 
     logbook_id      INTEGER  NOT NULL,
+    session_id      INTEGER  NOT NULL,
 
     CONSTRAINT qso_data_no_duplicates CHECK (
         json_extract(additional_data, '$.call') IS NULL AND
@@ -79,7 +88,8 @@ CREATE TABLE IF NOT EXISTS qso
         json_extract(additional_data, '$.country') IS NULL
         ),
     -- Client uses soft deletes; prevent deleting a logbook that still has QSOs
-    CONSTRAINT fk_qso_logbook FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE RESTRICT ON UPDATE NO ACTION
+    CONSTRAINT fk_qso_logbook FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE RESTRICT ON UPDATE NO ACTION,
+    CONSTRAINT fk_qso_session FOREIGN KEY (session_id) REFERENCES session (id) ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 
 CREATE INDEX IF NOT EXISTS idx_qso_call ON qso (call);

@@ -7,10 +7,10 @@ var TableNames = struct {
 	ContactedStation string
 	Logbook          string
 	Qso              string
-	Test             string
+	Session          string
 }{
 	ContactedStation: "contacted_station",
 	Logbook:          "logbook",
 	Qso:              "qso",
-	Test:             "test",
+	Session:          "session",
 }

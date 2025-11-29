@@ -41,6 +41,7 @@ type Qso struct {
 	Country        null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
 	AdditionalData types.JSON  `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
 	LogbookID      int64       `boil:"logbook_id" json:"logbook_id" toml:"logbook_id" yaml:"logbook_id"`
+	SessionID      int64       `boil:"session_id" json:"session_id" toml:"session_id" yaml:"session_id"`
 
 	R *qsoR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L qsoL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -63,6 +64,7 @@ var QsoColumns = struct {
 	Country        string
 	AdditionalData string
 	LogbookID      string
+	SessionID      string
 }{
 	ID:             "id",
 	CreatedAt:      "created_at",
@@ -80,6 +82,7 @@ var QsoColumns = struct {
 	Country:        "country",
 	AdditionalData: "additional_data",
 	LogbookID:      "logbook_id",
+	SessionID:      "session_id",
 }
 
 var QsoTableColumns = struct {
@@ -99,6 +102,7 @@ var QsoTableColumns = struct {
 	Country        string
 	AdditionalData string
 	LogbookID      string
+	SessionID      string
 }{
 	ID:             "qso.id",
 	CreatedAt:      "qso.created_at",
@@ -116,6 +120,7 @@ var QsoTableColumns = struct {
 	Country:        "qso.country",
 	AdditionalData: "qso.additional_data",
 	LogbookID:      "qso.logbook_id",
+	SessionID:      "qso.session_id",
 }
 
 // Generated where
@@ -137,6 +142,7 @@ var QsoWhere = struct {
 	Country        whereHelpernull_String
 	AdditionalData whereHelpertypes_JSON
 	LogbookID      whereHelperint64
+	SessionID      whereHelperint64
 }{
 	ID:             whereHelperint64{field: "\"qso\".\"id\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"qso\".\"created_at\""},
@@ -154,23 +160,43 @@ var QsoWhere = struct {
 	Country:        whereHelpernull_String{field: "\"qso\".\"country\""},
 	AdditionalData: whereHelpertypes_JSON{field: "\"qso\".\"additional_data\""},
 	LogbookID:      whereHelperint64{field: "\"qso\".\"logbook_id\""},
+	SessionID:      whereHelperint64{field: "\"qso\".\"session_id\""},
 }
 
 // QsoRels is where relationship names are stored.
 var QsoRels = struct {
+	Session string
 	Logbook string
 }{
+	Session: "Session",
 	Logbook: "Logbook",
 }
 
 // qsoR is where relationships are stored.
 type qsoR struct {
+	Session *Session `boil:"Session" json:"Session" toml:"Session" yaml:"Session"`
 	Logbook *Logbook `boil:"Logbook" json:"Logbook" toml:"Logbook" yaml:"Logbook"`
 }
 
 // NewStruct creates a new relationship struct
 func (*qsoR) NewStruct() *qsoR {
 	return &qsoR{}
+}
+
+func (o *Qso) GetSession() *Session {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetSession()
+}
+
+func (r *qsoR) GetSession() *Session {
+	if r == nil {
+		return nil
+	}
+
+	return r.Session
 }
 
 func (o *Qso) GetLogbook() *Logbook {
@@ -193,8 +219,8 @@ func (r *qsoR) GetLogbook() *Logbook {
 type qsoL struct{}
 
 var (
-	qsoAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "country", "additional_data", "logbook_id"}
-	qsoColumnsWithoutDefault = []string{"call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "logbook_id"}
+	qsoAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "country", "additional_data", "logbook_id", "session_id"}
+	qsoColumnsWithoutDefault = []string{"call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "logbook_id", "session_id"}
 	qsoColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "country", "additional_data"}
 	qsoPrimaryKeyColumns     = []string{"id"}
 	qsoGeneratedColumns      = []string{"id"}
@@ -291,6 +317,17 @@ func (q qsoQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, 
 	return count > 0, nil
 }
 
+// Session pointed to by the foreign key.
+func (o *Qso) Session(mods ...qm.QueryMod) sessionQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.SessionID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	return Sessions(queryMods...)
+}
+
 // Logbook pointed to by the foreign key.
 func (o *Qso) Logbook(mods ...qm.QueryMod) logbookQuery {
 	queryMods := []qm.QueryMod{
@@ -300,6 +337,119 @@ func (o *Qso) Logbook(mods ...qm.QueryMod) logbookQuery {
 	queryMods = append(queryMods, mods...)
 
 	return Logbooks(queryMods...)
+}
+
+// LoadSession allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (qsoL) LoadSession(ctx context.Context, e boil.ContextExecutor, singular bool, maybeQso interface{}, mods queries.Applicator) error {
+	var slice []*Qso
+	var object *Qso
+
+	if singular {
+		var ok bool
+		object, ok = maybeQso.(*Qso)
+		if !ok {
+			object = new(Qso)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeQso)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeQso))
+			}
+		}
+	} else {
+		s, ok := maybeQso.(*[]*Qso)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeQso)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeQso))
+			}
+		}
+	}
+
+	args := make(map[interface{}]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &qsoR{}
+		}
+		args[object.SessionID] = struct{}{}
+
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &qsoR{}
+			}
+
+			args[obj.SessionID] = struct{}{}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]interface{}, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`session`),
+		qm.WhereIn(`session.id in ?`, argsSlice...),
+		qmhelper.WhereIsNull(`session.deleted_at`),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Session")
+	}
+
+	var resultSlice []*Session
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Session")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for session")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for session")
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Session = foreign
+		if foreign.R == nil {
+			foreign.R = &sessionR{}
+		}
+		foreign.R.Qsos = append(foreign.R.Qsos, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if local.SessionID == foreign.ID {
+				local.R.Session = foreign
+				if foreign.R == nil {
+					foreign.R = &sessionR{}
+				}
+				foreign.R.Qsos = append(foreign.R.Qsos, local)
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadLogbook allows an eager lookup of values, cached into the
@@ -410,6 +560,53 @@ func (qsoL) LoadLogbook(ctx context.Context, e boil.ContextExecutor, singular bo
 				break
 			}
 		}
+	}
+
+	return nil
+}
+
+// SetSession of the qso to the related item.
+// Sets o.R.Session to related.
+// Adds o to related.R.Qsos.
+func (o *Qso) SetSession(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Session) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"qso\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 0, []string{"session_id"}),
+		strmangle.WhereClause("\"", "\"", 0, qsoPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	o.SessionID = related.ID
+	if o.R == nil {
+		o.R = &qsoR{
+			Session: related,
+		}
+	} else {
+		o.R.Session = related
+	}
+
+	if related.R == nil {
+		related.R = &sessionR{
+			Qsos: QsoSlice{o},
+		}
+	} else {
+		related.R.Qsos = append(related.R.Qsos, o)
 	}
 
 	return nil

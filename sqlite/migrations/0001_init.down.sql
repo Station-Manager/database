@@ -22,5 +22,6 @@ DROP INDEX IF EXISTS idx_contacted_station_callsign;
 DROP TABLE IF EXISTS contacted_station;
 DROP TABLE IF EXISTS qso;
 DROP TABLE IF EXISTS logbook;
+DROP TABLE IF EXISTS session;
 
 PRAGMA foreign_keys = ON;
