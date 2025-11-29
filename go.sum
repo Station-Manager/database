@@ -14,8 +14,8 @@ github.com/Station-Manager/errors v0.0.8 h1:30Muy38/ePWPawXkaNmw+myeIvSy9vNc7i26
 github.com/Station-Manager/errors v0.0.8/go.mod h1:yedsGkIKLyDEUhkm7VrjwE2Qq6Jdlq0MpwEjdDhBwh0=
 github.com/Station-Manager/logging v0.0.7 h1:SW6zWyid/7tYJKoQmNR1XzeVZR4P1O1/4iIwmmaF16I=
 github.com/Station-Manager/logging v0.0.7/go.mod h1:sqK28EbDlFFys7VA9br4HWeHk2KDu7Clc1s9LT1C0Pk=
-github.com/Station-Manager/types v0.0.28 h1:5WzD/20HdMBPC4r3cOPP45YazBG6fiKZwYeE+1lOcFQ=
-github.com/Station-Manager/types v0.0.28/go.mod h1:b6JU4edbW+yGlXKIwWjqS7ffDjH6a8l/z6k5/H5w4kM=
+github.com/Station-Manager/types v0.0.29 h1:0uuVv/YOID1pQ34oaI8QulBaqMF1u2ro/NvpnLlkmCY=
+github.com/Station-Manager/types v0.0.29/go.mod h1:b6JU4edbW+yGlXKIwWjqS7ffDjH6a8l/z6k5/H5w4kM=
 github.com/Station-Manager/utils v0.0.2 h1:/YHe/Yvx03eTBoBoSN2YnyEF/Zy67NKeahRcapkfqLQ=
 github.com/Station-Manager/utils v0.0.2/go.mod h1:6J2fGU4xpoe1PpLEWfgUs8fjKp/+v7wCzpvek2jiWpI=
 github.com/aarondl/inflect v0.0.2 h1:XvH8K5g1wKS921tMmDOUsZ3zS1Eo8WwK5RHC0IGGT2s=
