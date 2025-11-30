@@ -12,7 +12,6 @@ import (
 	"github.com/Station-Manager/types"
 	_ "github.com/lib/pq"
 	_ "modernc.org/sqlite"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -388,33 +387,6 @@ func (s *Service) QueryContext(ctx context.Context, query string, args ...interf
 	return res, nil
 }
 
-// logPostgresActivity logs a short snapshot of active Postgres queries and waits.
-// It uses a short background timeout so it's safe to call from a deadline-failed path.
-func (s *Service) logPostgresActivity() {
-	if s == nil || s.DatabaseConfig == nil || s.DatabaseConfig.Driver != PostgresDriver || s.handle == nil {
-		return
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	//noinspection SqlNoDataSourceInspection,SqlResolve
-	rows, err := s.handle.QueryContext(ctx, `SELECT pid, usename, state, wait_event_type, wait_event, CURRENT_TIMESTAMP - query_start AS duration, query FROM pg_stat_activity WHERE state <> 'idle' ORDER BY duration DESC LIMIT 10`)
-	if err != nil {
-		// Internal diagnostic only (error not returned to caller)
-		s.Logger.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity query error")
-		return
-	}
-	defer func() { _ = rows.Close() }()
-	for rows.Next() {
-		var pid int
-		var usename, state, waitType, waitEvent, duration, query string
-		if err := rows.Scan(&pid, &usename, &state, &waitType, &waitEvent, &duration, &query); err != nil {
-			s.Logger.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity row scan error")
-			continue
-		}
-		s.Logger.DebugWith().Str("component", "db").Str("sub", "activity").Int("pid", pid).Str("user", usename).Str("state", state).Str("wait_type", waitType).Str("wait_event", waitEvent).Str("duration", duration).Str("query", query).Msg("active query")
-	}
-}
-
 func (s *Service) LogStats(prefix string) {
 	// Snapshot handle under read lock to avoid races with Close()/Open()
 	if s == nil {
@@ -429,22 +401,4 @@ func (s *Service) LogStats(prefix string) {
 	st := h.Stats()
 	// Structured, non-error diagnostic (not returned to caller)
 	s.Logger.DebugWith().Str("component", "db").Str("metric", "pool").Str("phase", prefix).Int("open", st.OpenConnections).Int("in_use", st.InUse).Int("idle", st.Idle).Int64("wait_count", st.WaitCount).Dur("wait_duration", st.WaitDuration).Int("max_open", st.MaxOpenConnections).Msg("db pool stats")
-}
-
-// isTransientPingError returns true if the error message indicates a transient condition worth a short retry.
-func isTransientPingError(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := strings.ToLower(err.Error())
-	// Common transient indicators across drivers
-	if strings.Contains(msg, "timeout") ||
-		strings.Contains(msg, "deadline") ||
-		strings.Contains(msg, "busy") ||
-		strings.Contains(msg, "locked") ||
-		strings.Contains(msg, "connection reset") ||
-		strings.Contains(msg, "broken pipe") {
-		return true
-	}
-	return false
 }

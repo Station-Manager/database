@@ -112,10 +112,23 @@ func (s *Service) AdaptTypeToPostgresModelUser(u types.User) (*pgmodels.User, er
 	return m, err
 }
 
+// AdaptSqliteModelToTypeContactedStation converts a ContactedStation SQLite model to its corresponding domain type.
+// Returns the converted types.ContactedStation and an error if the service or adapter is nil, or if the conversion fails.
 func (s *Service) AdaptSqliteModelToTypeContactedStation(m *sqmodels.ContactedStation) (types.ContactedStation, error) {
 	if s == nil || s.adapterFromModel == nil {
 		return types.ContactedStation{}, errors.New("adapt").Msg("service or adapter nil")
 	}
 	out, err := adapters.Make[types.ContactedStation](s.adapterFromModel, m)
 	return out, err
+}
+
+// AdaptTypeToSqliteModelContactedStation converts a types.ContactedStation object to its corresponding SQLite model representation.
+// Returns the SQLite model instance and any error encountered during the adaptation process.
+// If the service or its adapter is nil, it returns an error indicating the issue.
+func (s *Service) AdaptTypeToSqliteModelContactedStation(u types.ContactedStation) (*sqmodels.ContactedStation, error) {
+	if s == nil || s.adapterToModel == nil {
+		return nil, errors.New("adapt").Msg("service or adapter nil")
+	}
+	m, err := adapters.AdaptTo[sqmodels.ContactedStation](s.adapterToModel, &u)
+	return m, err
 }
