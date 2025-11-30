@@ -225,3 +225,44 @@ func (s *Service) sqliteFetchContactedStationByCallsignContext(ctx context.Conte
 
 	return contactedStationType, nil
 }
+
+/*********************************************************************************************************************
+Exists by callsign - Contacted Station Methods
+**********************************************************************************************************************/
+
+// ContactedStationExistsByCallsign checks if a contacted station exists in the database using the provided callsign.
+// Returns true if the station exists, false otherwise. Errors are returned for invalid input or unsupported drivers.
+func (s *Service) ContactedStationExistsByCallsign(callsign string) (bool, error) {
+	const op errors.Op = "database.Service.ContactedStationExistsByCallsign"
+	if err := checkService(op, s); err != nil {
+		return false, errors.New(op).Err(err)
+	}
+	if callsign == "" {
+		return false, errors.New(op).Msg("callsign cannot be empty")
+	}
+
+	switch s.DatabaseConfig.Driver {
+	case SqliteDriver:
+		return s.sqliteContactedStationExistsByCallsign(callsign)
+	case PostgresDriver:
+		return false, errors.New(op).Msg("Not supported. Desktop application only.")
+	default:
+		return false, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+}
+
+// sqliteContactedStationExistsByCallsign checks if a contacted station exists in the database by its callsign.
+// Returns a boolean indicating existence and an error if any occurs during the execution.
+func (s *Service) sqliteContactedStationExistsByCallsign(callsign string) (bool, error) {
+	const op errors.Op = "database.Service.sqliteContactedStationExistsByCallsign"
+	if err := checkService(op, s); err != nil {
+		return false, errors.New(op).Err(err)
+	}
+
+	exists, err := sqmodels.ContactedStations(sqmodels.ContactedStationWhere.Callsign.EQ(callsign)).Exists(context.Background(), s.handle)
+	if err != nil {
+		return false, errors.New(op).Err(err)
+	}
+
+	return exists, nil
+}

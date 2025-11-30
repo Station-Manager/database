@@ -13,6 +13,10 @@ import (
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
 )
 
+/*********************************************************************************************************************
+Inser User Methods
+**********************************************************************************************************************/
+
 // InsertUser inserts a new user into the database and returns the inserted user or an error if any operation fails.
 // This calls InsertUserContext with a background context.
 func (s *Service) InsertUser(user types.User) (types.User, error) {
@@ -68,6 +72,10 @@ func (s *Service) InsertUserContext(ctx context.Context, user types.User) (types
 	user.ID = model.ID
 	return user, nil
 }
+
+/*********************************************************************************************************************
+Fetch User by Callsign Methods
+**********************************************************************************************************************/
 
 // FetchUserByCallsign returns a user by its callsign or an empty user if no user was found.
 func (s *Service) FetchUserByCallsign(callsign string) (types.User, error) {
@@ -127,6 +135,10 @@ func (s *Service) FetchUserByCallsignContext(ctx context.Context, callsign strin
 
 	return user, nil
 }
+
+/*********************************************************************************************************************
+Update User Methods
+**********************************************************************************************************************/
 
 // UpdateUser updates the provided user in the database using the given service instance and context.
 func (s *Service) UpdateUser(user types.User) error {
