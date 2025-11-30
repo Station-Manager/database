@@ -208,7 +208,7 @@ func (s *Service) sqliteFetchContactedStationByCallsignContext(ctx context.Conte
 		defer cancel()
 	}
 
-	model, err := sqmodels.ContactedStations(sqmodels.ContactedStationWhere.Callsign.EQ(callsign)).One(ctx, h)
+	model, err := sqmodels.ContactedStations(sqmodels.ContactedStationWhere.Call.EQ(callsign)).One(ctx, h)
 	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
 		return emptyRetVal, errors.New(op).Err(err)
 	}
@@ -259,7 +259,7 @@ func (s *Service) sqliteContactedStationExistsByCallsign(callsign string) (bool,
 		return false, errors.New(op).Err(err)
 	}
 
-	exists, err := sqmodels.ContactedStations(sqmodels.ContactedStationWhere.Callsign.EQ(callsign)).Exists(context.Background(), s.handle)
+	exists, err := sqmodels.ContactedStations(sqmodels.ContactedStationWhere.Call.EQ(callsign)).Exists(context.Background(), s.handle)
 	if err != nil {
 		return false, errors.New(op).Err(err)
 	}
