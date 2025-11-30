@@ -3,11 +3,11 @@ module github.com/Station-Manager/database
 go 1.25
 
 require (
-	github.com/Station-Manager/adapters v0.0.10
+	github.com/Station-Manager/adapters v0.0.11
 	github.com/Station-Manager/config v0.0.16
 	github.com/Station-Manager/errors v0.0.8
 	github.com/Station-Manager/logging v0.0.7
-	github.com/Station-Manager/types v0.0.31
+	github.com/Station-Manager/types v0.0.33
 	github.com/Station-Manager/utils v0.0.2
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
@@ -31,7 +31,6 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
-	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
