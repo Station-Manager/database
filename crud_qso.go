@@ -177,6 +177,10 @@ func (s *Service) sqliteInsertQsoContext(ctx context.Context, qso types.Qso) (ty
 		return qso, errors.New(op).Err(err)
 	}
 
+	if len(model.AdditionalData) == 0 {
+		model.AdditionalData = []byte("{}")
+	}
+
 	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
@@ -293,6 +297,9 @@ func (s *Service) sqliteUpdateQsoContext(ctx context.Context, qso types.Qso) err
 
 	model.ID = qso.ID
 
+	if len(model.AdditionalData) == 0 {
+		model.AdditionalData = []byte("{}")
+	}
 	rows, err := model.Update(ctx, tx, boil.Infer())
 	if err != nil {
 		_ = tx.Rollback()

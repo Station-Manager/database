@@ -68,6 +68,11 @@ func (s *Service) sqliteInsertContactedStationContext(ctx context.Context, stati
 	if err != nil {
 		return station, errors.New(op).Err(err)
 	}
+
+	// Ensure AdditionalData is always valid JSON. For now, if it's empty/zero, normalise to "{}".
+	if len(model.AdditionalData) == 0 {
+		model.AdditionalData = []byte("{}")
+	}
 	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
 		return station, errors.New(op).Err(err)
 	}
@@ -232,6 +237,7 @@ Exists by callsign - Contacted Station Methods
 
 // ContactedStationExistsByCallsign checks if a contacted station exists in the database using the provided callsign.
 // Returns true if the station exists, false otherwise. Errors are returned for invalid input or unsupported drivers.
+// It supports only SQLite and will return an error for unsupported database drivers or uninitialized services.
 func (s *Service) ContactedStationExistsByCallsign(callsign string) (bool, error) {
 	const op errors.Op = "database.Service.ContactedStationExistsByCallsign"
 	if err := checkService(op, s); err != nil {
@@ -265,4 +271,75 @@ func (s *Service) sqliteContactedStationExistsByCallsign(callsign string) (bool,
 	}
 
 	return exists, nil
+}
+
+/*********************************************************************************************************************
+Update - Contacted Station Methods
+**********************************************************************************************************************/
+
+// UpdateContactedStation updates the contacted station details in the database using a default background context.
+// It ensures the provided contacted station data is valid and triggers an update operation.
+// Returns an error if the update fails.
+// It supports only SQLite and will return an error for unsupported database drivers or uninitialized services.
+func (s *Service) UpdateContactedStation(station types.ContactedStation) error {
+	return s.UpdateContactedStationContext(context.Background(), station)
+}
+
+// UpdateContactedStationContext updates the contacted station details in the database within the provided context.
+// Returns an error if the service is nil, not initialized, not open, or if the database driver is unsupported.
+// It supports only SQLite and will return an error for unsupported database drivers or uninitialized services.
+func (s *Service) UpdateContactedStationContext(ctx context.Context, station types.ContactedStation) error {
+	const op errors.Op = "database.Service.UpdateContactedStationContext"
+	if err := checkService(op, s); err != nil {
+		return errors.New(op).Err(err)
+	}
+	switch s.DatabaseConfig.Driver {
+	case SqliteDriver:
+		return s.sqliteUpdateContactedStationContext(ctx, station)
+	case PostgresDriver:
+		return errors.New(op).Msg("Not supported. Desktop application only.")
+	default:
+		return errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+}
+
+// sqliteUpdateContactedStationContext updates an existing contacted station record in the SQLite database within a given context.
+// It ensures the service is active, adapts the input type to the database model, and performs the update.
+func (s *Service) sqliteUpdateContactedStationContext(ctx context.Context, station types.ContactedStation) error {
+	const op errors.Op = "database.Service.sqliteUpdateContactedStationContext"
+	if err := checkService(op, s); err != nil {
+		return errors.New(op).Err(err)
+	}
+
+	s.mu.RLock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
+	if h == nil || !isOpen {
+		return errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	s.initAdapters()
+	model, err := s.AdaptTypeToSqliteModelContactedStation(station)
+	s.Logger.DebugWith().Msgf("Updating contacted station: %+v", model)
+	if err != nil {
+		return errors.New(op).Err(err)
+	}
+
+	// Normalise AdditionalData to valid JSON for updates as well.
+	if len(model.AdditionalData) == 0 {
+		model.AdditionalData = []byte("{}")
+	}
+
+	if _, err = model.Update(ctx, s.handle, boil.Infer()); err != nil {
+		return errors.New(op).Err(err)
+	}
+
+	return nil
 }
