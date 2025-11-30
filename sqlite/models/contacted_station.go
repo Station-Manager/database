@@ -30,7 +30,7 @@ type ContactedStation struct {
 	ModifiedAt     null.Time   `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
 	DeletedAt      null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
 	Name           string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Callsign       string      `boil:"callsign" json:"callsign" toml:"callsign" yaml:"callsign"`
+	Call           string      `boil:"call" json:"call" toml:"call" yaml:"call"`
 	Country        null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
 	TimeOffset     string      `boil:"time_offset" json:"time_offset" toml:"time_offset" yaml:"time_offset"`
 	AdditionalData types.JSON  `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
@@ -45,7 +45,7 @@ var ContactedStationColumns = struct {
 	ModifiedAt     string
 	DeletedAt      string
 	Name           string
-	Callsign       string
+	Call           string
 	Country        string
 	TimeOffset     string
 	AdditionalData string
@@ -55,7 +55,7 @@ var ContactedStationColumns = struct {
 	ModifiedAt:     "modified_at",
 	DeletedAt:      "deleted_at",
 	Name:           "name",
-	Callsign:       "callsign",
+	Call:           "call",
 	Country:        "country",
 	TimeOffset:     "time_offset",
 	AdditionalData: "additional_data",
@@ -67,7 +67,7 @@ var ContactedStationTableColumns = struct {
 	ModifiedAt     string
 	DeletedAt      string
 	Name           string
-	Callsign       string
+	Call           string
 	Country        string
 	TimeOffset     string
 	AdditionalData string
@@ -77,7 +77,7 @@ var ContactedStationTableColumns = struct {
 	ModifiedAt:     "contacted_station.modified_at",
 	DeletedAt:      "contacted_station.deleted_at",
 	Name:           "contacted_station.name",
-	Callsign:       "contacted_station.callsign",
+	Call:           "contacted_station.call",
 	Country:        "contacted_station.country",
 	TimeOffset:     "contacted_station.time_offset",
 	AdditionalData: "contacted_station.additional_data",
@@ -249,7 +249,7 @@ var ContactedStationWhere = struct {
 	ModifiedAt     whereHelpernull_Time
 	DeletedAt      whereHelpernull_Time
 	Name           whereHelperstring
-	Callsign       whereHelperstring
+	Call           whereHelperstring
 	Country        whereHelpernull_String
 	TimeOffset     whereHelperstring
 	AdditionalData whereHelpertypes_JSON
@@ -259,7 +259,7 @@ var ContactedStationWhere = struct {
 	ModifiedAt:     whereHelpernull_Time{field: "\"contacted_station\".\"modified_at\""},
 	DeletedAt:      whereHelpernull_Time{field: "\"contacted_station\".\"deleted_at\""},
 	Name:           whereHelperstring{field: "\"contacted_station\".\"name\""},
-	Callsign:       whereHelperstring{field: "\"contacted_station\".\"callsign\""},
+	Call:           whereHelperstring{field: "\"contacted_station\".\"call\""},
 	Country:        whereHelpernull_String{field: "\"contacted_station\".\"country\""},
 	TimeOffset:     whereHelperstring{field: "\"contacted_station\".\"time_offset\""},
 	AdditionalData: whereHelpertypes_JSON{field: "\"contacted_station\".\"additional_data\""},
@@ -282,8 +282,8 @@ func (*contactedStationR) NewStruct() *contactedStationR {
 type contactedStationL struct{}
 
 var (
-	contactedStationAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "name", "callsign", "country", "time_offset", "additional_data"}
-	contactedStationColumnsWithoutDefault = []string{"name", "callsign", "time_offset"}
+	contactedStationAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "name", "call", "country", "time_offset", "additional_data"}
+	contactedStationColumnsWithoutDefault = []string{"name", "call", "time_offset"}
 	contactedStationColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "country", "additional_data"}
 	contactedStationPrimaryKeyColumns     = []string{"id"}
 	contactedStationGeneratedColumns      = []string{"id"}

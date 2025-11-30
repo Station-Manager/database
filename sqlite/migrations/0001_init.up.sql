@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS contacted_station
     modified_at     DATETIME,
     deleted_at      DATETIME,
     name            TEXT     NOT NULL,
-    callsign        TEXT     NOT NULL UNIQUE CHECK (length(callsign) <= 20),
+    call            TEXT     NOT NULL UNIQUE CHECK (length(call) <= 20),
     country         TEXT CHECK (length(country) <= 50),
     time_offset     TEXT     NOT NULL,
     additional_data JSON     NOT NULL DEFAULT ('{}') CHECK (json_valid(additional_data)),
@@ -136,4 +136,4 @@ CREATE TABLE IF NOT EXISTS contacted_station
         )
 );
 
-CREATE INDEX IF NOT EXISTS idx_contacted_station_callsign ON contacted_station (callsign);
+CREATE INDEX IF NOT EXISTS idx_contacted_station_callsign ON contacted_station (call);
