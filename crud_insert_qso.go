@@ -30,6 +30,7 @@ func (s *Service) InsertQsoContext(ctx context.Context, qso types.Qso) (types.Qs
 	}
 }
 
+// sqliteInsertQsoContext inserts a QSO entry into the SQLite database within the given context and returns the updated QSO.
 func (s *Service) sqliteInsertQsoContext(ctx context.Context, qso types.Qso) (types.Qso, error) {
 	const op errors.Op = "database.Service.sqliteInsertQsoContext"
 	if err := checkService(op, s); err != nil {
@@ -37,6 +38,11 @@ func (s *Service) sqliteInsertQsoContext(ctx context.Context, qso types.Qso) (ty
 	}
 	if qso.LogbookID < 1 {
 		return qso, errors.New(op).Msg("LogbookID is required")
+	}
+	// SessionID is required for SQLite, but not for PostgreSQL. This is because SQLite is only used for desktop apps
+	// where sessions are used.
+	if qso.SessionID < 1 {
+		return qso, errors.New(op).Msg("SessionID is required")
 	}
 
 	s.mu.RLock()
@@ -67,6 +73,9 @@ func (s *Service) sqliteInsertQsoContext(ctx context.Context, qso types.Qso) (ty
 	return qso, nil
 }
 
+// postgresInsertQsoContext inserts a QSO record into the PostgreSQL database and returns the updated QSO object or an error.
+// It ensures the database service is initialized and open, and applies a default timeout if none exists in the context.
+// The method adapts the QSO type to the PostgreSQL model before performing the insert operation.
 func (s *Service) postgresInsertQsoContext(ctx context.Context, qso types.Qso) (types.Qso, error) {
 	const op errors.Op = "database.Service.postgresInsertQsoContext"
 	if err := checkService(op, s); err != nil {
@@ -99,6 +108,7 @@ func (s *Service) postgresInsertQsoContext(ctx context.Context, qso types.Qso) (
 	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
 		return qso, errors.New(op).Err(err)
 	}
+
 	qso.ID = model.ID
 	return qso, nil
 }
