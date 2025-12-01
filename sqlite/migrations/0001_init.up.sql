@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS qso
     deleted_at      DATETIME,
 
     call            TEXT     NOT NULL CHECK (length(trim(call)) BETWEEN 1 AND 20),
-    band            TEXT     NOT NULL CHECK (length(band) <= 10),
-    mode            TEXT     NOT NULL CHECK (length(mode) <= 10),
+    band            TEXT     NOT NULL CHECK (length(trim(band)) <= 10),
+    mode            TEXT     NOT NULL CHECK (length(trim(mode)) <= 10),
     /* freq is in kHz, thus app MUST multiply by 1000 for MHz */
     freq            INTEGER  NOT NULL CHECK (freq >= 0 AND freq <= 99999999),
     /* DATETIME here prompts SQLBoiler to use the "time.Time" type */
@@ -123,8 +123,8 @@ CREATE TABLE IF NOT EXISTS contacted_station
     modified_at     DATETIME,
     deleted_at      DATETIME,
     name            TEXT     NOT NULL,
-    call            TEXT     NOT NULL UNIQUE CHECK (length(call) <= 20),
-    country         TEXT CHECK (length(country) <= 50),
+    call            TEXT     NOT NULL UNIQUE CHECK (length(trim(call)) <= 20),
+    country         TEXT CHECK (length(trim(country)) <= 50),
     time_offset     TEXT     NOT NULL,
     additional_data JSON     NOT NULL DEFAULT ('{}') CHECK (json_valid(additional_data)),
 
@@ -137,3 +137,22 @@ CREATE TABLE IF NOT EXISTS contacted_station
 );
 
 CREATE INDEX IF NOT EXISTS idx_contacted_station_callsign ON contacted_station (call);
+
+CREATE TABLE IF NOT EXISTS country
+(
+    id          INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
+    created_at  DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+    modified_at DATETIME,
+    deleted_at  DATETIME,
+    name        TEXT     NOT NULL,
+    cq_zone     TEXT     NOT NULL,
+    itu_zone    TEXT     NOT NULL,
+    continent   TEXT     NOT NULL,
+    prefix      TEXT     NOT NULL UNIQUE CHECK (length(trim(prefix)) <= 50),
+    ccode       TEXT,
+    dxcc_prefix TEXT,
+    time_offset TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_country_name ON country (name);
+CREATE INDEX IF NOT EXISTS idx_country_prefix ON country (prefix);

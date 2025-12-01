@@ -7,7 +7,9 @@ import (
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
+	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
+	"time"
 )
 
 /*********************************************************************************************************************
@@ -331,6 +333,9 @@ func (s *Service) sqliteUpdateContactedStationContext(ctx context.Context, stati
 	if err != nil {
 		return errors.New(op).Err(err)
 	}
+
+	// Set ModifiedAt to current time
+	model.ModifiedAt = null.TimeFrom(time.Now())
 
 	// Normalise AdditionalData to valid JSON for updates as well.
 	if len(model.AdditionalData) == 0 {
