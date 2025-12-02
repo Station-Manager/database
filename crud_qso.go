@@ -119,6 +119,78 @@ func (s *Service) postgresFetchQsoContext(ctx context.Context, id int64) (types.
 	return out, nil
 }
 
+func (s *Service) FetchQsosBySessionId(id int64, includeForwarded bool, includeDeleted bool) ([]types.Qso, error) {
+	return s.FetchQsosBySessionIdContext(context.Background(), id, includeForwarded, includeDeleted)
+}
+
+func (s *Service) FetchQsosBySessionIdContext(ctx context.Context, sessionId int64, includeForwarded bool, includeDeleted bool) ([]types.Qso, error) {
+	const op errors.Op = "database.Service.FetchQsosBySessionIdContext"
+	if err := checkService(op, s); err != nil {
+		return nil, errors.New(op).Err(err)
+	}
+	if sessionId < 1 {
+		return nil, errors.New(op).Msg("Invalid session ID")
+	}
+
+	switch s.DatabaseConfig.Driver {
+	case SqliteDriver:
+		return s.sqliteFetchQsosBySessionIdContext(ctx, sessionId, includeForwarded, includeDeleted)
+	case PostgresDriver:
+		return nil, errors.New(op).Msg("Not supported. Desktop application only.")
+	default:
+		return nil, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+}
+
+func (s *Service) sqliteFetchQsosBySessionIdContext(ctx context.Context, sessionID int64, includeForwarded bool, includeDeleted bool) ([]types.Qso, error) {
+	const op errors.Op = "database.Service.sqliteFetchQsosBySessionIdContext"
+
+	s.mu.RLock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
+	if h == nil || !isOpen {
+		return nil, errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	var mods []qm.QueryMod
+	mods = append(mods, sqmodels.QsoWhere.SessionID.EQ(sessionID))
+	mods = append(mods, qm.OrderBy(sqmodels.QsoColumns.CreatedAt+" DESC"))
+	//if !includeForwarded {
+	//	// Only include QSOs that are directly marked as NOT ("N") forwarded by email.
+	//	mods = append(mods, sqmodels.QsoWhere.SmFwrdByEmailStatus.EQ(null.StringFrom(adif.NoString)))
+	//}
+	if includeDeleted {
+		mods = append(mods, qm.WithDeleted())
+	}
+
+	// Apply default timeout if caller did not set one
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	slice, err := sqmodels.Qsos(mods...).All(ctx, h)
+	if err != nil {
+		return nil, errors.New(op).Err(err).Msg("sqmodels.Qsos(mods...).All")
+	}
+
+	s.initAdapters()
+	adapter := s.adapterFromModel
+
+	list := make(types.QsoSlice, 0, len(slice))
+	for _, qsoModel := range slice {
+		qso := types.Qso{}
+		if err = adapter.Into(&qso, qsoModel); err != nil {
+			return nil, errors.New(op).Err(err).Msg("Failed to adapt QSO for contact history.")
+		}
+		list = append(list, qso)
+	}
+
+	return list, nil
+}
+
 /*********************************************************************************************************************
 Insert QSO Methods
 **********************************************************************************************************************/
