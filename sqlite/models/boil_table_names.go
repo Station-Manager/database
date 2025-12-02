@@ -5,11 +5,13 @@ package models
 
 var TableNames = struct {
 	ContactedStation string
+	Country          string
 	Logbook          string
 	Qso              string
 	Session          string
 }{
 	ContactedStation: "contacted_station",
+	Country:          "country",
 	Logbook:          "logbook",
 	Qso:              "qso",
 	Session:          "session",
