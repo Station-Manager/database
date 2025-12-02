@@ -6,8 +6,8 @@ github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERo
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
 github.com/Station-Manager/adapters v0.0.11 h1:j/Qp9iAS09cOnKZ6MJzFraxaIKpeArhzlQNqD/fOpVA=
 github.com/Station-Manager/adapters v0.0.11/go.mod h1:gmiG8x+XhCBauOhlw2emdG7om+l9TwotrnfEHWWT8tI=
-github.com/Station-Manager/config v0.0.17 h1:tIWd+NjKGsz1rsiNtUs2/YhjiF8ZIIMapjK940nd4Ik=
-github.com/Station-Manager/config v0.0.17/go.mod h1:TbNJ+bRwgDdtmjEmM4aVubmwrdR8N1iiNt9W3oBCzrU=
+github.com/Station-Manager/config v0.0.18 h1:VbYubs98sAeMMMXWgqeZLD/atg4G/0fws9Uxi4cix8A=
+github.com/Station-Manager/config v0.0.18/go.mod h1:0YqXzggD7JTEo12xa2rQuUGHHdDtewUDsAp1eA0IyrY=
 github.com/Station-Manager/enums v0.0.1 h1:eQSGIscQpxUy7npIMMUKEiOswdxdXTv02Mw7cKhTxYU=
 github.com/Station-Manager/enums v0.0.1/go.mod h1:+DM4D5iPVIXyaflzHsBVQQb5DnBnL0iYNaddkKiBdao=
 github.com/Station-Manager/errors v0.0.9 h1:sAKBZ45jPT4NRdwlzdPgjJME608Y8RZn2uqoaG4h3/A=
