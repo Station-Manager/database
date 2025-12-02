@@ -2,11 +2,16 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	stderr "errors"
+	"fmt"
 	pgmodels "github.com/Station-Manager/database/postgres/models"
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries/qm"
+	"strings"
 )
 
 /*********************************************************************************************************************
@@ -439,4 +444,105 @@ func (s *Service) DeleteQsoContext(ctx context.Context, id int64) error {
 		return errors.New(op).Err(err)
 	}
 	return nil
+}
+
+/*********************************************************************************************************************
+History Methods
+**********************************************************************************************************************/
+
+// ContactHistory retrieves the contact history for the specified callsign from the database.
+// It returns a slice of types.ContactHistory or an error if the operation fails.
+func (s *Service) ContactHistory(callsign string) ([]types.ContactHistory, error) {
+	return s.ContactHistoryContext(context.Background(), callsign)
+}
+
+// ContactHistoryContext retrieves contact history for a given callsign using the specified database driver and context.
+// Returns a slice of types.ContactHistory or an error if the operation fails.
+func (s *Service) ContactHistoryContext(ctx context.Context, callsign string) ([]types.ContactHistory, error) {
+	const op errors.Op = "database.Service.ContactHistory"
+
+	callsign = strings.TrimSpace(callsign)
+	if len(callsign) < 3 {
+		return nil, errors.New(op).Msg("Callsign must be at least 3 characters long")
+	}
+
+	switch s.DatabaseConfig.Driver {
+	case SqliteDriver:
+		return s.sqliteContactHistoryContext(ctx, callsign)
+	case PostgresDriver:
+		return nil, errors.New(op).Msg("Not supported. Desktop application only.")
+	default:
+		return nil, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+}
+
+// sqliteContactHistoryContext retrieves the contact history for a given callsign from the SQLite database in descending order.
+// The context is required and applies a default timeout if none is set by the caller.
+// Returns a slice of ContactHistory or an error if the service is not open or the query fails.
+func (s *Service) sqliteContactHistoryContext(ctx context.Context, callsign string) ([]types.ContactHistory, error) {
+	const op errors.Op = "database.Service.sqliteContactHistoryContext"
+	if err := checkService(op, s); err != nil {
+		return nil, errors.New(op).Err(err)
+	}
+
+	s.mu.RLock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
+	if h == nil || !isOpen {
+		return nil, errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	// Apply default timeout if caller did not set one
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	// We want pattern matching here as we might have QSOs with prefixes and/or suffixes.
+	callsign = fmt.Sprintf("%%%s%%", callsign)
+
+	var mods []qm.QueryMod
+	mods = append(mods, sqmodels.QsoWhere.Call.LIKE(callsign))
+	mods = append(mods, qm.OrderBy(sqmodels.QsoColumns.CreatedAt+" DESC"))
+	slice, err := sqmodels.Qsos(mods...).All(ctx, h)
+	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
+		return nil, errors.New(op).Err(err).Msg("Failed to fetch contact history.")
+	}
+
+	if err != nil || slice == nil { // sql.ErrNoRows
+		return nil, errors.ErrNotFound
+	}
+	s.initAdapters()
+	adapter := s.adapterFromModel
+
+	history := make([]types.ContactHistory, 0, len(slice))
+	for _, qsoModel := range slice {
+		qso := types.Qso{}
+		if err = adapter.Into(&qso, qsoModel); err != nil {
+			return nil, errors.New(op).Err(err).Msg("Failed to adapt QSO for contact history.")
+		}
+		history = append(history, copyToHistory(qso))
+	}
+
+	return history, nil
+}
+
+// copyToHistory creates a ContactHistory instance from a Qso object by mapping relevant fields.
+func copyToHistory(qso types.Qso) types.ContactHistory {
+	return types.ContactHistory{
+		ID:      qso.ID,
+		Band:    qso.Band,
+		Freq:    qso.Freq,
+		Mode:    qso.Mode,
+		QsoDate: qso.QsoDate,
+		TimeOn:  qso.TimeOn,
+		Name:    qso.Name,
+		Country: qso.Country,
+		Call:    qso.Call,
+		RstRcvd: qso.RstRcvd,
+		RstSent: qso.RstSent,
+		Notes:   qso.Notes,
+	}
 }

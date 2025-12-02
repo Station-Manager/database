@@ -90,7 +90,7 @@ func (s *Service) sqliteSoftDeleteSessionIDContext(ctx context.Context, id int64
 	}
 
 	session, err := sqmodels.FindSession(ctx, h, id)
-	if err != nil {
+	if err != nil { // Any error is a problem
 		return errors.New(op).Err(err)
 	}
 
