@@ -618,3 +618,53 @@ func copyToHistory(qso types.Qso) types.ContactHistory {
 		Notes:   qso.Notes,
 	}
 }
+
+/*********************************************************************************************************************
+Misc QSO Methods
+**********************************************************************************************************************/
+
+func (s *Service) QsoCountByLogbookId(logbookId int64) (int64, error) {
+	return s.QsoCountByLogbookIdContext(context.Background(), logbookId)
+}
+
+func (s *Service) QsoCountByLogbookIdContext(ctx context.Context, logbookId int64) (int64, error) {
+	const op errors.Op = "database.Service.QsoCountByLogbookIdContext"
+
+	switch s.DatabaseConfig.Driver {
+	case SqliteDriver:
+		return s.sqliteQsoCountByLogbookIdContext(ctx, logbookId)
+	case PostgresDriver:
+		return 0, errors.New(op).Msg("Not supported. Desktop application only.")
+	default:
+		return 0, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+}
+
+func (s *Service) sqliteQsoCountByLogbookIdContext(ctx context.Context, logbookId int64) (int64, error) {
+	const op errors.Op = "database.Service.sqliteQsoCountByLogbookIdContext"
+	if err := checkService(op, s); err != nil {
+		return 0, errors.New(op).Err(err)
+	}
+
+	s.mu.RLock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
+	if h == nil || !isOpen {
+		return 0, errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	// Apply default timeout if caller did not set one
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	count, err := sqmodels.Qsos(sqmodels.QsoWhere.LogbookID.EQ(logbookId)).Count(ctx, h)
+	if err != nil {
+		return 0, errors.New(op).Err(err).Msg("models.Qsos(...).Count")
+	}
+
+	return count, nil
+}
