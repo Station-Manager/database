@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	stderr "errors"
+	"github.com/Station-Manager/adapters"
+	"github.com/Station-Manager/adapters/converters/common"
 	sqmodels "github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
@@ -71,12 +73,17 @@ func (s *Service) sqliteUpsertCountryContext(ctx context.Context, country types.
 		defer cancel()
 	}
 
-	s.initAdapters()
-	adapter := s.adapterToModel
+	adapter := adapters.New()
+	adapter.RegisterConverter("Ccode", common.TypeToModelStringConverter)
+	adapter.RegisterConverter("DXCCPrefix", common.TypeToModelStringConverter)
+	adapter.RegisterConverter("TimeOffset", common.TypeToModelStringConverter)
+
 	model := sqmodels.Country{}
-	if err := adapter.Into(&model, country); err != nil {
+	if err := adapter.Into(&model, &country); err != nil {
 		return emptyRetVal, errors.New(op).Err(err).Msg("Failed to adapt Country.")
 	}
+
+	s.Logger.DebugWith().Interface("country", country).Msg("Convertion.")
 
 	if err := model.Upsert(ctx, h, true, nil, boil.Infer(), boil.Infer()); err != nil {
 		return emptyRetVal, errors.New(op).Err(err)

@@ -19,6 +19,7 @@ func (s *Service) initAdapters() {
 		aToModel.RegisterConverter("Freq", common.TypeToModelFreqConverter)
 		aToModel.RegisterConverter("Country", common.TypeToModelStringConverter)
 		aToModel.RegisterConverter("Description", common.TypeToModelStringConverter)
+		aToModel.RegisterConverter("AdditionalData", common.TypeToModelStringConverter)
 		if s.DatabaseConfig.Driver == SqliteDriver {
 			aToModel.RegisterConverter("QsoDate", sqlite.TypeToModelDateConverter)
 			aToModel.RegisterConverter("TimeOn", sqlite.TypeToModelTimeConverter)
