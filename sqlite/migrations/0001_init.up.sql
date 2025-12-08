@@ -148,7 +148,7 @@ CREATE TABLE IF NOT EXISTS country
     cq_zone     TEXT     NOT NULL,
     itu_zone    TEXT     NOT NULL,
     continent   TEXT     NOT NULL,
-    prefix      TEXT     NOT NULL UNIQUE CHECK (length(trim(prefix)) <= 50),
+    prefix      TEXT     NOT NULL UNIQUE CHECK (length(trim(prefix)) <= 20),
     ccode       TEXT,
     dxcc_prefix TEXT,
     time_offset TEXT
