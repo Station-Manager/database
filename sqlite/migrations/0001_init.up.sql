@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS qso
         ),
     rst_sent        TEXT     NOT NULL CHECK (length(rst_sent) <= 3),
     rst_rcvd        TEXT     NOT NULL CHECK (length(rst_rcvd) <= 3),
-    country         TEXT CHECK (length(country) <= 50),
+    country         TEXT CHECK (length(trim(country)) <= 50),
     additional_data JSON     NOT NULL DEFAULT ('{}') CHECK (json_valid(additional_data)),
 
     logbook_id      INTEGER  NOT NULL,
