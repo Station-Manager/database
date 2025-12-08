@@ -8,6 +8,7 @@ import (
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/null/v8"
+	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
 	"strings"
 )
@@ -22,6 +23,66 @@ func (s *Service) InsertCountry(country types.Country) (types.Country, error) {
 
 func (s *Service) InsertCountryContext(ctx context.Context, country types.Country) (types.Country, error) {
 	return types.Country{}, nil
+}
+
+/*********************************************************************************************************************
+Upsert Country Methods
+**********************************************************************************************************************/
+
+func (s *Service) UpsertCountry(country types.Country) (types.Country, error) {
+	return s.UpsertCountryContext(context.Background(), country)
+}
+
+func (s *Service) UpsertCountryContext(ctx context.Context, country types.Country) (types.Country, error) {
+	const op errors.Op = "database.Service.UpsertCountryContext"
+	emptyRetVal := types.Country{}
+	if err := checkService(op, s); err != nil {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	//TODO: basic validation
+
+	switch s.DatabaseConfig.Driver {
+	case SqliteDriver:
+		return s.sqliteUpsertCountryContext(ctx, country)
+	case PostgresDriver:
+		return emptyRetVal, errors.New(op).Msg("Not supported. Desktop application only.")
+	default:
+		return emptyRetVal, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
+	}
+}
+
+func (s *Service) sqliteUpsertCountryContext(ctx context.Context, country types.Country) (types.Country, error) {
+	const op errors.Op = "database.Service.sqliteUpsertCountryContext"
+	emptyRetVal := types.Country{}
+
+	s.mu.RLock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
+	if h == nil || !isOpen {
+		return emptyRetVal, errors.New(op).Msg(errMsgNotOpen)
+	}
+
+	// Apply default timeout if caller did not set one
+	if _, hasDeadline := ctx.Deadline(); !hasDeadline {
+		var cancel context.CancelFunc
+		ctx, cancel = s.withDefaultTimeout(ctx)
+		defer cancel()
+	}
+
+	s.initAdapters()
+	adapter := s.adapterToModel
+	model := sqmodels.Country{}
+	if err := adapter.Into(&model, country); err != nil {
+		return emptyRetVal, errors.New(op).Err(err).Msg("Failed to adapt Country.")
+	}
+
+	if err := model.Upsert(ctx, h, true, nil, boil.Infer(), boil.Infer()); err != nil {
+		return emptyRetVal, errors.New(op).Err(err)
+	}
+
+	return country, nil
 }
 
 /*********************************************************************************************************************
