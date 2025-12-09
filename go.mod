@@ -4,16 +4,17 @@ go 1.25
 
 require (
 	github.com/Station-Manager/adapters v0.0.11
-	github.com/Station-Manager/config v0.0.21
+	github.com/Station-Manager/config v0.0.23
 	github.com/Station-Manager/errors v0.0.9
-	github.com/Station-Manager/logging v0.0.7
-	github.com/Station-Manager/types v0.0.48
-	github.com/Station-Manager/utils v0.0.2
+	github.com/Station-Manager/logging v0.0.8
+	github.com/Station-Manager/types v0.0.49
+	github.com/Station-Manager/utils v0.0.3
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
 	github.com/aarondl/strmangle v0.0.9
 	github.com/friendsofgo/errors v0.9.2
 	github.com/go-playground/validator/v10 v10.28.0
+	github.com/goccy/go-json v0.10.5
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/lib/pq v1.10.9
 	modernc.org/sqlite v1.40.1
@@ -27,10 +28,8 @@ require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ericlagergren/decimal v0.0.0-20240411145413-00de7ca16731 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.11 // indirect
-	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
