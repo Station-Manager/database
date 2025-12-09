@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	stderr "errors"
+	"fmt"
 	"github.com/Station-Manager/database/sqlite/adapters"
 	"github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
@@ -110,4 +111,63 @@ func (s *Service) FetchCountryByCallsignWithContext(ctx context.Context, callsig
 	}
 
 	return country, nil
+}
+
+func (s *Service) FetchContactHistoryWithContext(ctx context.Context, callsign string) ([]types.ContactHistory, error) {
+	const op errors.Op = "sqlite.Service.FetchContactHistoryWithContext"
+	if err := checkService(op, s); err != nil {
+		return nil, err
+	}
+
+	callsign = strings.TrimSpace(callsign)
+	if callsign == "" {
+		return nil, errors.New(op).Msg(errMsgEmptyCallsign)
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	callsign = fmt.Sprintf("%%%s%%", callsign)
+
+	var mods []qm.QueryMod
+	mods = append(mods, models.QsoWhere.Call.LIKE(callsign))
+	mods = append(mods, qm.OrderBy(models.QsoColumns.CreatedAt+" DESC"))
+	slice, err := models.Qsos(mods...).All(ctx, h)
+	if err != nil {
+		if stderr.Is(err, sql.ErrNoRows) {
+			return nil, errors.ErrNotFound
+		}
+		return nil, errors.New(op).Err(err).Msg("Failed to fetch contact history.")
+	}
+
+	history := make([]types.ContactHistory, 0, len(slice))
+	for _, qso := range slice {
+		typeQso, er := adapters.QsoModelToType(qso)
+		if er != nil {
+			//TODO: Log, but ignore
+			continue
+		}
+		item := types.ContactHistory{
+			ID:      typeQso.ID,
+			Band:    typeQso.Band,
+			Freq:    typeQso.Freq,
+			Mode:    typeQso.Mode,
+			QsoDate: typeQso.QsoDate,
+			TimeOn:  typeQso.TimeOn,
+			Name:    typeQso.Name,
+			Country: typeQso.Country,
+			Call:    typeQso.Call,
+			RstSent: typeQso.RstSent,
+			RstRcvd: typeQso.RstRcvd,
+			Notes:   typeQso.Notes,
+		}
+		history = append(history, item)
+	}
+
+	return history, nil
 }

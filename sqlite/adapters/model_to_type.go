@@ -5,12 +5,13 @@ import (
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/goccy/go-json"
+	"strconv"
 )
 
 func ContactedStationModelToType(model *models.ContactedStation) (types.ContactedStation, error) {
 	const op errors.Op = "sqlite.adapters.ContactedStationModelToType"
 	if model == nil {
-		return types.ContactedStation{}, errors.New(op).Msg("model is nil")
+		return types.ContactedStation{}, errors.New(op).Msg(errMsgNilModel)
 	}
 	type additionalData struct {
 		Address      string `json:"address,omitempty"`
@@ -73,7 +74,7 @@ func ContactedStationModelToType(model *models.ContactedStation) (types.Contacte
 func CountryModelToType(model *models.Country) (types.Country, error) {
 	const op errors.Op = "sqlite.adapters.CountryModelToType"
 	if model == nil {
-		return types.Country{}, errors.New(op).Msg("model is nil")
+		return types.Country{}, errors.New(op).Msg(errMsgNilModel)
 	}
 	return types.Country{
 		Name:       model.Name,
@@ -85,4 +86,31 @@ func CountryModelToType(model *models.Country) (types.Country, error) {
 		CQZone:     model.CQZone,
 		ITUZone:    model.ItuZone,
 	}, nil
+}
+
+func QsoModelToType(model *models.Qso) (types.Qso, error) {
+	const op errors.Op = "sqlite.adapters.QsoModelToType"
+	if model == nil {
+		return types.Qso{}, errors.New(op).Msg(errMsgNilModel)
+	}
+
+	typesQso := types.Qso{}
+	if err := json.Unmarshal(model.AdditionalData, &typesQso); err != nil {
+		return typesQso, err
+	}
+
+	typesQso.QsoDetails.Band = model.Band
+	typesQso.QsoDetails.Freq = strconv.FormatInt(model.Freq, 10)
+	typesQso.QsoDetails.Mode = model.Mode
+	typesQso.QsoDetails.QsoDate = model.QsoDate
+	typesQso.QsoDetails.RstRcvd = model.RstRcvd
+	typesQso.QsoDetails.RstSent = model.RstSent
+	typesQso.QsoDetails.TimeOff = model.TimeOff
+	typesQso.QsoDetails.TimeOn = model.TimeOn
+	typesQso.LogbookID = model.LogbookID
+	typesQso.SessionID = model.SessionID
+	typesQso.ContactedStation.Country = model.Country
+	typesQso.ContactedStation.Call = model.Call
+
+	return typesQso, nil
 }

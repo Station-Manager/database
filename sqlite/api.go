@@ -16,3 +16,7 @@ func (s *Service) FetchContactedStationByCallsign(callsign string) (types.Contac
 func (s *Service) FetchCountryByCallsign(callsign string) (types.Country, error) {
 	return s.FetchCountryByCallsignWithContext(context.Background(), callsign)
 }
+
+func (s *Service) FetchContactHistory(callsign string) ([]types.ContactHistory, error) {
+	return s.FetchContactHistoryWithContext(context.Background(), callsign)
+}
