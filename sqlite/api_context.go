@@ -149,7 +149,7 @@ func (s *Service) FetchContactHistoryWithContext(ctx context.Context, callsign s
 	for _, qso := range slice {
 		typeQso, er := adapters.QsoModelToType(qso)
 		if er != nil {
-			//TODO: Log, but ignore
+			s.LoggerService.WarnWith().Int64("qso.id", qso.ID).Err(er).Msg("Failed to adapt QSO for contact history.")
 			continue
 		}
 		item := types.ContactHistory{
