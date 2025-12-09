@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/utils"
@@ -13,6 +14,17 @@ import (
 	"strings"
 	"time"
 )
+
+func (s *Service) getOpenHandle(op errors.Op) (*sql.DB, error) {
+	s.mu.RLock()
+	h := s.handle
+	isOpen := s.isOpen.Load()
+	s.mu.RUnlock()
+	if h == nil || !isOpen {
+		return nil, errors.New(op).Msg(errMsgNotOpen)
+	}
+	return h, nil
+}
 
 // getDsn returns the DSN for the database identified in the config.
 func (s *Service) getDsn() (string, error) {
@@ -75,6 +87,20 @@ func (s *Service) getDsn() (string, error) {
 	default:
 		return emptyString, errors.New(op).Errorf("Unsupported database driver: %s (expected %q or %q)", s.DatabaseConfig.Driver, PostgresDriver, SqliteDriver)
 	}
+}
+
+// ensureCtxTimeout ensures that the context has an associated timeout.
+// If the context is nil, a new context with a default timeout is created.
+// If the context already has a deadline, it is returned as-is.
+// If the context is derived from another context, the original cancel function is called when the derived context is done.
+func (s *Service) ensureCtxTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	if ctx == nil {
+		return s.withDefaultTimeout(ctx)
+	}
+	if _, hasDeadline := ctx.Deadline(); hasDeadline {
+		return ctx, func() {}
+	}
+	return s.withDefaultTimeout(ctx)
 }
 
 // withDefaultTimeout returns a context with a default timeout if none is provided.

@@ -32,7 +32,6 @@ type ContactedStation struct {
 	Name           string     `boil:"name" json:"name" toml:"name" yaml:"name"`
 	Call           string     `boil:"call" json:"call" toml:"call" yaml:"call"`
 	Country        string     `boil:"country" json:"country" toml:"country" yaml:"country"`
-	TimeOffset     string     `boil:"time_offset" json:"time_offset" toml:"time_offset" yaml:"time_offset"`
 	AdditionalData types.JSON `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
 
 	R *contactedStationR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -47,7 +46,6 @@ var ContactedStationColumns = struct {
 	Name           string
 	Call           string
 	Country        string
-	TimeOffset     string
 	AdditionalData string
 }{
 	ID:             "id",
@@ -57,7 +55,6 @@ var ContactedStationColumns = struct {
 	Name:           "name",
 	Call:           "call",
 	Country:        "country",
-	TimeOffset:     "time_offset",
 	AdditionalData: "additional_data",
 }
 
@@ -69,7 +66,6 @@ var ContactedStationTableColumns = struct {
 	Name           string
 	Call           string
 	Country        string
-	TimeOffset     string
 	AdditionalData string
 }{
 	ID:             "contacted_station.id",
@@ -79,7 +75,6 @@ var ContactedStationTableColumns = struct {
 	Name:           "contacted_station.name",
 	Call:           "contacted_station.call",
 	Country:        "contacted_station.country",
-	TimeOffset:     "contacted_station.time_offset",
 	AdditionalData: "contacted_station.additional_data",
 }
 
@@ -207,7 +202,6 @@ var ContactedStationWhere = struct {
 	Name           whereHelperstring
 	Call           whereHelperstring
 	Country        whereHelperstring
-	TimeOffset     whereHelperstring
 	AdditionalData whereHelpertypes_JSON
 }{
 	ID:             whereHelperint64{field: "\"contacted_station\".\"id\""},
@@ -217,7 +211,6 @@ var ContactedStationWhere = struct {
 	Name:           whereHelperstring{field: "\"contacted_station\".\"name\""},
 	Call:           whereHelperstring{field: "\"contacted_station\".\"call\""},
 	Country:        whereHelperstring{field: "\"contacted_station\".\"country\""},
-	TimeOffset:     whereHelperstring{field: "\"contacted_station\".\"time_offset\""},
 	AdditionalData: whereHelpertypes_JSON{field: "\"contacted_station\".\"additional_data\""},
 }
 
@@ -238,8 +231,8 @@ func (*contactedStationR) NewStruct() *contactedStationR {
 type contactedStationL struct{}
 
 var (
-	contactedStationAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "name", "call", "country", "time_offset", "additional_data"}
-	contactedStationColumnsWithoutDefault = []string{"name", "call", "country", "time_offset"}
+	contactedStationAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "name", "call", "country", "additional_data"}
+	contactedStationColumnsWithoutDefault = []string{"name", "call", "country"}
 	contactedStationColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "additional_data"}
 	contactedStationPrimaryKeyColumns     = []string{"id"}
 	contactedStationGeneratedColumns      = []string{"id"}

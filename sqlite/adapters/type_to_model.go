@@ -3,7 +3,7 @@ package adapters
 import (
 	"github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/types"
-	"github.com/go-jose/go-jose/v4/json"
+	"github.com/goccy/go-json"
 	"strconv"
 )
 
@@ -42,7 +42,6 @@ func QsoTypeToSqliteModel(qso types.Qso) (models.Qso, error) {
 		Address      string `json:"address,omitempty"`
 		Age          string `json:"age,omitempty"`
 		Altitude     string `json:"altitude,omitempty"`
-		Call         string `json:"call,omitempty"`
 		Cont         string `json:"cont,omitempty"` // the contacted station's Continent
 		ContactedOp  string `json:"contacted_op,omitempty"`
 		CQZ          string `json:"cqz,omitempty"`
@@ -107,10 +106,10 @@ func QsoTypeToSqliteModel(qso types.Qso) (models.Qso, error) {
 		STX:         qso.QsoDetails.STX,
 		TxPwr:       qso.QsoDetails.TxPwr,
 
+		// ContactedStation
 		Address:      qso.ContactedStation.Address,
 		Age:          qso.ContactedStation.Age,
 		Altitude:     qso.ContactedStation.Altitude,
-		Call:         qso.ContactedStation.Call,
 		Cont:         qso.ContactedStation.Cont,
 		ContactedOp:  qso.ContactedStation.ContactedOp,
 		CQZ:          qso.ContactedStation.CQZ,
@@ -130,6 +129,7 @@ func QsoTypeToSqliteModel(qso types.Qso) (models.Qso, error) {
 		SigInfo:      qso.ContactedStation.SigInfo,
 		Web:          qso.ContactedStation.Web,
 		WwffRef:      qso.ContactedStation.WwffRef,
+
 		// LoggingStation
 		AntennaAzimuth:  qso.LoggingStation.AntennaAzimuth,
 		MyAltitude:      qso.LoggingStation.MyAltitude,
@@ -162,6 +162,10 @@ func QsoTypeToSqliteModel(qso types.Qso) (models.Qso, error) {
 	jsonData, err := json.Marshal(additionalData)
 	if err != nil {
 		return models.Qso{}, err
+	}
+
+	if len(jsonData) == 0 {
+		jsonData = []byte("{}")
 	}
 
 	return models.Qso{

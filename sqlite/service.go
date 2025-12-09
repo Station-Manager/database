@@ -172,13 +172,9 @@ func (s *Service) Ping() error {
 	const op errors.Op = "sqlite.Service.Ping"
 
 	// Snapshot state under read lock to minimize lock hold time during network call.
-	s.mu.RLock()
-	h := s.handle
-	isOpen := s.isOpen.Load()
-	s.mu.RUnlock()
-
-	if h == nil || !isOpen {
-		return errors.New(op).Msg(errMsgNotOpen)
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return err
 	}
 
 	var lastErr error
@@ -224,14 +220,9 @@ func (s *Service) Migrate() error {
 func (s *Service) BeginTxContext(ctx context.Context) (*sql.Tx, context.CancelFunc, error) {
 	const op errors.Op = "sqlite.Service.BeginTxContext"
 
-	// Snapshot handle & open state under read lock (mirrors ExecContext/QueryContext pattern)
-	s.mu.RLock()
-	h := s.handle
-	isOpen := s.isOpen.Load()
-	s.mu.RUnlock()
-
-	if h == nil || !isOpen {
-		return nil, nil, errors.New(op).Msg(errMsgNotOpen)
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	_, hasDeadline := ctx.Deadline()

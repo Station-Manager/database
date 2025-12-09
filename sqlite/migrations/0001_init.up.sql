@@ -124,14 +124,12 @@ CREATE TABLE IF NOT EXISTS contacted_station
     name            TEXT     NOT NULL,
     call            TEXT     NOT NULL CHECK (length(trim(call)) <= 20),
     country         TEXT     NOT NULL CHECK (length(trim(country)) <= 50),
-    time_offset     TEXT     NOT NULL,
     additional_data JSON     NOT NULL DEFAULT ('{}') CHECK (json_valid(additional_data)),
 
     CONSTRAINT qso_data_no_duplicates CHECK (
         json_extract(additional_data, '$.name') IS NULL AND
         json_extract(additional_data, '$.call') IS NULL AND
-        json_extract(additional_data, '$.country') IS NULL AND
-        json_extract(additional_data, '$.time_offset') IS NULL
+        json_extract(additional_data, '$.country') IS NULL
         )
 );
 

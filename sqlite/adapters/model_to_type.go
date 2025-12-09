@@ -1,0 +1,67 @@
+package adapters
+
+import (
+	"github.com/Station-Manager/database/sqlite/models"
+	"github.com/Station-Manager/types"
+	"github.com/goccy/go-json"
+)
+
+func ContactedStationModelToType(model *models.ContactedStation) (types.ContactedStation, error) {
+
+	type additionalData struct {
+		Address      string `json:"address,omitempty"`
+		Age          string `json:"age,omitempty"`
+		Altitude     string `json:"altitude,omitempty"`
+		Cont         string `json:"cont,omitempty"` // the contacted station's Continent
+		ContactedOp  string `json:"contacted_op,omitempty"`
+		CQZ          string `json:"cqz,omitempty"`
+		DXCC         string `json:"dxcc,omitempty"`
+		Email        string `json:"email,omitempty"`
+		EqCall       string `json:"eq_call,omitempty"` // the contacted station's owner's callsign (if different from call)
+		Gridsquare   string `json:"gridsquare,omitempty"`
+		Iota         string `json:"iota,omitempty"`
+		IotaIslandId string `json:"iota_island_id,omitempty"`
+		ITUZ         string `json:"ituz,omitempty"`
+		Lat          string `json:"lat,omitempty"`
+		Lon          string `json:"lon,omitempty"`
+		QTH          string `json:"qth,omitempty"`
+		Rig          string `json:"rig,omitempty"`
+		Sig          string `json:"sig,omitempty"`      // the name of the contacted station's special activity or interest group
+		SigInfo      string `json:"sig_info,omitempty"` // information associated with the contacted station's activity or interest group
+		Web          string `json:"web,omitempty"`
+		WwffRef      string `json:"wwff_ref,omitempty"`
+	}
+
+	data := additionalData{}
+	if err := json.Unmarshal(model.AdditionalData, &data); err != nil {
+		return types.ContactedStation{}, err
+	}
+
+	return types.ContactedStation{
+		ID:           model.ID,
+		Name:         model.Name,
+		Call:         model.Call,
+		Country:      model.Country,
+		Address:      data.Address,
+		Age:          data.Age,
+		Altitude:     data.Altitude,
+		Cont:         data.Cont,
+		ContactedOp:  data.ContactedOp,
+		CQZ:          data.CQZ,
+		DXCC:         data.DXCC,
+		Email:        data.Email,
+		EqCall:       data.EqCall,
+		Gridsquare:   data.Gridsquare,
+		Iota:         data.Iota,
+		IotaIslandId: data.IotaIslandId,
+		ITUZ:         data.ITUZ,
+		Lat:          data.Lat,
+		Lon:          data.Lon,
+		QTH:          data.QTH,
+		Rig:          data.Rig,
+		Sig:          data.Sig,
+		SigInfo:      data.SigInfo,
+		Web:          data.Web,
+		WwffRef:      data.WwffRef,
+	}, nil
+}
