@@ -2,12 +2,16 @@ package adapters
 
 import (
 	"github.com/Station-Manager/database/sqlite/models"
+	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/goccy/go-json"
 )
 
 func ContactedStationModelToType(model *models.ContactedStation) (types.ContactedStation, error) {
-
+	const op errors.Op = "sqlite.adapters.ContactedStationModelToType"
+	if model == nil {
+		return types.ContactedStation{}, errors.New(op).Msg("model is nil")
+	}
 	type additionalData struct {
 		Address      string `json:"address,omitempty"`
 		Age          string `json:"age,omitempty"`
@@ -63,5 +67,22 @@ func ContactedStationModelToType(model *models.ContactedStation) (types.Contacte
 		SigInfo:      data.SigInfo,
 		Web:          data.Web,
 		WwffRef:      data.WwffRef,
+	}, nil
+}
+
+func CountryModelToType(model *models.Country) (types.Country, error) {
+	const op errors.Op = "sqlite.adapters.CountryModelToType"
+	if model == nil {
+		return types.Country{}, errors.New(op).Msg("model is nil")
+	}
+	return types.Country{
+		Name:       model.Name,
+		Prefix:     model.Prefix,
+		Continent:  model.Continent,
+		Ccode:      model.Ccode,
+		DXCCPrefix: model.DXCCPrefix,
+		TimeOffset: model.TimeOffset,
+		CQZone:     model.CQZone,
+		ITUZone:    model.ItuZone,
 	}, nil
 }

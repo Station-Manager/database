@@ -12,3 +12,7 @@ func (s *Service) InsertQso(qso types.Qso) (int64, error) {
 func (s *Service) FetchContactedStationByCallsign(callsign string) (types.ContactedStation, error) {
 	return s.FetchContactedStationByCallsignWithContext(context.Background(), callsign)
 }
+
+func (s *Service) FetchCountryByCallsign(callsign string) (types.Country, error) {
+	return s.FetchCountryByCallsignWithContext(context.Background(), callsign)
+}
