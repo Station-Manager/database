@@ -204,18 +204,18 @@ func (s *Service) logPostgresActivity() {
 	rows, err := s.handle.QueryContext(ctx, `SELECT pid, usename, state, wait_event_type, wait_event, CURRENT_TIMESTAMP - query_start AS duration, query FROM pg_stat_activity WHERE state <> 'idle' ORDER BY duration DESC LIMIT 10`)
 	if err != nil {
 		// Internal diagnostic only (error not returned to caller)
-		s.Logger.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity query error")
+		s.LoggerService.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity query error")
 		return
 	}
 	defer func() { _ = rows.Close() }()
 	for rows.Next() {
 		var pid int
 		var usename, state, waitType, waitEvent, duration, query string
-		if err := rows.Scan(&pid, &usename, &state, &waitType, &waitEvent, &duration, &query); err != nil {
-			s.Logger.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity row scan error")
+		if err = rows.Scan(&pid, &usename, &state, &waitType, &waitEvent, &duration, &query); err != nil {
+			s.LoggerService.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity row scan error")
 			continue
 		}
-		s.Logger.DebugWith().Str("component", "db").Str("sub", "activity").Int("pid", pid).Str("user", usename).Str("state", state).Str("wait_type", waitType).Str("wait_event", waitEvent).Str("duration", duration).Str("query", query).Msg("active query")
+		s.LoggerService.DebugWith().Str("component", "db").Str("sub", "activity").Int("pid", pid).Str("user", usename).Str("state", state).Str("wait_type", waitType).Str("wait_event", waitEvent).Str("duration", duration).Str("query", query).Msg("active query")
 	}
 }
 

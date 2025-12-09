@@ -24,18 +24,18 @@ import (
 
 // Country is an object representing the database table.
 type Country struct {
-	ID         int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	CreatedAt  time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ModifiedAt null.Time   `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
-	DeletedAt  null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
-	Name       string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	CQZone     string      `boil:"cq_zone" json:"cq_zone" toml:"cq_zone" yaml:"cq_zone"`
-	ItuZone    string      `boil:"itu_zone" json:"itu_zone" toml:"itu_zone" yaml:"itu_zone"`
-	Continent  string      `boil:"continent" json:"continent" toml:"continent" yaml:"continent"`
-	Prefix     string      `boil:"prefix" json:"prefix" toml:"prefix" yaml:"prefix"`
-	Ccode      null.String `boil:"ccode" json:"ccode,omitempty" toml:"ccode" yaml:"ccode,omitempty"`
-	DXCCPrefix null.String `boil:"dxcc_prefix" json:"dxcc_prefix,omitempty" toml:"dxcc_prefix" yaml:"dxcc_prefix,omitempty"`
-	TimeOffset null.String `boil:"time_offset" json:"time_offset,omitempty" toml:"time_offset" yaml:"time_offset,omitempty"`
+	ID         int64     `boil:"id" json:"id" toml:"id" yaml:"id"`
+	CreatedAt  time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt null.Time `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
+	DeletedAt  null.Time `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	Name       string    `boil:"name" json:"name" toml:"name" yaml:"name"`
+	CQZone     string    `boil:"cq_zone" json:"cq_zone" toml:"cq_zone" yaml:"cq_zone"`
+	ItuZone    string    `boil:"itu_zone" json:"itu_zone" toml:"itu_zone" yaml:"itu_zone"`
+	Continent  string    `boil:"continent" json:"continent" toml:"continent" yaml:"continent"`
+	Prefix     string    `boil:"prefix" json:"prefix" toml:"prefix" yaml:"prefix"`
+	Ccode      string    `boil:"ccode" json:"ccode" toml:"ccode" yaml:"ccode"`
+	DXCCPrefix string    `boil:"dxcc_prefix" json:"dxcc_prefix" toml:"dxcc_prefix" yaml:"dxcc_prefix"`
+	TimeOffset string    `boil:"time_offset" json:"time_offset" toml:"time_offset" yaml:"time_offset"`
 
 	R *countryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L countryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -109,9 +109,9 @@ var CountryWhere = struct {
 	ItuZone    whereHelperstring
 	Continent  whereHelperstring
 	Prefix     whereHelperstring
-	Ccode      whereHelpernull_String
-	DXCCPrefix whereHelpernull_String
-	TimeOffset whereHelpernull_String
+	Ccode      whereHelperstring
+	DXCCPrefix whereHelperstring
+	TimeOffset whereHelperstring
 }{
 	ID:         whereHelperint64{field: "\"country\".\"id\""},
 	CreatedAt:  whereHelpertime_Time{field: "\"country\".\"created_at\""},
@@ -122,9 +122,9 @@ var CountryWhere = struct {
 	ItuZone:    whereHelperstring{field: "\"country\".\"itu_zone\""},
 	Continent:  whereHelperstring{field: "\"country\".\"continent\""},
 	Prefix:     whereHelperstring{field: "\"country\".\"prefix\""},
-	Ccode:      whereHelpernull_String{field: "\"country\".\"ccode\""},
-	DXCCPrefix: whereHelpernull_String{field: "\"country\".\"dxcc_prefix\""},
-	TimeOffset: whereHelpernull_String{field: "\"country\".\"time_offset\""},
+	Ccode:      whereHelperstring{field: "\"country\".\"ccode\""},
+	DXCCPrefix: whereHelperstring{field: "\"country\".\"dxcc_prefix\""},
+	TimeOffset: whereHelperstring{field: "\"country\".\"time_offset\""},
 }
 
 // CountryRels is where relationship names are stored.
@@ -145,8 +145,8 @@ type countryL struct{}
 
 var (
 	countryAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "name", "cq_zone", "itu_zone", "continent", "prefix", "ccode", "dxcc_prefix", "time_offset"}
-	countryColumnsWithoutDefault = []string{"name", "cq_zone", "itu_zone", "continent", "prefix"}
-	countryColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "ccode", "dxcc_prefix", "time_offset"}
+	countryColumnsWithoutDefault = []string{"name", "cq_zone", "itu_zone", "continent", "prefix", "ccode", "dxcc_prefix", "time_offset"}
+	countryColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at"}
 	countryPrimaryKeyColumns     = []string{"id"}
 	countryGeneratedColumns      = []string{"id"}
 )

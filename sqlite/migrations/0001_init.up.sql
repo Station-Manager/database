@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS qso
         ),
     rst_sent        TEXT     NOT NULL CHECK (length(rst_sent) <= 3),
     rst_rcvd        TEXT     NOT NULL CHECK (length(rst_rcvd) <= 3),
-    country         TEXT CHECK (length(trim(country)) <= 50),
+    country         TEXT     NOT NULL CHECK (length(trim(country)) <= 50),
     additional_data JSON     NOT NULL DEFAULT ('{}') CHECK (json_valid(additional_data)),
 
     logbook_id      INTEGER  NOT NULL,
@@ -88,8 +88,8 @@ CREATE TABLE IF NOT EXISTS qso
         json_extract(additional_data, '$.country') IS NULL
         ),
     -- Client uses soft deletes; prevent deleting a logbook that still has QSOs
-    CONSTRAINT fk_qso_logbook FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE RESTRICT ON UPDATE NO ACTION,
-    CONSTRAINT fk_qso_session FOREIGN KEY (session_id) REFERENCES session (id) ON DELETE RESTRICT ON UPDATE NO ACTION
+    CONSTRAINT fk_qso_logbook_id FOREIGN KEY (logbook_id) REFERENCES logbook (id) ON DELETE RESTRICT ON UPDATE NO ACTION,
+    CONSTRAINT fk_qso_session_id FOREIGN KEY (session_id) REFERENCES session (id) ON DELETE RESTRICT ON UPDATE NO ACTION
 );
 
 CREATE INDEX IF NOT EXISTS idx_qso_call ON qso (call);
@@ -99,12 +99,11 @@ CREATE INDEX IF NOT EXISTS idx_qso_date_time ON qso (qso_date, time_on);
 -- Index on the FK column for joins/deletes
 CREATE INDEX IF NOT EXISTS idx_qso_logbook_id ON qso (logbook_id);
 
+CREATE INDEX IF NOT EXISTS idx_qso_session_id ON qso (session_id);
+
 -- Optional partial indexes to speed queries that ignore soft-deleted rows
 CREATE INDEX IF NOT EXISTS idx_qso_active_call ON qso (call) WHERE deleted_at IS NULL;
 CREATE INDEX IF NOT EXISTS idx_qso_active_date_time ON qso (qso_date, time_on) WHERE deleted_at IS NULL;
-
--- Optional: enforce uniqueness for active QSOs (example — adjust columns to your deduplication rules)
--- CREATE UNIQUE INDEX IF NOT EXISTS uq_qso_active_unique ON qso (call, qso_date, time_on, freq) WHERE deleted_at IS NULL;
 
 -- Trigger to set modified_at on updates (safe pattern: update the row after the user's update)
 CREATE TRIGGER IF NOT EXISTS trg_qso_set_modified_at
@@ -113,7 +112,7 @@ CREATE TRIGGER IF NOT EXISTS trg_qso_set_modified_at
     FOR EACH ROW
     WHEN NEW.modified_at IS NULL OR NEW.modified_at = OLD.modified_at
 BEGIN
-    UPDATE qso SET modified_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+    UPDATE qso SET modified_at = datetime('now', 'localtime') WHERE id = OLD.id;
 END;
 
 CREATE TABLE IF NOT EXISTS contacted_station
@@ -123,20 +122,22 @@ CREATE TABLE IF NOT EXISTS contacted_station
     modified_at     DATETIME,
     deleted_at      DATETIME,
     name            TEXT     NOT NULL,
-    call            TEXT     NOT NULL UNIQUE CHECK (length(trim(call)) <= 20),
-    country         TEXT CHECK (length(trim(country)) <= 50),
+    call            TEXT     NOT NULL CHECK (length(trim(call)) <= 20),
+    country         TEXT     NOT NULL CHECK (length(trim(country)) <= 50),
     time_offset     TEXT     NOT NULL,
     additional_data JSON     NOT NULL DEFAULT ('{}') CHECK (json_valid(additional_data)),
 
     CONSTRAINT qso_data_no_duplicates CHECK (
         json_extract(additional_data, '$.name') IS NULL AND
-        json_extract(additional_data, '$.callsign') IS NULL AND
+        json_extract(additional_data, '$.call') IS NULL AND
         json_extract(additional_data, '$.country') IS NULL AND
         json_extract(additional_data, '$.time_offset') IS NULL
         )
 );
 
-CREATE INDEX IF NOT EXISTS idx_contacted_station_callsign ON contacted_station (call);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_contacted_station_active_call
+    ON contacted_station (call)
+    WHERE deleted_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS country
 (
@@ -149,10 +150,9 @@ CREATE TABLE IF NOT EXISTS country
     itu_zone    TEXT     NOT NULL,
     continent   TEXT     NOT NULL,
     prefix      TEXT     NOT NULL UNIQUE CHECK (length(trim(prefix)) <= 20),
-    ccode       TEXT,
-    dxcc_prefix TEXT,
-    time_offset TEXT
+    ccode       TEXT     NOT NULL,
+    dxcc_prefix TEXT     NOT NULL,
+    time_offset TEXT     NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_country_name ON country (name);
-CREATE INDEX IF NOT EXISTS idx_country_prefix ON country (prefix);

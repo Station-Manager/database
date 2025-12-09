@@ -25,23 +25,23 @@ import (
 
 // Qso is an object representing the database table.
 type Qso struct {
-	ID             int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ModifiedAt     null.Time   `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
-	DeletedAt      null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
-	Call           string      `boil:"call" json:"call" toml:"call" yaml:"call"`
-	Band           string      `boil:"band" json:"band" toml:"band" yaml:"band"`
-	Mode           string      `boil:"mode" json:"mode" toml:"mode" yaml:"mode"`
-	Freq           int64       `boil:"freq" json:"freq" toml:"freq" yaml:"freq"`
-	QsoDate        string      `boil:"qso_date" json:"qso_date" toml:"qso_date" yaml:"qso_date"`
-	TimeOn         string      `boil:"time_on" json:"time_on" toml:"time_on" yaml:"time_on"`
-	TimeOff        string      `boil:"time_off" json:"time_off" toml:"time_off" yaml:"time_off"`
-	RstSent        string      `boil:"rst_sent" json:"rst_sent" toml:"rst_sent" yaml:"rst_sent"`
-	RstRcvd        string      `boil:"rst_rcvd" json:"rst_rcvd" toml:"rst_rcvd" yaml:"rst_rcvd"`
-	Country        null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
-	AdditionalData types.JSON  `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
-	LogbookID      int64       `boil:"logbook_id" json:"logbook_id" toml:"logbook_id" yaml:"logbook_id"`
-	SessionID      int64       `boil:"session_id" json:"session_id" toml:"session_id" yaml:"session_id"`
+	ID             int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	CreatedAt      time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt     null.Time  `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
+	DeletedAt      null.Time  `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	Call           string     `boil:"call" json:"call" toml:"call" yaml:"call"`
+	Band           string     `boil:"band" json:"band" toml:"band" yaml:"band"`
+	Mode           string     `boil:"mode" json:"mode" toml:"mode" yaml:"mode"`
+	Freq           int64      `boil:"freq" json:"freq" toml:"freq" yaml:"freq"`
+	QsoDate        string     `boil:"qso_date" json:"qso_date" toml:"qso_date" yaml:"qso_date"`
+	TimeOn         string     `boil:"time_on" json:"time_on" toml:"time_on" yaml:"time_on"`
+	TimeOff        string     `boil:"time_off" json:"time_off" toml:"time_off" yaml:"time_off"`
+	RstSent        string     `boil:"rst_sent" json:"rst_sent" toml:"rst_sent" yaml:"rst_sent"`
+	RstRcvd        string     `boil:"rst_rcvd" json:"rst_rcvd" toml:"rst_rcvd" yaml:"rst_rcvd"`
+	Country        string     `boil:"country" json:"country" toml:"country" yaml:"country"`
+	AdditionalData types.JSON `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
+	LogbookID      int64      `boil:"logbook_id" json:"logbook_id" toml:"logbook_id" yaml:"logbook_id"`
+	SessionID      int64      `boil:"session_id" json:"session_id" toml:"session_id" yaml:"session_id"`
 
 	R *qsoR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L qsoL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -139,7 +139,7 @@ var QsoWhere = struct {
 	TimeOff        whereHelperstring
 	RstSent        whereHelperstring
 	RstRcvd        whereHelperstring
-	Country        whereHelpernull_String
+	Country        whereHelperstring
 	AdditionalData whereHelpertypes_JSON
 	LogbookID      whereHelperint64
 	SessionID      whereHelperint64
@@ -157,7 +157,7 @@ var QsoWhere = struct {
 	TimeOff:        whereHelperstring{field: "\"qso\".\"time_off\""},
 	RstSent:        whereHelperstring{field: "\"qso\".\"rst_sent\""},
 	RstRcvd:        whereHelperstring{field: "\"qso\".\"rst_rcvd\""},
-	Country:        whereHelpernull_String{field: "\"qso\".\"country\""},
+	Country:        whereHelperstring{field: "\"qso\".\"country\""},
 	AdditionalData: whereHelpertypes_JSON{field: "\"qso\".\"additional_data\""},
 	LogbookID:      whereHelperint64{field: "\"qso\".\"logbook_id\""},
 	SessionID:      whereHelperint64{field: "\"qso\".\"session_id\""},
@@ -220,8 +220,8 @@ type qsoL struct{}
 
 var (
 	qsoAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "country", "additional_data", "logbook_id", "session_id"}
-	qsoColumnsWithoutDefault = []string{"call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "logbook_id", "session_id"}
-	qsoColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "country", "additional_data"}
+	qsoColumnsWithoutDefault = []string{"call", "band", "mode", "freq", "qso_date", "time_on", "time_off", "rst_sent", "rst_rcvd", "country", "logbook_id", "session_id"}
+	qsoColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "additional_data"}
 	qsoPrimaryKeyColumns     = []string{"id"}
 	qsoGeneratedColumns      = []string{"id"}
 )
