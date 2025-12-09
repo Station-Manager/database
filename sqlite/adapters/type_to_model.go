@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 
-func QsoTypeToSqliteModel(qso types.Qso) models.Qso {
+func QsoTypeToSqliteModel(qso types.Qso) (models.Qso, error) {
 	// Parse frequency from types (string) to int64 expected by models.
 	var freqHz int64
 	if qso.QsoDetails.Freq != "" {
@@ -161,7 +161,7 @@ func QsoTypeToSqliteModel(qso types.Qso) models.Qso {
 
 	jsonData, err := json.Marshal(additionalData)
 	if err != nil {
-		panic(err)
+		return models.Qso{}, err
 	}
 
 	return models.Qso{
@@ -181,5 +181,5 @@ func QsoTypeToSqliteModel(qso types.Qso) models.Qso {
 		RstRcvd:        qso.QsoDetails.RstRcvd,
 		Country:        qso.ContactedStation.Country,
 		AdditionalData: jsonData,
-	}
+	}, nil
 }
