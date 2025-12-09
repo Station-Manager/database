@@ -2,8 +2,10 @@ package sqlite
 
 import (
 	"context"
+	"github.com/Station-Manager/database/sqlite/adapters"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
+	"github.com/aarondl/sqlboiler/v4/boil"
 )
 
 func (s *Service) InsertQso(qso types.Qso) (int64, error) {
@@ -31,5 +33,18 @@ func (s *Service) InsertQsoWithContext(ctx context.Context, qso types.Qso) (int6
 		defer cancel()
 	}
 
-	return 0, nil
+	model, err := adapters.QsoTypeToSqliteModel(qso)
+	if err != nil {
+		return 0, errors.New(op).Err(err)
+	}
+
+	if len(model.AdditionalData) == 0 {
+		model.AdditionalData = []byte("{}")
+	}
+
+	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
+		return 0, errors.New(op).Err(err)
+	}
+
+	return model.ID, nil
 }
