@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/database"
+	"github.com/Station-Manager/database/sqlite"
 	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
 	"os"
@@ -28,7 +29,7 @@ func main() {
 			TransactionContextTimeout: 5,
 		},
 		LoggingConfig: types.LoggingConfig{
-			Level:                  "info",
+			Level:                  "debug",
 			WithTimestamp:          false,
 			ConsoleLogging:         true,
 			FileLogging:            false,
@@ -51,7 +52,7 @@ func main() {
 	}
 	defer func() { _ = logService.Close() }()
 
-	dbService := database.Service{ConfigService: cfgService, Logger: logService}
+	dbService := sqlite.Service{ConfigService: cfgService, LoggerService: logService}
 	if err := dbService.Initialize(); err != nil {
 		panic(err)
 	}

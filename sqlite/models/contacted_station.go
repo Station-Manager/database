@@ -25,15 +25,14 @@ import (
 
 // ContactedStation is an object representing the database table.
 type ContactedStation struct {
-	ID             int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ModifiedAt     null.Time   `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
-	DeletedAt      null.Time   `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
-	Name           string      `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Call           string      `boil:"call" json:"call" toml:"call" yaml:"call"`
-	Country        null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
-	TimeOffset     string      `boil:"time_offset" json:"time_offset" toml:"time_offset" yaml:"time_offset"`
-	AdditionalData types.JSON  `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
+	ID             int64      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	CreatedAt      time.Time  `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt     null.Time  `boil:"modified_at" json:"modified_at,omitempty" toml:"modified_at" yaml:"modified_at,omitempty"`
+	DeletedAt      null.Time  `boil:"deleted_at" json:"deleted_at,omitempty" toml:"deleted_at" yaml:"deleted_at,omitempty"`
+	Name           string     `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Call           string     `boil:"call" json:"call" toml:"call" yaml:"call"`
+	Country        string     `boil:"country" json:"country" toml:"country" yaml:"country"`
+	AdditionalData types.JSON `boil:"additional_data" json:"additional_data" toml:"additional_data" yaml:"additional_data"`
 
 	R *contactedStationR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L contactedStationL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -47,7 +46,6 @@ var ContactedStationColumns = struct {
 	Name           string
 	Call           string
 	Country        string
-	TimeOffset     string
 	AdditionalData string
 }{
 	ID:             "id",
@@ -57,7 +55,6 @@ var ContactedStationColumns = struct {
 	Name:           "name",
 	Call:           "call",
 	Country:        "country",
-	TimeOffset:     "time_offset",
 	AdditionalData: "additional_data",
 }
 
@@ -69,7 +66,6 @@ var ContactedStationTableColumns = struct {
 	Name           string
 	Call           string
 	Country        string
-	TimeOffset     string
 	AdditionalData string
 }{
 	ID:             "contacted_station.id",
@@ -79,7 +75,6 @@ var ContactedStationTableColumns = struct {
 	Name:           "contacted_station.name",
 	Call:           "contacted_station.call",
 	Country:        "contacted_station.country",
-	TimeOffset:     "contacted_station.time_offset",
 	AdditionalData: "contacted_station.additional_data",
 }
 
@@ -178,50 +173,6 @@ func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
-type whereHelpernull_String struct{ field string }
-
-func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-func (w whereHelpernull_String) LIKE(x null.String) qm.QueryMod {
-	return qm.Where(w.field+" LIKE ?", x)
-}
-func (w whereHelpernull_String) NLIKE(x null.String) qm.QueryMod {
-	return qm.Where(w.field+" NOT LIKE ?", x)
-}
-func (w whereHelpernull_String) IN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelpernull_String) NIN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-
 type whereHelpertypes_JSON struct{ field string }
 
 func (w whereHelpertypes_JSON) EQ(x types.JSON) qm.QueryMod {
@@ -250,8 +201,7 @@ var ContactedStationWhere = struct {
 	DeletedAt      whereHelpernull_Time
 	Name           whereHelperstring
 	Call           whereHelperstring
-	Country        whereHelpernull_String
-	TimeOffset     whereHelperstring
+	Country        whereHelperstring
 	AdditionalData whereHelpertypes_JSON
 }{
 	ID:             whereHelperint64{field: "\"contacted_station\".\"id\""},
@@ -260,8 +210,7 @@ var ContactedStationWhere = struct {
 	DeletedAt:      whereHelpernull_Time{field: "\"contacted_station\".\"deleted_at\""},
 	Name:           whereHelperstring{field: "\"contacted_station\".\"name\""},
 	Call:           whereHelperstring{field: "\"contacted_station\".\"call\""},
-	Country:        whereHelpernull_String{field: "\"contacted_station\".\"country\""},
-	TimeOffset:     whereHelperstring{field: "\"contacted_station\".\"time_offset\""},
+	Country:        whereHelperstring{field: "\"contacted_station\".\"country\""},
 	AdditionalData: whereHelpertypes_JSON{field: "\"contacted_station\".\"additional_data\""},
 }
 
@@ -282,9 +231,9 @@ func (*contactedStationR) NewStruct() *contactedStationR {
 type contactedStationL struct{}
 
 var (
-	contactedStationAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "name", "call", "country", "time_offset", "additional_data"}
-	contactedStationColumnsWithoutDefault = []string{"name", "call", "time_offset"}
-	contactedStationColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "country", "additional_data"}
+	contactedStationAllColumns            = []string{"id", "created_at", "modified_at", "deleted_at", "name", "call", "country", "additional_data"}
+	contactedStationColumnsWithoutDefault = []string{"name", "call", "country"}
+	contactedStationColumnsWithDefault    = []string{"id", "created_at", "modified_at", "deleted_at", "additional_data"}
 	contactedStationPrimaryKeyColumns     = []string{"id"}
 	contactedStationGeneratedColumns      = []string{"id"}
 )
