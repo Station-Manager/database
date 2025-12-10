@@ -270,3 +270,17 @@ func ContactedStationTypeToModel(station types.ContactedStation) (models.Contact
 		AdditionalData: jsonData,
 	}, nil
 }
+
+func CountryTypeToModel(country types.Country) (models.Country, error) {
+	return models.Country{
+		ID:         country.ID,
+		Name:       country.Name,
+		CQZone:     country.CQZone,
+		ItuZone:    country.ITUZone,
+		Continent:  country.Continent,
+		Prefix:     country.Prefix,
+		Ccode:      country.Ccode,
+		DXCCPrefix: country.DXCCPrefix,
+		TimeOffset: country.TimeOffset,
+	}, nil
+}

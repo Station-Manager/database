@@ -10,12 +10,12 @@ github.com/Station-Manager/config v0.0.24 h1:1JHs7xigui5pQK3YHMqAhjFEZHHCucQSgqs
 github.com/Station-Manager/config v0.0.24/go.mod h1:kbxfmjMRKCJVWDcn5A47dESSs9gsl2h7Wv9rMY6VYgI=
 github.com/Station-Manager/enums v0.0.1 h1:eQSGIscQpxUy7npIMMUKEiOswdxdXTv02Mw7cKhTxYU=
 github.com/Station-Manager/enums v0.0.1/go.mod h1:+DM4D5iPVIXyaflzHsBVQQb5DnBnL0iYNaddkKiBdao=
-github.com/Station-Manager/errors v0.0.9 h1:sAKBZ45jPT4NRdwlzdPgjJME608Y8RZn2uqoaG4h3/A=
-github.com/Station-Manager/errors v0.0.9/go.mod h1:yedsGkIKLyDEUhkm7VrjwE2Qq6Jdlq0MpwEjdDhBwh0=
+github.com/Station-Manager/errors v0.0.11 h1:I5C57weFS9hDx5j5E3xhQU+CdC1w0tXjdlqUQU3VnjY=
+github.com/Station-Manager/errors v0.0.11/go.mod h1:yedsGkIKLyDEUhkm7VrjwE2Qq6Jdlq0MpwEjdDhBwh0=
 github.com/Station-Manager/logging v0.0.8 h1:c6jwWcTYII+qfXHj/TjEQ1EXu49/Iqhn0TLWFJKSygw=
 github.com/Station-Manager/logging v0.0.8/go.mod h1:Q4jW7ScRGXNZrR/FMtDdXbEBBvoKFtaJBLR2Rzo/0yE=
-github.com/Station-Manager/types v0.0.50 h1:htoTymuMS84pBCkRT98LnqgamE2dN5Xd/x/PuOcemhA=
-github.com/Station-Manager/types v0.0.50/go.mod h1:G3VmTr0CRvWzM47yOTlNyPmIw83qGLdHtmXo7aFylLY=
+github.com/Station-Manager/types v0.0.51 h1:/7R84pdZ0SQmzfRvDCKHpFmqaWBnfHKJ6SBbYTy/kR8=
+github.com/Station-Manager/types v0.0.51/go.mod h1:G3VmTr0CRvWzM47yOTlNyPmIw83qGLdHtmXo7aFylLY=
 github.com/Station-Manager/utils v0.0.3 h1:HhZ4qqf9iwNB+5f8N23aXRd/vG75fhkjs9mOAxVMFW0=
 github.com/Station-Manager/utils v0.0.3/go.mod h1:EnFoj5YpCZntfBjfSiVaLuh21wQStGoHGcFMJBWorsI=
 github.com/aarondl/inflect v0.0.2 h1:XvH8K5g1wKS921tMmDOUsZ3zS1Eo8WwK5RHC0IGGT2s=

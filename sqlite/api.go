@@ -49,6 +49,18 @@ func (s *Service) FetchCountryByCallsign(callsign string) (types.Country, error)
 	return s.FetchCountryByCallsignWithContext(context.Background(), callsign)
 }
 
+func (s *Service) FetchCountryByName(name string) (types.Country, error) {
+	return s.FetchCountryByNameWithContext(context.Background(), name)
+}
+
+func (s *Service) InsertCountry(country types.Country) (int64, error) {
+	return s.InsertCountryWithContext(context.Background(), country)
+}
+
+func (s *Service) UpdateCountry(country types.Country) error {
+	return s.UpdateCountryWithContext(context.Background(), country)
+}
+
 /**********************************************************************************************************************
  * Logbook Methods
  **********************************************************************************************************************/

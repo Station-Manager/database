@@ -310,6 +310,92 @@ func (s *Service) FetchCountryByCallsignWithContext(ctx context.Context, callsig
 	return country, nil
 }
 
+func (s *Service) FetchCountryByNameWithContext(ctx context.Context, name string) (types.Country, error) {
+	const op errors.Op = "sqlite.Service.FetchCountryByNameWithContext"
+	if err := checkService(op, s); err != nil {
+		return types.Country{}, err
+	}
+
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return types.Country{}, errors.New(op).Msg("Country name cannot be empty")
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return types.Country{}, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	model, err := models.Countries(models.CountryWhere.Name.EQ(name)).One(ctx, h)
+	if err != nil {
+		if stderr.Is(err, sql.ErrNoRows) {
+			return types.Country{}, errors.ErrNotFound
+		}
+		return types.Country{}, errors.New(op).Err(err)
+	}
+
+	country, err := adapters.CountryModelToType(model)
+	if err != nil {
+		return types.Country{}, errors.New(op).Err(err)
+	}
+
+	return country, nil
+}
+
+func (s *Service) InsertCountryWithContext(ctx context.Context, country types.Country) (int64, error) {
+	const op errors.Op = "sqlite.Service.InsertCountryWithContext"
+	if err := checkService(op, s); err != nil {
+		return 0, err
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return 0, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	model, err := adapters.CountryTypeToModel(country)
+	if err != nil {
+		return 0, errors.New(op).Err(err)
+	}
+	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
+		return 0, errors.New(op).Err(err).Msg("Inserting new country failed.")
+	}
+
+	return model.ID, nil
+}
+
+func (s *Service) UpdateCountryWithContext(ctx context.Context, country types.Country) error {
+	const op errors.Op = "sqlite.Service.UpdateCountryWithContext"
+	if err := checkService(op, s); err != nil {
+		return err
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	model, err := adapters.CountryTypeToModel(country)
+	if err != nil {
+		return errors.New(op).Err(err)
+	}
+
+	if _, err = model.Update(ctx, h, boil.Infer()); err != nil {
+		return errors.New(op).Err(err).Msg("Updating country failed.")
+	}
+
+	return nil
+}
+
 /**********************************************************************************************************************
  * Logbook Methods
  **********************************************************************************************************************/
