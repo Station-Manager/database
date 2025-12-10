@@ -114,3 +114,17 @@ func QsoModelToType(model *models.Qso) (types.Qso, error) {
 
 	return typesQso, nil
 }
+
+func LogbookModelToType(model *models.Logbook) (types.Logbook, error) {
+	const op errors.Op = "sqlite.adapters.LogbookModelToType"
+	if model == nil {
+		return types.Logbook{}, errors.New(op).Msg(errMsgNilModel)
+	}
+	return types.Logbook{
+		ID:          model.ID,
+		Name:        model.Name,
+		Callsign:    model.Callsign,
+		APIKey:      model.APIKey.String,
+		Description: model.Description.String,
+	}, nil
+}

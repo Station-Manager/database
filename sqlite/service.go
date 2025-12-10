@@ -8,10 +8,13 @@ import (
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
+	_ "modernc.org/sqlite"
 	"sync"
 	"sync/atomic"
 	"time"
 )
+
+const ServiceName = types.SqliteServiceName
 
 type Service struct {
 	ConfigService  *config.Service  `di.inject:"configservice"`

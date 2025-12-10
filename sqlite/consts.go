@@ -1,7 +1,5 @@
 package sqlite
 
-import "github.com/Station-Manager/types"
-
 const (
 	errMsgNotInitialized = "Database service is not initialized."
 	errMsgNilService     = "Database service is nil."
@@ -24,7 +22,6 @@ const (
 )
 
 const (
-	ServiceName    = types.DatabaseServiceName
 	PostgresDriver = "postgres"
 	SqliteDriver   = "sqlite"
 	emptyString    = ""

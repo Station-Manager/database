@@ -5,9 +5,10 @@ import (
 	"github.com/Station-Manager/types"
 	"github.com/goccy/go-json"
 	"strconv"
+	"strings"
 )
 
-func QsoTypeToSqliteModel(qso types.Qso) (models.Qso, error) {
+func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 	// Parse frequency from types (string) to int64 expected by models.
 	var freqHz int64
 	if qso.QsoDetails.Freq != "" {
@@ -18,6 +19,21 @@ func QsoTypeToSqliteModel(qso types.Qso) (models.Qso, error) {
 			// Assume MHz and convert to Hz
 			freqHz = int64(f * 1_000_000)
 		}
+	}
+
+	date := qso.QsoDetails.QsoDate
+	if strings.Contains(date, "-") {
+		date = strings.ReplaceAll(date, "-", "")
+	}
+
+	timeOn := qso.QsoDetails.TimeOn
+	if strings.Contains(timeOn, ":") {
+		timeOn = strings.ReplaceAll(timeOn, ":", "")
+	}
+
+	timeOff := qso.QsoDetails.TimeOff
+	if strings.Contains(timeOff, ":") {
+		timeOff = strings.ReplaceAll(timeOff, ":", "")
 	}
 
 	additionalData := struct {
@@ -178,12 +194,79 @@ func QsoTypeToSqliteModel(qso types.Qso) (models.Qso, error) {
 		Band:           qso.QsoDetails.Band,
 		Mode:           qso.QsoDetails.Mode,
 		Freq:           freqHz,
-		QsoDate:        qso.QsoDetails.QsoDate,
-		TimeOn:         qso.QsoDetails.TimeOn,
-		TimeOff:        qso.QsoDetails.TimeOff,
+		QsoDate:        date,
+		TimeOn:         timeOn,
+		TimeOff:        timeOff,
 		RstSent:        qso.QsoDetails.RstSent,
 		RstRcvd:        qso.QsoDetails.RstRcvd,
 		Country:        qso.ContactedStation.Country,
+		AdditionalData: jsonData,
+	}, nil
+}
+
+func ContactedStationTypeToModel(station types.ContactedStation) (models.ContactedStation, error) {
+	additionalData := struct {
+		Address      string `json:"address,omitempty"`
+		Age          string `json:"age,omitempty"`
+		Altitude     string `json:"altitude,omitempty"`
+		Cont         string `json:"cont,omitempty"` // the contacted station's Continent
+		ContactedOp  string `json:"contacted_op,omitempty"`
+		CQZ          string `json:"cqz,omitempty"`
+		DXCC         string `json:"dxcc,omitempty"`
+		Email        string `json:"email,omitempty"`
+		EqCall       string `json:"eq_call,omitempty"` // the contacted station's owner's callsign (if different from call)
+		Gridsquare   string `json:"gridsquare,omitempty"`
+		Iota         string `json:"iota,omitempty"`
+		IotaIslandId string `json:"iota_island_id,omitempty"`
+		ITUZ         string `json:"ituz,omitempty"`
+		Lat          string `json:"lat,omitempty"`
+		Lon          string `json:"lon,omitempty"`
+		//		Name         string `json:"name,omitempty"`
+		QTH     string `json:"qth,omitempty"`
+		Rig     string `json:"rig,omitempty"`
+		Sig     string `json:"sig,omitempty"`      // the name of the contacted station's special activity or interest group
+		SigInfo string `json:"sig_info,omitempty"` // information associated with the contacted station's activity or interest group
+		Web     string `json:"web,omitempty"`
+		WwffRef string `json:"wwff_ref,omitempty"`
+	}{
+		Address:      station.Address,
+		Age:          station.Age,
+		Altitude:     station.Altitude,
+		Cont:         station.Cont,
+		ContactedOp:  station.ContactedOp,
+		CQZ:          station.CQZ,
+		DXCC:         station.DXCC,
+		Email:        station.Email,
+		EqCall:       station.EqCall,
+		Gridsquare:   station.Gridsquare,
+		Iota:         station.Iota,
+		IotaIslandId: station.IotaIslandId,
+		ITUZ:         station.ITUZ,
+		Lat:          station.Lat,
+		Lon:          station.Lon,
+		//		Name:         station.Name,
+		QTH:     station.QTH,
+		Rig:     station.Rig,
+		Sig:     station.Sig,
+		SigInfo: station.SigInfo,
+		Web:     station.Web,
+		WwffRef: station.WwffRef,
+	}
+
+	jsonData, err := json.Marshal(additionalData)
+	if err != nil {
+		return models.ContactedStation{}, err
+	}
+
+	if len(jsonData) == 0 {
+		jsonData = []byte("{}")
+	}
+
+	return models.ContactedStation{
+		ID:             station.ID,
+		Call:           station.Call,
+		Country:        station.Country,
+		Name:           station.Name,
 		AdditionalData: jsonData,
 	}, nil
 }
