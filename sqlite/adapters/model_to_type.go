@@ -99,6 +99,7 @@ func QsoModelToType(model *models.Qso) (types.Qso, error) {
 		return typesQso, err
 	}
 
+	typesQso.ID = model.ID
 	typesQso.QsoDetails.Band = model.Band
 	typesQso.QsoDetails.Freq = strconv.FormatInt(model.Freq, 10)
 	typesQso.QsoDetails.Mode = model.Mode

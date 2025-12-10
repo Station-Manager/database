@@ -39,8 +39,6 @@ func (s *Service) InsertQsoWithContext(ctx context.Context, qso types.Qso) (int6
 		return 0, errors.New(op).Err(err)
 	}
 
-	fmt.Println(model)
-
 	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
 		return 0, errors.New(op).Err(err)
 	}
