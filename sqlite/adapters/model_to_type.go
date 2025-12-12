@@ -1,11 +1,12 @@
 package adapters
 
 import (
+	"strconv"
+
 	"github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/goccy/go-json"
-	"strconv"
 )
 
 func ContactedStationModelToType(model *models.ContactedStation) (types.ContactedStation, error) {
@@ -43,7 +44,7 @@ func ContactedStationModelToType(model *models.ContactedStation) (types.Contacte
 	}
 
 	return types.ContactedStation{
-		ID:           model.ID,
+		CSID:         model.ID,
 		Name:         model.Name,
 		Call:         model.Call,
 		Country:      model.Country,
