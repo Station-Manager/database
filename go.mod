@@ -4,10 +4,10 @@ go 1.25
 
 require (
 	github.com/Station-Manager/adapters v0.0.11
-	github.com/Station-Manager/config v0.0.25
+	github.com/Station-Manager/config v0.0.28
 	github.com/Station-Manager/errors v0.0.11
 	github.com/Station-Manager/logging v0.0.8
-	github.com/Station-Manager/types v0.0.54
+	github.com/Station-Manager/types v0.0.57
 	github.com/Station-Manager/utils v0.0.3
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
@@ -21,13 +21,13 @@ require (
 )
 
 require (
-	github.com/Station-Manager/enums v0.0.1 // indirect
+	github.com/Station-Manager/enums v0.0.2 // indirect
 	github.com/aarondl/inflect v0.0.2 // indirect
 	github.com/aarondl/randomize v0.0.2 // indirect
 	github.com/creack/goselect v0.1.3 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/ericlagergren/decimal v0.0.0-20240411145413-00de7ca16731 // indirect
-	github.com/gabriel-vasile/mimetype v1.4.11 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/gofrs/uuid v4.4.0+incompatible // indirect
