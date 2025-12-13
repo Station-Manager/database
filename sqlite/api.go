@@ -85,3 +85,11 @@ func (s *Service) SoftDeleteSessionByID(id int64) error {
 func (s *Service) InsertSession() (int64, error) {
 	return s.InsertSessionWithContext(context.Background())
 }
+
+/**********************************************************************************************************************
+ * Contest Related Methods
+ **********************************************************************************************************************/
+
+func (s *Service) IsContestDuplicateByLogbookID(id int64, callsign, band string) (bool, error) {
+	return s.IsContestDuplicatByLogbookIDWithContext(context.Background(), id, callsign, band)
+}

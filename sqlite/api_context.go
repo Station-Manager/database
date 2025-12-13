@@ -519,3 +519,47 @@ func (s *Service) InsertSessionWithContext(ctx context.Context) (int64, error) {
 
 	return session.ID, nil
 }
+
+/**********************************************************************************************************************
+ * Contest Related Methods
+ **********************************************************************************************************************/
+
+func (s *Service) IsContestDuplicatByLogbookIDWithContext(ctx context.Context, id int64, callsign, band string) (bool, error) {
+	const op errors.Op = "sqlite.Service.IsContestDuplicatByLogbookIDWithContext"
+	if err := checkService(op, s); err != nil {
+		return false, err
+	}
+
+	if id < 1 {
+		return false, errors.New(op).Msg(errMsgInvalidId)
+	}
+	callsign = strings.TrimSpace(callsign)
+	if callsign == "" {
+		return false, errors.New(op).Msg("Callsign cannot be empty")
+	}
+
+	band = strings.TrimSpace(band)
+	if band == "" {
+		return false, errors.New(op).Msg("Band cannot be empty")
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return false, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	var mods []qm.QueryMod
+	mods = append(mods, models.QsoWhere.Call.EQ(callsign))
+	mods = append(mods, models.QsoWhere.Band.EQ(band))
+	mods = append(mods, models.QsoWhere.LogbookID.EQ(id))
+
+	exists, err := models.Qsos(mods...).Exists(ctx, h)
+	if err != nil {
+		return false, errors.New(op).Err(err)
+	}
+
+	return exists, nil
+}
