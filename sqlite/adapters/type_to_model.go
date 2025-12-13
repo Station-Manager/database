@@ -47,8 +47,13 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 
 	additionalData := struct {
 		// Qso
-		QrzComUploadDate   string `json:"qrzcom_qso_upload_date"`
-		QrzComUploadStatus string `json:"qrzcom_qso_upload_status"`
+		SmQsoUploadDate     string `json:"sm_qso_upload_date,omitempty"`
+		SmQsoUploadStatus   string `json:"sm_qso_upload_status,omitempty"`
+		SmFwrdByEmailDate   string `json:"sm_fwrd_by_email_date,omitempty"`
+		SmFwrdByEmailStatus string `json:"sm_fwrd_by_email_status,omitempty"`
+
+		QrzComUploadDate   string `json:"qrzcom_qso_upload_date,omitempty"`
+		QrzComUploadStatus string `json:"qrzcom_qso_upload_status,omitempty"`
 
 		// QsoDetails
 		AIndex      string `json:"a_index,omitempty"`
@@ -119,6 +124,11 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 		// QSL (TBD)
 	}{
 		// Qso
+		SmQsoUploadDate:     qso.SmQsoUploadDate,
+		SmQsoUploadStatus:   qso.SmQsoUploadStatus,
+		SmFwrdByEmailDate:   qso.SmFwrdByEmailDate,
+		SmFwrdByEmailStatus: qso.SmFwrdByEmailStatus,
+
 		QrzComUploadDate:   qso.QrzComUploadDate,
 		QrzComUploadStatus: qso.QrzComUploadStatus,
 
