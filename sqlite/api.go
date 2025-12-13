@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"context"
+
 	"github.com/Station-Manager/types"
 )
 
@@ -11,6 +12,10 @@ import (
 
 func (s *Service) InsertQso(qso types.Qso) (int64, error) {
 	return s.InsertQsoWithContext(context.Background(), qso)
+}
+
+func (s *Service) UpdateQso(qso types.Qso) error {
+	return s.UpdateQsoWithContext(context.Background(), qso)
 }
 
 func (s *Service) FetchQsoSliceBySessionID(id int64) ([]types.Qso, error) {

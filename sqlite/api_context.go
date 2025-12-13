@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	stderr "errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/Station-Manager/database/sqlite/adapters"
 	"github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
@@ -12,8 +15,6 @@ import (
 	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	"strings"
-	"time"
 )
 
 /**********************************************************************************************************************
@@ -168,6 +169,36 @@ func (s *Service) FetchQsoCountByLogbookIdWithContext(ctx context.Context, id in
 	}
 
 	return count, nil
+}
+
+func (s *Service) UpdateQsoWithContext(ctx context.Context, qso types.Qso) error {
+	const op errors.Op = "sqlite.Service.FetchQsoCountByLogbookIdWithContext"
+	if err := checkService(op, s); err != nil {
+		return err
+	}
+
+	if qso.ID < 1 {
+		return errors.New(op).Msgf("QSO ID is invalid: %d", qso.ID)
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	model, err := adapters.QsoTypeToModel(qso)
+	if err != nil {
+		return errors.New(op).Err(err)
+	}
+
+	if _, err = model.Update(ctx, h, boil.Infer()); err != nil {
+		return errors.New(op).Err(err)
+	}
+
+	return nil
 }
 
 /**********************************************************************************************************************

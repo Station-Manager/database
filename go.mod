@@ -13,7 +13,7 @@ require (
 	github.com/aarondl/sqlboiler/v4 v4.19.5
 	github.com/aarondl/strmangle v0.0.9
 	github.com/friendsofgo/errors v0.9.2
-	github.com/go-playground/validator/v10 v10.28.0
+	github.com/go-playground/validator/v10 v10.29.0
 	github.com/goccy/go-json v0.10.5
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/lib/pq v1.10.9

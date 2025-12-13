@@ -22,6 +22,7 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 		}
 	}
 
+	// Normalize date and time fields
 	date := qso.QsoDetails.QsoDate
 	if strings.Contains(date, "-") {
 		date = strings.ReplaceAll(date, "-", "")
@@ -38,6 +39,10 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 	}
 
 	additionalData := struct {
+		// Qso
+		QrzComUploadDate   string `json:"qrzcom_qso_upload_date"`
+		QrzComUploadStatus string `json:"qrzcom_qso_upload_status"`
+
 		// QsoDetails
 		AIndex      string `json:"a_index,omitempty"`
 		AntPath     string `json:"ant_path,omitempty"` // ADIF, section II.B.1 - currently, we only use S and L
@@ -106,6 +111,11 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 		StationCallsign string `json:"station_callsign"`
 		// QSL (TBD)
 	}{
+		// Qso
+		QrzComUploadDate:   qso.QrzComUploadDate,
+		QrzComUploadStatus: qso.QrzComUploadStatus,
+
+		// QsoDetails
 		AIndex:      qso.QsoDetails.AIndex,
 		AntPath:     qso.QsoDetails.AntPath,
 		BandRx:      qso.QsoDetails.BandRx,
