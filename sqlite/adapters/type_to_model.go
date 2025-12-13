@@ -5,22 +5,29 @@ import (
 	"strings"
 
 	"github.com/Station-Manager/database/sqlite/models"
+	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/goccy/go-json"
 )
 
 func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
-	// Parse frequency from types (string) to int64 expected by models.
-	var freqHz int64
-	if qso.QsoDetails.Freq != "" {
-		// Attempt to parse as integer first (already Hz). If that fails, try parsing as float (e.g., MHz)
-		if v, err := strconv.ParseInt(qso.QsoDetails.Freq, 10, 64); err == nil {
-			freqHz = v
-		} else if f, err2 := strconv.ParseFloat(qso.QsoDetails.Freq, 64); err2 == nil {
-			// Assume MHz and convert to Hz
-			freqHz = int64(f * 1_000_000)
-		}
+	const op errors.Op = "sqlite.adapters.QsoTypeToModel"
+
+	freqHz, err := strconv.ParseInt(qso.QsoDetails.Freq, 10, 64)
+	if err != nil {
+		return models.Qso{}, errors.New(op).Err(err).Msg("failed to parse frequency")
 	}
+	// Parse frequency from types (string) to int64 expected by models.
+	//	var freqHz int64
+	//	if qso.QsoDetails.Freq != "" {
+	// Attempt to parse as integer first (already Hz). If that fails, try parsing as float (e.g., MHz)
+	//if v, err := strconv.ParseInt(qso.QsoDetails.Freq, 10, 64); err == nil {
+	//	freqHz = v
+	//} else if f, err2 := strconv.ParseFloat(qso.QsoDetails.Freq, 64); err2 == nil {
+	//	// Assume MHz and convert to Hz
+	//	freqHz = int64(f * 1_000_000)
+	//}
+	//	}
 
 	// Normalize date and time fields
 	date := qso.QsoDetails.QsoDate
