@@ -201,6 +201,48 @@ func (s *Service) UpdateQsoWithContext(ctx context.Context, qso types.Qso) error
 	return nil
 }
 
+func (s *Service) FetchQsoSliceNotForwardedWithContext(ctx context.Context) ([]types.Qso, error) {
+	const op errors.Op = "sqlite.Service.FetchQsoSliceNotForwardedWithContext"
+	if err := checkService(op, s); err != nil {
+		return nil, err
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	modelSlice, err := models.Qsos(
+		qm.Where(
+			"json_extract(\"qso\".\"additional_data\", '$.QrzComUploadStatus') IS NULL "+
+				"OR json_extract(\"qso\".\"additional_data\", '$.SmQsoUploadStatus') IS NULL",
+		),
+	).All(ctx, h)
+
+	if err != nil {
+		return nil, errors.New(op).Err(err).Msg("Failed to non-forwarded QSO slice.")
+	}
+
+	var typeSlice []types.Qso
+	if modelSlice != nil {
+		typeSlice = make([]types.Qso, 0, len(modelSlice))
+
+		for _, qso := range modelSlice {
+			typeQso, er := adapters.QsoModelToType(qso)
+			if er != nil {
+				s.LoggerService.WarnWith().Int64("qso.id", qso.ID).Err(er).Msg("Failed to adapt QSO for contact history.")
+				continue
+			}
+			typeSlice = append(typeSlice, typeQso)
+		}
+	}
+
+	return typeSlice, nil
+}
+
 /**********************************************************************************************************************
  * ContactedStation Methods
  **********************************************************************************************************************/

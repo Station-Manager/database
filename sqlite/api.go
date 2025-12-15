@@ -30,6 +30,10 @@ func (s *Service) FetchQsoCountByLogbookId(id int64) (int64, error) {
 	return s.FetchQsoCountByLogbookIdWithContext(context.Background(), id)
 }
 
+func (s *Service) FetchQsoSliceNotForwarded() ([]types.Qso, error) {
+	return s.FetchQsoSliceNotForwardedWithContext(context.Background())
+}
+
 /**********************************************************************************************************************
  * ContactedStation Methods
  **********************************************************************************************************************/
