@@ -4,10 +4,10 @@ go 1.25
 
 require (
 	github.com/Station-Manager/adapters v0.0.11
-	github.com/Station-Manager/config v0.0.28
+	github.com/Station-Manager/config v0.0.29
 	github.com/Station-Manager/errors v0.0.11
 	github.com/Station-Manager/logging v0.0.10
-	github.com/Station-Manager/types v0.0.59
+	github.com/Station-Manager/types v0.0.62
 	github.com/Station-Manager/utils v0.0.4
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
