@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 
+	"github.com/Station-Manager/enums/upload"
 	"github.com/Station-Manager/types"
 )
 
@@ -32,6 +33,10 @@ func (s *Service) FetchQsoCountByLogbookId(id int64) (int64, error) {
 
 func (s *Service) FetchQsoSliceNotForwarded() ([]types.Qso, error) {
 	return s.FetchQsoSliceNotForwardedWithContext(context.Background())
+}
+
+func (s *Service) InsertQsoUpload(qsoId int64, service upload.OnlineService) (int64, error) {
+	return s.InsertQsoUploadWithContext(context.Background(), qsoId, service)
 }
 
 /**********************************************************************************************************************

@@ -10,6 +10,7 @@ import (
 
 	"github.com/Station-Manager/database/sqlite/adapters"
 	"github.com/Station-Manager/database/sqlite/models"
+	"github.com/Station-Manager/enums/upload"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/null/v8"
@@ -241,6 +242,10 @@ func (s *Service) FetchQsoSliceNotForwardedWithContext(ctx context.Context) ([]t
 	}
 
 	return typeSlice, nil
+}
+
+func (s *Service) InsertQsoUploadWithContext(ctx context.Context, qsoId int64, service upload.OnlineService) (int64, error) {
+	return 0, nil
 }
 
 /**********************************************************************************************************************

@@ -189,8 +189,8 @@ type qsoUploadL struct{}
 
 var (
 	qsoUploadAllColumns            = []string{"id", "qso_id", "service", "status", "uploaded_at", "next_attempt_at", "attempts", "last_error", "created_at", "updated_at"}
-	qsoUploadColumnsWithoutDefault = []string{"qso_id", "service", "status"}
-	qsoUploadColumnsWithDefault    = []string{"id", "uploaded_at", "next_attempt_at", "attempts", "last_error", "created_at", "updated_at"}
+	qsoUploadColumnsWithoutDefault = []string{"qso_id", "service"}
+	qsoUploadColumnsWithDefault    = []string{"id", "status", "uploaded_at", "next_attempt_at", "attempts", "last_error", "created_at", "updated_at"}
 	qsoUploadPrimaryKeyColumns     = []string{"id"}
 	qsoUploadGeneratedColumns      = []string{"id"}
 )

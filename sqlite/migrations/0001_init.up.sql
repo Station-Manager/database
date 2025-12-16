@@ -158,8 +158,8 @@ CREATE INDEX IF NOT EXISTS idx_country_name ON country (name);
 CREATE TABLE IF NOT EXISTS qso_upload (
                                           id               INTEGER PRIMARY KEY AUTOINCREMENT,
                                           qso_id           INTEGER NOT NULL,
-                                          service          TEXT    NOT NULL, -- e.g., 'qrz', 'lotw', 'eqsl', 'clublog'
-                                          status           TEXT    NOT NULL CHECK (status IN ('pending','in_progress','uploaded','failed')),
+                                          service          TEXT    NOT NULL, -- e.g., 'sm', 'qrz', 'lotw', 'eqsl', 'clublog'
+                                          status           TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','in_progress','uploaded','failed')),
                                           uploaded_at      DATETIME,
                                           next_attempt_at  DATETIME,
                                           attempts         INTEGER NOT NULL DEFAULT 0,
