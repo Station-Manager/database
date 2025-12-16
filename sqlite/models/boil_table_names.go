@@ -8,11 +8,13 @@ var TableNames = struct {
 	Country          string
 	Logbook          string
 	Qso              string
+	QsoUpload        string
 	Session          string
 }{
 	ContactedStation: "contacted_station",
 	Country:          "country",
 	Logbook:          "logbook",
 	Qso:              "qso",
+	QsoUpload:        "qso_upload",
 	Session:          "session",
 }

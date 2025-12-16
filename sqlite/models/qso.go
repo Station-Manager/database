@@ -165,17 +165,20 @@ var QsoWhere = struct {
 
 // QsoRels is where relationship names are stored.
 var QsoRels = struct {
-	Session string
-	Logbook string
+	Session    string
+	Logbook    string
+	QsoUploads string
 }{
-	Session: "Session",
-	Logbook: "Logbook",
+	Session:    "Session",
+	Logbook:    "Logbook",
+	QsoUploads: "QsoUploads",
 }
 
 // qsoR is where relationships are stored.
 type qsoR struct {
-	Session *Session `boil:"Session" json:"Session" toml:"Session" yaml:"Session"`
-	Logbook *Logbook `boil:"Logbook" json:"Logbook" toml:"Logbook" yaml:"Logbook"`
+	Session    *Session       `boil:"Session" json:"Session" toml:"Session" yaml:"Session"`
+	Logbook    *Logbook       `boil:"Logbook" json:"Logbook" toml:"Logbook" yaml:"Logbook"`
+	QsoUploads QsoUploadSlice `boil:"QsoUploads" json:"QsoUploads" toml:"QsoUploads" yaml:"QsoUploads"`
 }
 
 // NewStruct creates a new relationship struct
@@ -213,6 +216,22 @@ func (r *qsoR) GetLogbook() *Logbook {
 	}
 
 	return r.Logbook
+}
+
+func (o *Qso) GetQsoUploads() QsoUploadSlice {
+	if o == nil {
+		return nil
+	}
+
+	return o.R.GetQsoUploads()
+}
+
+func (r *qsoR) GetQsoUploads() QsoUploadSlice {
+	if r == nil {
+		return nil
+	}
+
+	return r.QsoUploads
 }
 
 // qsoL is where Load methods for each relationship are stored.
@@ -337,6 +356,20 @@ func (o *Qso) Logbook(mods ...qm.QueryMod) logbookQuery {
 	queryMods = append(queryMods, mods...)
 
 	return Logbooks(queryMods...)
+}
+
+// QsoUploads retrieves all the qso_upload's QsoUploads with an executor.
+func (o *Qso) QsoUploads(mods ...qm.QueryMod) qsoUploadQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"qso_upload\".\"qso_id\"=?", o.ID),
+	)
+
+	return QsoUploads(queryMods...)
 }
 
 // LoadSession allows an eager lookup of values, cached into the
@@ -565,6 +598,112 @@ func (qsoL) LoadLogbook(ctx context.Context, e boil.ContextExecutor, singular bo
 	return nil
 }
 
+// LoadQsoUploads allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (qsoL) LoadQsoUploads(ctx context.Context, e boil.ContextExecutor, singular bool, maybeQso interface{}, mods queries.Applicator) error {
+	var slice []*Qso
+	var object *Qso
+
+	if singular {
+		var ok bool
+		object, ok = maybeQso.(*Qso)
+		if !ok {
+			object = new(Qso)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeQso)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeQso))
+			}
+		}
+	} else {
+		s, ok := maybeQso.(*[]*Qso)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeQso)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeQso))
+			}
+		}
+	}
+
+	args := make(map[interface{}]struct{})
+	if singular {
+		if object.R == nil {
+			object.R = &qsoR{}
+		}
+		args[object.ID] = struct{}{}
+	} else {
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &qsoR{}
+			}
+			args[obj.ID] = struct{}{}
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	argsSlice := make([]interface{}, len(args))
+	i := 0
+	for arg := range args {
+		argsSlice[i] = arg
+		i++
+	}
+
+	query := NewQuery(
+		qm.From(`qso_upload`),
+		qm.WhereIn(`qso_upload.qso_id in ?`, argsSlice...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load qso_upload")
+	}
+
+	var resultSlice []*QsoUpload
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice qso_upload")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on qso_upload")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for qso_upload")
+	}
+
+	if singular {
+		object.R.QsoUploads = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &qsoUploadR{}
+			}
+			foreign.R.Qso = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.QsoID {
+				local.R.QsoUploads = append(local.R.QsoUploads, foreign)
+				if foreign.R == nil {
+					foreign.R = &qsoUploadR{}
+				}
+				foreign.R.Qso = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetSession of the qso to the related item.
 // Sets o.R.Session to related.
 // Adds o to related.R.Qsos.
@@ -656,6 +795,59 @@ func (o *Qso) SetLogbook(ctx context.Context, exec boil.ContextExecutor, insert 
 		related.R.Qsos = append(related.R.Qsos, o)
 	}
 
+	return nil
+}
+
+// AddQsoUploads adds the given related objects to the existing relationships
+// of the qso, optionally inserting them as new records.
+// Appends related to o.R.QsoUploads.
+// Sets related.R.Qso appropriately.
+func (o *Qso) AddQsoUploads(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*QsoUpload) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.QsoID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"qso_upload\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 0, []string{"qso_id"}),
+				strmangle.WhereClause("\"", "\"", 0, qsoUploadPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.QsoID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &qsoR{
+			QsoUploads: related,
+		}
+	} else {
+		o.R.QsoUploads = append(o.R.QsoUploads, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &qsoUploadR{
+				Qso: o,
+			}
+		} else {
+			rel.R.Qso = o
+		}
+	}
 	return nil
 }
 
