@@ -244,8 +244,34 @@ func (s *Service) FetchQsoSliceNotForwardedWithContext(ctx context.Context) ([]t
 	return typeSlice, nil
 }
 
-func (s *Service) InsertQsoUploadWithContext(ctx context.Context, qsoId int64, service upload.OnlineService) (int64, error) {
-	return 0, nil
+func (s *Service) InsertQsoUploadWithContext(ctx context.Context, qsoId int64, service upload.OnlineService) error {
+	const op errors.Op = "sqlite.Service.InsertQsoUploadWithContext"
+	if err := checkService(op, s); err != nil {
+		return err
+	}
+
+	if qsoId < 1 {
+		return errors.New(op).Msgf("QSO ID is invalid: %d", qsoId)
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	model := models.QsoUpload{
+		QsoID:   qsoId,
+		Service: service.String(),
+	}
+
+	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
+		return errors.New(op).Err(err).Msg("Inserting new QSO upload failed.")
+	}
+
+	return nil
 }
 
 /**********************************************************************************************************************
@@ -609,4 +635,60 @@ func (s *Service) IsContestDuplicatByLogbookIDWithContext(ctx context.Context, i
 	}
 
 	return exists, nil
+}
+
+/**********************************************************************************************************************
+ * Upload Methods
+ **********************************************************************************************************************/
+
+func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.QsoUpload, error) {
+	const op errors.Op = "sqlite.Service.FetchPendingUploadsWithContext"
+	if err := checkService(op, s); err != nil {
+		return nil, err
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	var mods []qm.QueryMod
+	mods = append(mods, models.QsoUploadWhere.Status.EQ("pending"))
+	mods = append(mods, qm.Load(models.QsoUploadRels.Qso))
+	//mods = append(mods, qm.Where("next_attempt_at IS NULL OR next_attempt_at <= ?", time.Now()))
+	//mods = append(mods, qm.OrderBy("next_attempt_at IS NOT NULL, next_attempt_at, id"))
+
+	// Zero '0' means no limit!
+	if s.DatabaseConfig.QsoForwardingRowLimit > 0 {
+		mods = append(mods, qm.Limit(s.DatabaseConfig.QsoForwardingRowLimit))
+	}
+
+	slice, err := models.QsoUploads(mods...).All(ctx, h)
+	if err != nil {
+		return nil, errors.New(op).Err(err)
+	}
+
+	list := make([]types.QsoUpload, 0, len(slice))
+	for _, ref := range slice {
+		up := types.QsoUpload{
+			ID:        ref.ID,
+			QsoID:     ref.QsoID,
+			Service:   ref.Service,
+			Status:    ref.Status,
+			Attempts:  ref.Attempts,
+			LastError: ref.LastError.String,
+		}
+
+		up.Qso, err = adapters.QsoModelToType(ref.R.Qso)
+		if err != nil {
+			s.LoggerService.ErrorWith().Err(err).Msg("Failed to adapt QSO for QsoUpload.")
+			continue
+		}
+		list = append(list, up)
+	}
+
+	return list, nil
 }

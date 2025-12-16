@@ -31,11 +31,7 @@ func (s *Service) FetchQsoCountByLogbookId(id int64) (int64, error) {
 	return s.FetchQsoCountByLogbookIdWithContext(context.Background(), id)
 }
 
-func (s *Service) FetchQsoSliceNotForwarded() ([]types.Qso, error) {
-	return s.FetchQsoSliceNotForwardedWithContext(context.Background())
-}
-
-func (s *Service) InsertQsoUpload(qsoId int64, service upload.OnlineService) (int64, error) {
+func (s *Service) InsertQsoUpload(qsoId int64, service upload.OnlineService) error {
 	return s.InsertQsoUploadWithContext(context.Background(), qsoId, service)
 }
 
@@ -101,4 +97,12 @@ func (s *Service) InsertSession() (int64, error) {
 
 func (s *Service) IsContestDuplicateByLogbookID(id int64, callsign, band string) (bool, error) {
 	return s.IsContestDuplicatByLogbookIDWithContext(context.Background(), id, callsign, band)
+}
+
+/**********************************************************************************************************************
+ * Upload Methods
+ **********************************************************************************************************************/
+
+func (s *Service) FetchPendingUploads() ([]types.QsoUpload, error) {
+	return s.FetchPendingUploadsWithContext(context.Background())
 }

@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS country
 CREATE INDEX IF NOT EXISTS idx_country_name ON country (name);
 
 CREATE TABLE IF NOT EXISTS qso_upload (
-                                          id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                                          id               INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                                           qso_id           INTEGER NOT NULL,
                                           service          TEXT    NOT NULL, -- e.g., 'sm', 'qrz', 'lotw', 'eqsl', 'clublog'
                                           status           TEXT    NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','in_progress','uploaded','failed')),
@@ -165,18 +165,18 @@ CREATE TABLE IF NOT EXISTS qso_upload (
                                           attempts         INTEGER NOT NULL DEFAULT 0,
                                           last_error       TEXT,
                                           created_at       DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
-                                          updated_at       DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+                                          modified_at       DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
                                           CONSTRAINT uq_qso_service UNIQUE (qso_id, service),
                                           CONSTRAINT fk_qso_upload_qso FOREIGN KEY (qso_id) REFERENCES qso(id) ON DELETE CASCADE
 );
 
--- Keep updated_at fresh on updates
+-- Keep modified_at fresh on updates
 CREATE TRIGGER IF NOT EXISTS trg_qso_upload_set_updated_at
     AFTER UPDATE ON qso_upload
     FOR EACH ROW
 BEGIN
     UPDATE qso_upload
-    SET updated_at = datetime('now', 'localtime')
+    SET modified_at = datetime('now', 'localtime')
     WHERE id = OLD.id;
 END;
 
