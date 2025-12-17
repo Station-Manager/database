@@ -17,6 +17,8 @@ import (
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
+	btypes "github.com/aarondl/sqlboiler/v4/types"
+	"github.com/goccy/go-json"
 )
 
 /**********************************************************************************************************************
@@ -759,8 +761,14 @@ func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64
 	ctx, cancel := s.ensureCtxTimeout(ctx)
 	defer cancel()
 
-	uploadModel, err := models.FindQsoUpload(ctx, h, id)
+	tx, err := h.BeginTx(ctx, nil)
 	if err != nil {
+		return errors.New(op).Err(err).Msg("Failed to begin transaction")
+	}
+
+	uploadModel, err := models.FindQsoUpload(ctx, tx, id)
+	if err != nil {
+		_ = tx.Rollback()
 		return errors.New(op).Err(err).Msg("Failed to find QSO upload")
 	}
 
@@ -769,12 +777,40 @@ func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64
 	uploadModel.LastError = null.NewString(lastError, lastError != "")
 	uploadModel.ModifiedAt = null.TimeFrom(time.Now())
 
-	_, err = uploadModel.Update(ctx, h, boil.Infer())
+	_, err = uploadModel.Update(ctx, tx, boil.Infer())
 	if err != nil {
+		_ = tx.Rollback()
 		return errors.New(op).Err(err).Msg("Failed to update QSO upload status")
 	}
 
-	//TODO: Update the Qso itself
+	// At this point, we don't need to update the QSO itself as that SHOULD have been
+	// done by the online-forwarder, since the online-forwarder knows what fields in the
+	// qso object to update based on the service.
+
+	if err = tx.Commit(); err != nil {
+		return errors.New(op).Err(err).Msg("Failed to commit transaction")
+	}
 
 	return nil
+}
+
+func addAdditionalField(additional btypes.JSON, key string, value any) (btypes.JSON, error) {
+	// Start with an empty map if the JSON is empty or null.
+	var m map[string]any
+	if len(additional) > 0 && string(additional) != "null" {
+		if err := json.Unmarshal(additional, &m); err != nil {
+			return nil, err
+		}
+	}
+	if m == nil {
+		m = make(map[string]any)
+	}
+
+	m[key] = value
+
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	return btypes.JSON(b), nil
 }
