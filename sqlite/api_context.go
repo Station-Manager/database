@@ -692,3 +692,43 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 
 	return list, nil
 }
+
+func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64, status string, attempts int64, lastError string) error {
+	const op errors.Op = "sqlite.Service.UpdateQsoUploadStatusWithContext"
+	if err := checkService(op, s); err != nil {
+		return err
+	}
+
+	if id < 1 {
+		return errors.New(op).Msg(errMsgInvalidId)
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	upload, err := models.FindQsoUpload(ctx, h, id)
+	if err != nil {
+		return errors.New(op).Err(err).Msg("Failed to find QSO upload")
+	}
+
+	upload.Status = status
+	upload.Attempts = attempts
+	upload.LastError = null.NewString(lastError, lastError != "")
+	upload.ModifiedAt = time.Now()
+
+	if status == "completed" {
+		upload.UploadedAt = null.NewTime(time.Now(), true)
+	}
+
+	_, err = upload.Update(ctx, h, boil.Infer())
+	if err != nil {
+		return errors.New(op).Err(err).Msg("Failed to update QSO upload status")
+	}
+
+	return nil
+}

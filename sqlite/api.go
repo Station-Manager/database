@@ -106,3 +106,7 @@ func (s *Service) IsContestDuplicateByLogbookID(id int64, callsign, band string)
 func (s *Service) FetchPendingUploads() ([]types.QsoUpload, error) {
 	return s.FetchPendingUploadsWithContext(context.Background())
 }
+
+func (s *Service) UpdateQsoUploadStatus(id int64, status string, attempts int64, lastError string) error {
+	return s.UpdateQsoUploadStatusWithContext(context.Background(), id, status, attempts, lastError)
+}
