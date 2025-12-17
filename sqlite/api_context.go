@@ -15,6 +15,7 @@ import (
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/null/v8"
 	"github.com/aarondl/sqlboiler/v4/boil"
+	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
 )
 
@@ -655,40 +656,47 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 	ctx, cancel := s.ensureCtxTimeout(ctx)
 	defer cancel()
 
-	var mods []qm.QueryMod
-	mods = append(mods, models.QsoUploadWhere.Status.EQ("pending"))
-	mods = append(mods, qm.Load(models.QsoUploadRels.Qso))
-	//mods = append(mods, qm.Where("next_attempt_at IS NULL OR next_attempt_at <= ?", time.Now()))
+	var list []types.QsoUpload
+	now := time.Now()
+	err = queries.Raw(`UPDATE qso_upload SET status = 'processing', updated_at = ? WHERE status = 'pending' AND (last_attempt_at IS NULL OR last_attempt_at < ?) LIMIT 5`, now, now.Add(-5*time.Minute)).Bind(ctx, h, &list)
+
+	s.LoggerService.DebugWith().Int("count", len(list)).Msg("Updated pending uploads.")
+
+	//var mods []qm.QueryMod
+	//mods = append(mods, models.QsoUploadWhere.Status.EQ("pending"))
+
+	//	mods = append(mods, qm.Load(models.QsoUploadRels.Qso))
+	//	mods = append(mods, qm.Where("next_attempt_at IS NULL OR next_attempt_at <= ?", time.Now()))
 	//mods = append(mods, qm.OrderBy("next_attempt_at IS NOT NULL, next_attempt_at, id"))
 
 	// Zero '0' means no limit!
-	if s.DatabaseConfig.QsoForwardingRowLimit > 0 {
-		mods = append(mods, qm.Limit(s.DatabaseConfig.QsoForwardingRowLimit))
-	}
+	//if s.DatabaseConfig.QsoForwardingRowLimit > 0 {
+	//	mods = append(mods, qm.Limit(s.DatabaseConfig.QsoForwardingRowLimit))
+	//}
 
-	slice, err := models.QsoUploads(mods...).All(ctx, h)
-	if err != nil {
-		return nil, errors.New(op).Err(err)
-	}
-
-	list := make([]types.QsoUpload, 0, len(slice))
-	for _, ref := range slice {
-		up := types.QsoUpload{
-			ID:        ref.ID,
-			QsoID:     ref.QsoID,
-			Service:   ref.Service,
-			Status:    ref.Status,
-			Attempts:  ref.Attempts,
-			LastError: ref.LastError.String,
-		}
-
-		up.Qso, err = adapters.QsoModelToType(ref.R.Qso)
-		if err != nil {
-			s.LoggerService.ErrorWith().Err(err).Msg("Failed to adapt QSO for QsoUpload.")
-			continue
-		}
-		list = append(list, up)
-	}
+	//slice, err := models.QsoUploads(mods...).All(ctx, h)
+	//if err != nil {
+	//	return nil, errors.New(op).Err(err)
+	//}
+	//
+	//list := make([]types.QsoUpload, 0, len(slice))
+	//for _, ref := range slice {
+	//	up := types.QsoUpload{
+	//		ID:        ref.ID,
+	//		QsoID:     ref.QsoID,
+	//		Service:   ref.Service,
+	//		Status:    ref.Status,
+	//		Attempts:  ref.Attempts,
+	//		LastError: ref.LastError.String,
+	//	}
+	//
+	//	up.Qso, err = adapters.QsoModelToType(ref.R.Qso)
+	//	if err != nil {
+	//		s.LoggerService.ErrorWith().Err(err).Msg("Failed to adapt QSO for QsoUpload.")
+	//		continue
+	//	}
+	//	list = append(list, up)
+	//}
 
 	return list, nil
 }

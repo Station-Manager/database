@@ -25,6 +25,8 @@ import (
 // QsoUpload is an object representing the database table.
 type QsoUpload struct {
 	ID            int64       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ModifiedAt    time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
 	QsoID         int64       `boil:"qso_id" json:"qso_id" toml:"qso_id" yaml:"qso_id"`
 	Service       string      `boil:"service" json:"service" toml:"service" yaml:"service"`
 	Status        string      `boil:"status" json:"status" toml:"status" yaml:"status"`
@@ -32,8 +34,7 @@ type QsoUpload struct {
 	NextAttemptAt null.Time   `boil:"next_attempt_at" json:"next_attempt_at,omitempty" toml:"next_attempt_at" yaml:"next_attempt_at,omitempty"`
 	Attempts      int64       `boil:"attempts" json:"attempts" toml:"attempts" yaml:"attempts"`
 	LastError     null.String `boil:"last_error" json:"last_error,omitempty" toml:"last_error" yaml:"last_error,omitempty"`
-	CreatedAt     time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
-	ModifiedAt    time.Time   `boil:"modified_at" json:"modified_at" toml:"modified_at" yaml:"modified_at"`
+	LastAttemptAt null.Int64  `boil:"last_attempt_at" json:"last_attempt_at,omitempty" toml:"last_attempt_at" yaml:"last_attempt_at,omitempty"`
 
 	R *qsoUploadR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L qsoUploadL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -41,6 +42,8 @@ type QsoUpload struct {
 
 var QsoUploadColumns = struct {
 	ID            string
+	CreatedAt     string
+	ModifiedAt    string
 	QsoID         string
 	Service       string
 	Status        string
@@ -48,10 +51,11 @@ var QsoUploadColumns = struct {
 	NextAttemptAt string
 	Attempts      string
 	LastError     string
-	CreatedAt     string
-	ModifiedAt    string
+	LastAttemptAt string
 }{
 	ID:            "id",
+	CreatedAt:     "created_at",
+	ModifiedAt:    "modified_at",
 	QsoID:         "qso_id",
 	Service:       "service",
 	Status:        "status",
@@ -59,12 +63,13 @@ var QsoUploadColumns = struct {
 	NextAttemptAt: "next_attempt_at",
 	Attempts:      "attempts",
 	LastError:     "last_error",
-	CreatedAt:     "created_at",
-	ModifiedAt:    "modified_at",
+	LastAttemptAt: "last_attempt_at",
 }
 
 var QsoUploadTableColumns = struct {
 	ID            string
+	CreatedAt     string
+	ModifiedAt    string
 	QsoID         string
 	Service       string
 	Status        string
@@ -72,10 +77,11 @@ var QsoUploadTableColumns = struct {
 	NextAttemptAt string
 	Attempts      string
 	LastError     string
-	CreatedAt     string
-	ModifiedAt    string
+	LastAttemptAt string
 }{
 	ID:            "qso_upload.id",
+	CreatedAt:     "qso_upload.created_at",
+	ModifiedAt:    "qso_upload.modified_at",
 	QsoID:         "qso_upload.qso_id",
 	Service:       "qso_upload.service",
 	Status:        "qso_upload.status",
@@ -83,14 +89,53 @@ var QsoUploadTableColumns = struct {
 	NextAttemptAt: "qso_upload.next_attempt_at",
 	Attempts:      "qso_upload.attempts",
 	LastError:     "qso_upload.last_error",
-	CreatedAt:     "qso_upload.created_at",
-	ModifiedAt:    "qso_upload.modified_at",
+	LastAttemptAt: "qso_upload.last_attempt_at",
 }
 
 // Generated where
 
+type whereHelpernull_Int64 struct{ field string }
+
+func (w whereHelpernull_Int64) EQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int64) NEQ(x null.Int64) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int64) LT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int64) LTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int64) GT(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int64) GTE(x null.Int64) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+func (w whereHelpernull_Int64) IN(slice []int64) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
+}
+func (w whereHelpernull_Int64) NIN(slice []int64) qm.QueryMod {
+	values := make([]interface{}, 0, len(slice))
+	for _, value := range slice {
+		values = append(values, value)
+	}
+	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
+}
+
+func (w whereHelpernull_Int64) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int64) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+
 var QsoUploadWhere = struct {
 	ID            whereHelperint64
+	CreatedAt     whereHelpertime_Time
+	ModifiedAt    whereHelpertime_Time
 	QsoID         whereHelperint64
 	Service       whereHelperstring
 	Status        whereHelperstring
@@ -98,10 +143,11 @@ var QsoUploadWhere = struct {
 	NextAttemptAt whereHelpernull_Time
 	Attempts      whereHelperint64
 	LastError     whereHelpernull_String
-	CreatedAt     whereHelpertime_Time
-	ModifiedAt    whereHelpertime_Time
+	LastAttemptAt whereHelpernull_Int64
 }{
 	ID:            whereHelperint64{field: "\"qso_upload\".\"id\""},
+	CreatedAt:     whereHelpertime_Time{field: "\"qso_upload\".\"created_at\""},
+	ModifiedAt:    whereHelpertime_Time{field: "\"qso_upload\".\"modified_at\""},
 	QsoID:         whereHelperint64{field: "\"qso_upload\".\"qso_id\""},
 	Service:       whereHelperstring{field: "\"qso_upload\".\"service\""},
 	Status:        whereHelperstring{field: "\"qso_upload\".\"status\""},
@@ -109,8 +155,7 @@ var QsoUploadWhere = struct {
 	NextAttemptAt: whereHelpernull_Time{field: "\"qso_upload\".\"next_attempt_at\""},
 	Attempts:      whereHelperint64{field: "\"qso_upload\".\"attempts\""},
 	LastError:     whereHelpernull_String{field: "\"qso_upload\".\"last_error\""},
-	CreatedAt:     whereHelpertime_Time{field: "\"qso_upload\".\"created_at\""},
-	ModifiedAt:    whereHelpertime_Time{field: "\"qso_upload\".\"modified_at\""},
+	LastAttemptAt: whereHelpernull_Int64{field: "\"qso_upload\".\"last_attempt_at\""},
 }
 
 // QsoUploadRels is where relationship names are stored.
@@ -150,9 +195,9 @@ func (r *qsoUploadR) GetQso() *Qso {
 type qsoUploadL struct{}
 
 var (
-	qsoUploadAllColumns            = []string{"id", "qso_id", "service", "status", "uploaded_at", "next_attempt_at", "attempts", "last_error", "created_at", "modified_at"}
+	qsoUploadAllColumns            = []string{"id", "created_at", "modified_at", "qso_id", "service", "status", "uploaded_at", "next_attempt_at", "attempts", "last_error", "last_attempt_at"}
 	qsoUploadColumnsWithoutDefault = []string{"qso_id", "service"}
-	qsoUploadColumnsWithDefault    = []string{"id", "status", "uploaded_at", "next_attempt_at", "attempts", "last_error", "created_at", "modified_at"}
+	qsoUploadColumnsWithDefault    = []string{"id", "created_at", "modified_at", "status", "uploaded_at", "next_attempt_at", "attempts", "last_error", "last_attempt_at"}
 	qsoUploadPrimaryKeyColumns     = []string{"id"}
 	qsoUploadGeneratedColumns      = []string{"id"}
 )
