@@ -707,10 +707,14 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 	for _, r := range rows {
 		ids = append(ids, r.ID)
 	}
+	idArgs := make([]interface{}, len(ids))
+	for i, v := range ids {
+		idArgs[i] = v
+	}
 
 	// Fetch the reserved rows with QSO eagerly loaded.
 	uploads, err := models.QsoUploads(
-		qm.WhereIn("qso_upload.id IN ?", ids),
+		qm.WhereIn("qso_upload.id IN ?", idArgs...),
 		qm.Load(models.QsoUploadRels.Qso),
 	).All(ctx, h)
 	if err != nil {
