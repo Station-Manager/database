@@ -159,15 +159,13 @@ CREATE TABLE IF NOT EXISTS qso_upload
 (
     id              INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
     created_at      DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
-    modified_at     DATETIME NOT NULL DEFAULT (datetime('now', 'localtime')),
+    modified_at     DATETIME,
     qso_id          INTEGER  NOT NULL,
     service         TEXT     NOT NULL,
     status          TEXT     NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'uploaded', 'failed')),
-    uploaded_at     DATETIME,
-    next_attempt_at DATETIME,
     attempts        INTEGER  NOT NULL DEFAULT 0,
+    last_attempt_at INTEGER, -- Unix time
     last_error      TEXT,
-    last_attempt_at INTEGER,
     CONSTRAINT uq_qso_service UNIQUE (qso_id, service),
     CONSTRAINT fk_qso_upload_qso FOREIGN KEY (qso_id) REFERENCES qso (id) ON DELETE CASCADE
 );
@@ -185,10 +183,10 @@ END;
 
 -- Pending work per service, ordered by next_attempt_at
 CREATE INDEX IF NOT EXISTS idx_qso_upload_pending
-    ON qso_upload (service, next_attempt_at)
+    ON qso_upload (service)
     WHERE status IN ('pending', 'in_progress');
 
 -- Fast lookup of uploaded rows per service (optional)
 CREATE INDEX IF NOT EXISTS idx_qso_upload_uploaded
-    ON qso_upload (service, uploaded_at)
+    ON qso_upload (service, modified_at)
     WHERE status = 'uploaded';

@@ -266,6 +266,7 @@ func (s *Service) InsertQsoUploadWithContext(ctx context.Context, qsoId int64, s
 	model := models.QsoUpload{
 		QsoID:   qsoId,
 		Service: service.String(),
+		Status:  upload.Pending.String(),
 	}
 
 	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
@@ -656,49 +657,88 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 	ctx, cancel := s.ensureCtxTimeout(ctx)
 	defer cancel()
 
-	var list []types.QsoUpload
+	batchLimit := 5
+	if s.DatabaseConfig.QsoForwardingRowLimit > 0 {
+		batchLimit = s.DatabaseConfig.QsoForwardingRowLimit
+	}
+
 	now := time.Now()
-	err = queries.Raw(`UPDATE qso_upload SET status = 'processing', updated_at = ? WHERE status = 'pending' AND (last_attempt_at IS NULL OR last_attempt_at < ?) LIMIT 5`, now, now.Add(-5*time.Minute)).Bind(ctx, h, &list)
+	cutoff := now.Add(-5 * time.Minute).Unix()
 
-	s.LoggerService.DebugWith().Int("count", len(list)).Msg("Updated pending uploads.")
+	// Reserve a batch and capture their IDs
+	updateAndReturn := `
+		UPDATE qso_upload
+		   SET status = ?, modified_at = ?, last_attempt_at = ?
+		 WHERE id IN (
+		     SELECT id
+		       FROM qso_upload
+		      WHERE status = ?
+		        AND (last_attempt_at IS NULL OR last_attempt_at < ?)
+		      LIMIT ?
+		   )
+		RETURNING id`
 
-	//var mods []qm.QueryMod
-	//mods = append(mods, models.QsoUploadWhere.Status.EQ("pending"))
+	type returnID struct {
+		ID int64 `boil:"id"`
+	}
 
-	//	mods = append(mods, qm.Load(models.QsoUploadRels.Qso))
-	//	mods = append(mods, qm.Where("next_attempt_at IS NULL OR next_attempt_at <= ?", time.Now()))
-	//mods = append(mods, qm.OrderBy("next_attempt_at IS NOT NULL, next_attempt_at, id"))
+	var rows []returnID
 
-	// Zero '0' means no limit!
-	//if s.DatabaseConfig.QsoForwardingRowLimit > 0 {
-	//	mods = append(mods, qm.Limit(s.DatabaseConfig.QsoForwardingRowLimit))
-	//}
+	err = queries.Raw(
+		updateAndReturn,
+		upload.InProgress.String(),
+		null.TimeFrom(now),
+		null.Int64From(now.Unix()),
+		upload.Pending.String(),
+		cutoff,
+		batchLimit,
+	).Bind(ctx, h, &rows)
+	if err != nil && !stderr.Is(err, sql.ErrNoRows) {
+		return nil, errors.New(op).Err(err).Msg("Failed to reserve pending uploads")
+	}
 
-	//slice, err := models.QsoUploads(mods...).All(ctx, h)
-	//if err != nil {
-	//	return nil, errors.New(op).Err(err)
-	//}
-	//
-	//list := make([]types.QsoUpload, 0, len(slice))
-	//for _, ref := range slice {
-	//	up := types.QsoUpload{
-	//		ID:        ref.ID,
-	//		QsoID:     ref.QsoID,
-	//		Service:   ref.Service,
-	//		Status:    ref.Status,
-	//		Attempts:  ref.Attempts,
-	//		LastError: ref.LastError.String,
-	//	}
-	//
-	//	up.Qso, err = adapters.QsoModelToType(ref.R.Qso)
-	//	if err != nil {
-	//		s.LoggerService.ErrorWith().Err(err).Msg("Failed to adapt QSO for QsoUpload.")
-	//		continue
-	//	}
-	//	list = append(list, up)
-	//}
+	if len(rows) == 0 {
+		return nil, nil
+	}
 
-	return list, nil
+	ids := make([]int64, 0, len(rows))
+	for _, r := range rows {
+		ids = append(ids, r.ID)
+	}
+
+	// Fetch the reserved rows with QSO eagerly loaded.
+	uploads, err := models.QsoUploads(
+		qm.WhereIn("qso_upload.id IN ?", ids),
+		qm.Load(models.QsoUploadRels.Qso),
+	).All(ctx, h)
+	if err != nil {
+		return nil, errors.New(op).Err(err).Msg("Failed to load reserved uploads")
+	}
+
+	// Adapt to types.QsoUpload.
+	out := make([]types.QsoUpload, 0, len(uploads))
+	for _, ref := range uploads {
+		up := types.QsoUpload{
+			ID:            ref.ID,
+			QsoID:         ref.QsoID,
+			Service:       ref.Service,
+			Status:        ref.Status,
+			Attempts:      ref.Attempts,
+			LastError:     ref.LastError.String,
+			LastAttemptAt: ref.LastAttemptAt.Int64,
+		}
+		if ref.R != nil && ref.R.Qso != nil {
+			qso, er := adapters.QsoModelToType(ref.R.Qso)
+			if er != nil {
+				s.LoggerService.ErrorWith().Err(er).Msg("Failed to adapt QSO for QsoUpload.")
+				continue
+			}
+			up.Qso = qso
+		}
+		out = append(out, up)
+	}
+
+	return out, nil
 }
 
 func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64, status string, attempts int64, lastError string) error {
@@ -719,24 +759,22 @@ func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64
 	ctx, cancel := s.ensureCtxTimeout(ctx)
 	defer cancel()
 
-	upload, err := models.FindQsoUpload(ctx, h, id)
+	uploadModel, err := models.FindQsoUpload(ctx, h, id)
 	if err != nil {
 		return errors.New(op).Err(err).Msg("Failed to find QSO upload")
 	}
 
-	upload.Status = status
-	upload.Attempts = attempts
-	upload.LastError = null.NewString(lastError, lastError != "")
-	upload.ModifiedAt = time.Now()
+	uploadModel.Status = status
+	uploadModel.Attempts = attempts
+	uploadModel.LastError = null.NewString(lastError, lastError != "")
+	uploadModel.ModifiedAt = null.TimeFrom(time.Now())
 
-	if status == "completed" {
-		upload.UploadedAt = null.NewTime(time.Now(), true)
-	}
-
-	_, err = upload.Update(ctx, h, boil.Infer())
+	_, err = uploadModel.Update(ctx, h, boil.Infer())
 	if err != nil {
 		return errors.New(op).Err(err).Msg("Failed to update QSO upload status")
 	}
+
+	//TODO: Update the Qso itself
 
 	return nil
 }
