@@ -816,5 +816,5 @@ func addAdditionalField(additional btypes.JSON, key string, value any) (btypes.J
 	if err != nil {
 		return nil, err
 	}
-	return btypes.JSON(b), nil
+	return b, nil
 }
