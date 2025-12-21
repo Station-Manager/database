@@ -31,8 +31,12 @@ func (s *Service) FetchQsoCountByLogbookId(id int64) (int64, error) {
 	return s.FetchQsoCountByLogbookIdWithContext(context.Background(), id)
 }
 
-func (s *Service) InsertQsoUpload(qsoId int64, service upload.OnlineService) error {
-	return s.InsertQsoUploadWithContext(context.Background(), qsoId, service)
+func (s *Service) InsertQsoUpload(id int64, service upload.OnlineService) error {
+	return s.InsertQsoUploadWithContext(context.Background(), id, service)
+}
+
+func (s *Service) FetchQsoById(id int64) (types.Qso, error) {
+	return s.FetchQsoByIdWithContext(context.Background(), id)
 }
 
 /**********************************************************************************************************************

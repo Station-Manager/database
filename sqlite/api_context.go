@@ -278,6 +278,40 @@ func (s *Service) InsertQsoUploadWithContext(ctx context.Context, qsoId int64, s
 	return nil
 }
 
+func (s *Service) FetchQsoByIdWithContext(ctx context.Context, id int64) (types.Qso, error) {
+	const op errors.Op = "sqlite.Service.FetchQsoByIdWithContext"
+	if err := checkService(op, s); err != nil {
+		return types.Qso{}, err
+	}
+
+	if id < 1 {
+		return types.Qso{}, errors.New(op).Msg(errMsgInvalidId)
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return types.Qso{}, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	model, err := models.FindQso(ctx, h, id)
+	if err != nil {
+		if stderr.Is(err, sql.ErrNoRows) {
+			return types.Qso{}, errors.ErrNotFound
+		}
+		return types.Qso{}, errors.New(op).Err(err)
+	}
+
+	qso, err := adapters.QsoModelToType(model)
+	if err != nil {
+		return types.Qso{}, errors.New(op).Err(err)
+	}
+
+	return qso, nil
+}
+
 /**********************************************************************************************************************
  * ContactedStation Methods
  **********************************************************************************************************************/
