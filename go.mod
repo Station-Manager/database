@@ -4,11 +4,11 @@ go 1.25
 
 require (
 	github.com/Station-Manager/adapters v0.0.11
-	github.com/Station-Manager/config v0.0.30
+	github.com/Station-Manager/config v0.0.31
 	github.com/Station-Manager/enums v0.0.4
 	github.com/Station-Manager/errors v0.0.11
 	github.com/Station-Manager/logging v0.0.10
-	github.com/Station-Manager/types v0.0.64
+	github.com/Station-Manager/types v0.0.65
 	github.com/Station-Manager/utils v0.0.4
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
@@ -18,7 +18,7 @@ require (
 	github.com/goccy/go-json v0.10.5
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/lib/pq v1.10.9
-	modernc.org/sqlite v1.40.1
+	modernc.org/sqlite v1.41.0
 )
 
 require (
@@ -43,7 +43,7 @@ require (
 	go.bug.st/serial v1.6.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.46.0 // indirect
-	golang.org/x/exp v0.0.0-20251209150349-8475f28825e9 // indirect
+	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect

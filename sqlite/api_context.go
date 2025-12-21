@@ -674,7 +674,7 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 		 WHERE id IN (
 		     SELECT id
 		       FROM qso_upload
-		      WHERE status = ?
+		      WHERE status IN (?, ?)
 		        AND (last_attempt_at IS NULL OR last_attempt_at < ?)
 		      LIMIT ?
 		   )
@@ -692,6 +692,7 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 		null.TimeFrom(now),
 		null.Int64From(now.Unix()),
 		upload.Pending.String(),
+		upload.Failed.String(),
 		cutoff,
 		batchLimit,
 	).Bind(ctx, h, &rows)
