@@ -31,11 +31,11 @@ func ContactedStationModelToType(model *models.ContactedStation) (types.Contacte
 		Lat          string `json:"lat,omitempty"`
 		Lon          string `json:"lon,omitempty"`
 		QTH          string `json:"qth,omitempty"`
-		Rig          string `json:"rig,omitempty"`
-		Sig          string `json:"sig,omitempty"`      // the name of the contacted station's special activity or interest group
-		SigInfo      string `json:"sig_info,omitempty"` // information associated with the contacted station's activity or interest group
-		Web          string `json:"web,omitempty"`
-		WwffRef      string `json:"wwff_ref,omitempty"`
+		//		Rig          string `json:"rig,omitempty"`
+		Sig     string `json:"sig,omitempty"`      // the name of the contacted station's special activity or interest group
+		SigInfo string `json:"sig_info,omitempty"` // information associated with the contacted station's activity or interest group
+		Web     string `json:"web,omitempty"`
+		WwffRef string `json:"wwff_ref,omitempty"`
 	}
 
 	data := additionalData{}
@@ -64,11 +64,11 @@ func ContactedStationModelToType(model *models.ContactedStation) (types.Contacte
 		Lat:          data.Lat,
 		Lon:          data.Lon,
 		QTH:          data.QTH,
-		Rig:          data.Rig,
-		Sig:          data.Sig,
-		SigInfo:      data.SigInfo,
-		Web:          data.Web,
-		WwffRef:      data.WwffRef,
+		//		Rig:          data.Rig,
+		Sig:     data.Sig,
+		SigInfo: data.SigInfo,
+		Web:     data.Web,
+		WwffRef: data.WwffRef,
 	}, nil
 }
 

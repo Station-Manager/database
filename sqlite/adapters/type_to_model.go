@@ -17,17 +17,6 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 	if err != nil {
 		return models.Qso{}, errors.New(op).Err(err).Msg("failed to parse frequency")
 	}
-	// Parse frequency from types (string) to int64 expected by models.
-	//	var freqHz int64
-	//	if qso.QsoDetails.Freq != "" {
-	// Attempt to parse as integer first (already Hz). If that fails, try parsing as float (e.g., MHz)
-	//if v, err := strconv.ParseInt(qso.QsoDetails.Freq, 10, 64); err == nil {
-	//	freqHz = v
-	//} else if f, err2 := strconv.ParseFloat(qso.QsoDetails.Freq, 64); err2 == nil {
-	//	// Assume MHz and convert to Hz
-	//	freqHz = int64(f * 1_000_000)
-	//}
-	//	}
 
 	// Normalize date and time fields
 	date := qso.QsoDetails.QsoDate
@@ -168,7 +157,7 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 		Lon:          qso.ContactedStation.Lon,
 		Name:         qso.ContactedStation.Name,
 		QTH:          qso.ContactedStation.QTH,
-		Rig:          qso.ContactedStation.Rig,
+		Rig:          qso.Rig,
 		Sig:          qso.ContactedStation.Sig,
 		SigInfo:      qso.ContactedStation.SigInfo,
 		Web:          qso.ContactedStation.Web,
@@ -273,8 +262,8 @@ func ContactedStationTypeToModel(station types.ContactedStation) (models.Contact
 		Lat:          station.Lat,
 		Lon:          station.Lon,
 		//		Name:         station.Name,
-		QTH:     station.QTH,
-		Rig:     station.Rig,
+		QTH: station.QTH,
+		//		Rig:     station.Rig,
 		Sig:     station.Sig,
 		SigInfo: station.SigInfo,
 		Web:     station.Web,
