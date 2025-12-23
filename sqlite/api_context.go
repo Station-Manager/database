@@ -11,6 +11,8 @@ import (
 	"github.com/Station-Manager/database/sqlite/adapters"
 	"github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/enums/upload"
+	"github.com/Station-Manager/enums/upload/action"
+	"github.com/Station-Manager/enums/upload/status"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
 	"github.com/aarondl/null/v8"
@@ -268,7 +270,8 @@ func (s *Service) InsertQsoUploadWithContext(ctx context.Context, qsoId int64, s
 	model := models.QsoUpload{
 		QsoID:   qsoId,
 		Service: service.String(),
-		Status:  upload.Pending.String(),
+		Action:  action.Insert.String(),
+		Status:  status.Pending.String(),
 	}
 
 	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
@@ -722,11 +725,11 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 
 	err = queries.Raw(
 		updateAndReturn,
-		upload.InProgress.String(),
+		status.InProgress.String(),
 		null.TimeFrom(now),
 		null.Int64From(now.Unix()),
-		upload.Pending.String(),
-		upload.Failed.String(),
+		status.Pending.String(),
+		status.Failed.String(),
 		cutoff,
 		batchLimit,
 	).Bind(ctx, h, &rows)

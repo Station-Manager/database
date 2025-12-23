@@ -162,6 +162,7 @@ CREATE TABLE IF NOT EXISTS qso_upload
     modified_at     DATETIME,
     qso_id          INTEGER  NOT NULL,
     service         TEXT     NOT NULL,
+    action          TEXT     NOT NULL DEFAULT 'insert' CHECK (action IN ('insert', 'update')),
     status          TEXT     NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'uploaded', 'failed')),
     attempts        INTEGER  NOT NULL DEFAULT 0,
     last_attempt_at INTEGER, -- Unix time
