@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/Station-Manager/enums/upload"
+	"github.com/Station-Manager/enums/upload/action"
+	"github.com/Station-Manager/enums/upload/status"
 	"github.com/Station-Manager/types"
 )
 
@@ -111,6 +113,6 @@ func (s *Service) FetchPendingUploads() ([]types.QsoUpload, error) {
 	return s.FetchPendingUploadsWithContext(context.Background())
 }
 
-func (s *Service) UpdateQsoUploadStatus(id int64, status string, attempts int64, lastError string) error {
-	return s.UpdateQsoUploadStatusWithContext(context.Background(), id, status, attempts, lastError)
+func (s *Service) UpdateQsoUploadStatus(id int64, status status.Status, action action.Action, attempts int64, lastError string) error {
+	return s.UpdateQsoUploadStatusWithContext(context.Background(), id, status, action, attempts, lastError)
 }

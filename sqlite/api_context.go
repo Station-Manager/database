@@ -785,7 +785,7 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 	return out, nil
 }
 
-func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64, status string, attempts int64, lastError string) error {
+func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64, status status.Status, action action.Action, attempts int64, lastError string) error {
 	const op errors.Op = "sqlite.Service.UpdateQsoUploadStatusWithContext"
 	if err := checkService(op, s); err != nil {
 		return err
@@ -814,7 +814,8 @@ func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64
 		return errors.New(op).Err(err).Msg("Failed to find QSO upload")
 	}
 
-	uploadModel.Status = status
+	uploadModel.Status = status.String()
+	uploadModel.Action = action.String()
 	uploadModel.Attempts = attempts
 	uploadModel.LastError = null.NewString(lastError, lastError != "")
 	uploadModel.ModifiedAt = null.TimeFrom(time.Now())
