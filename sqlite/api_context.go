@@ -249,7 +249,7 @@ func (s *Service) FetchQsoSliceNotForwardedWithContext(ctx context.Context) ([]t
 	return typeSlice, nil
 }
 
-func (s *Service) InsertQsoUploadWithContext(ctx context.Context, qsoId int64, service upload.OnlineService) error {
+func (s *Service) InsertQsoUploadWithContext(ctx context.Context, qsoId int64, action action.Action, service upload.OnlineService) error {
 	const op errors.Op = "sqlite.Service.InsertQsoUploadWithContext"
 	if err := checkService(op, s); err != nil {
 		return err
@@ -270,7 +270,7 @@ func (s *Service) InsertQsoUploadWithContext(ctx context.Context, qsoId int64, s
 	model := models.QsoUpload{
 		QsoID:   qsoId,
 		Service: service.String(),
-		Action:  action.Insert.String(),
+		Action:  action.String(),
 		Status:  status.Pending.String(),
 	}
 
