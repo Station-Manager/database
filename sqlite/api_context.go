@@ -19,8 +19,6 @@ import (
 	"github.com/aarondl/sqlboiler/v4/boil"
 	"github.com/aarondl/sqlboiler/v4/queries"
 	"github.com/aarondl/sqlboiler/v4/queries/qm"
-	btypes "github.com/aarondl/sqlboiler/v4/types"
-	"github.com/goccy/go-json"
 )
 
 /**********************************************************************************************************************
@@ -199,6 +197,8 @@ func (s *Service) UpdateQsoWithContext(ctx context.Context, qso types.Qso) error
 	if err != nil {
 		return errors.New(op).Err(err)
 	}
+
+	model.ModifiedAt = null.TimeFrom(time.Now())
 
 	if _, err = model.Update(ctx, h, boil.Infer()); err != nil {
 		return errors.New(op).Err(err)
@@ -837,23 +837,23 @@ func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64
 	return nil
 }
 
-func addAdditionalField(additional btypes.JSON, key string, value any) (btypes.JSON, error) {
-	// Start with an empty map if the JSON is empty or null.
-	var m map[string]any
-	if len(additional) > 0 && string(additional) != "null" {
-		if err := json.Unmarshal(additional, &m); err != nil {
-			return nil, err
-		}
-	}
-	if m == nil {
-		m = make(map[string]any)
-	}
-
-	m[key] = value
-
-	b, err := json.Marshal(m)
-	if err != nil {
-		return nil, err
-	}
-	return b, nil
-}
+//func addAdditionalField(additional btypes.JSON, key string, value any) (btypes.JSON, error) {
+//	// Start with an empty map if the JSON is empty or null.
+//	var m map[string]any
+//	if len(additional) > 0 && string(additional) != "null" {
+//		if err := json.Unmarshal(additional, &m); err != nil {
+//			return nil, err
+//		}
+//	}
+//	if m == nil {
+//		m = make(map[string]any)
+//	}
+//
+//	m[key] = value
+//
+//	b, err := json.Marshal(m)
+//	if err != nil {
+//		return nil, err
+//	}
+//	return b, nil
+//}
