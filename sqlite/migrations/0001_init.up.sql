@@ -27,7 +27,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_logbook_api_key ON logbook (api_key) WHERE 
 -- Seed a default logbook so newly initialized databases have a usable logbook.
 -- Use INSERT OR IGNORE so migrations are idempotent.
 INSERT OR IGNORE INTO logbook (name, callsign, description)
-VALUES ('Default', '7Q5MLV', 'Default logbook created by migrations');
+VALUES ('Default', '7Q5MLV/T', 'Default logbook created by migrations');
 
 CREATE TABLE IF NOT EXISTS session
 (
@@ -162,12 +162,12 @@ CREATE TABLE IF NOT EXISTS qso_upload
     modified_at     DATETIME,
     qso_id          INTEGER  NOT NULL,
     service         TEXT     NOT NULL,
-    action          TEXT     NOT NULL DEFAULT 'insert' CHECK (action IN ('insert', 'update')),
+    action          TEXT     NOT NULL DEFAULT 'insert' CHECK (action IN ('insert', 'update', 'delete')),
     status          TEXT     NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'uploaded', 'failed')),
     attempts        INTEGER  NOT NULL DEFAULT 0,
     last_attempt_at INTEGER, -- Unix time
     last_error      TEXT,
-    CONSTRAINT uq_qso_service UNIQUE (qso_id, service),
+    CONSTRAINT uq_qso_service UNIQUE (qso_id, service, action),
     CONSTRAINT fk_qso_upload_qso FOREIGN KEY (qso_id) REFERENCES qso (id) ON DELETE CASCADE
 );
 

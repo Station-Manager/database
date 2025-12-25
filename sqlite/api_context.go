@@ -766,6 +766,7 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 			ID:            ref.ID,
 			QsoID:         ref.QsoID,
 			Service:       ref.Service,
+			Action:        ref.Action,
 			Status:        ref.Status,
 			Attempts:      ref.Attempts,
 			LastError:     ref.LastError.String,
