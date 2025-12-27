@@ -4,11 +4,11 @@ go 1.25
 
 require (
 	github.com/Station-Manager/adapters v0.0.11
-	github.com/Station-Manager/config v0.0.31
+	github.com/Station-Manager/config v0.0.33
 	github.com/Station-Manager/enums v0.0.6
 	github.com/Station-Manager/errors v0.0.11
-	github.com/Station-Manager/logging v0.0.11
-	github.com/Station-Manager/types v0.0.67
+	github.com/Station-Manager/logging v0.0.12
+	github.com/Station-Manager/types v0.0.68
 	github.com/Station-Manager/utils v0.0.4
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
@@ -49,7 +49,7 @@ require (
 	golang.org/x/text v0.32.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
-	modernc.org/libc v1.67.1 // indirect
+	modernc.org/libc v1.67.2 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )
