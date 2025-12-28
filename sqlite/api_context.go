@@ -837,24 +837,3 @@ func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64
 
 	return nil
 }
-
-//func addAdditionalField(additional btypes.JSON, key string, value any) (btypes.JSON, error) {
-//	// Start with an empty map if the JSON is empty or null.
-//	var m map[string]any
-//	if len(additional) > 0 && string(additional) != "null" {
-//		if err := json.Unmarshal(additional, &m); err != nil {
-//			return nil, err
-//		}
-//	}
-//	if m == nil {
-//		m = make(map[string]any)
-//	}
-//
-//	m[key] = value
-//
-//	b, err := json.Marshal(m)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return b, nil
-//}

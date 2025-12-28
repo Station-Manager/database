@@ -8,7 +8,7 @@ require (
 	github.com/Station-Manager/enums v0.0.6
 	github.com/Station-Manager/errors v0.0.11
 	github.com/Station-Manager/logging v0.0.12
-	github.com/Station-Manager/types v0.0.68
+	github.com/Station-Manager/types v0.0.69
 	github.com/Station-Manager/utils v0.0.4
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.5
@@ -18,7 +18,7 @@ require (
 	github.com/goccy/go-json v0.10.5
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/lib/pq v1.10.9
-	modernc.org/sqlite v1.42.1
+	modernc.org/sqlite v1.42.2
 )
 
 require (
