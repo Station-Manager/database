@@ -93,8 +93,8 @@ func (s *Service) SoftDeleteSessionByID(id int64) error {
 	return s.SoftDeleteSessionByIDWithContext(context.Background(), id)
 }
 
-func (s *Service) InsertSession() (int64, error) {
-	return s.InsertSessionWithContext(context.Background())
+func (s *Service) GenerateSession() (int64, error) {
+	return s.GenerateSessionWithContext(context.Background())
 }
 
 /**********************************************************************************************************************

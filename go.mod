@@ -18,7 +18,7 @@ require (
 	github.com/goccy/go-json v0.10.5
 	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/lib/pq v1.10.9
-	modernc.org/sqlite v1.41.0
+	modernc.org/sqlite v1.42.1
 )
 
 require (

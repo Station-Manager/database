@@ -612,7 +612,7 @@ func (s *Service) SoftDeleteSessionByIDWithContext(ctx context.Context, id int64
 	return nil
 }
 
-func (s *Service) InsertSessionWithContext(ctx context.Context) (int64, error) {
+func (s *Service) GenerateSessionWithContext(ctx context.Context) (int64, error) {
 	const op errors.Op = "sqlite.Service.InsertSessionWithContext"
 	if err := checkService(op, s); err != nil {
 		return 0, err
