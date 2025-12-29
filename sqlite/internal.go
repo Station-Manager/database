@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"github.com/Station-Manager/errors"
-	"github.com/Station-Manager/utils"
 	"net"
 	"net/url"
 	"os"
@@ -13,6 +11,9 @@ import (
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/Station-Manager/errors"
+	"github.com/Station-Manager/utils"
 )
 
 func (s *Service) getOpenHandle(op errors.Op) (*sql.DB, error) {
@@ -52,6 +53,8 @@ func (s *Service) getDsn() (string, error) {
 		if path == emptyString {
 			return emptyString, errors.New(op).Msg(errMsgEmptyPath)
 		}
+
+		s.LoggerService.InfoWith().Str("path", path).Msg("Using sqlite database file")
 
 		// Merge defaults if not provided
 		opts := map[string]string{}

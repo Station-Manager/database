@@ -4,14 +4,15 @@ import (
 	"context"
 	"database/sql"
 	stderr "errors"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/Station-Manager/config"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/logging"
 	"github.com/Station-Manager/types"
 	_ "modernc.org/sqlite"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 const ServiceName = types.SqliteServiceName
