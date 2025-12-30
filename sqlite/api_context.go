@@ -595,9 +595,7 @@ func (s *Service) FetchAllLogbooksWithContext(ctx context.Context) ([]types.Logb
 		return nil, errors.New(op).Err(err)
 	}
 
-	fmt.Println(">", list)
-
-	result := make([]types.Logbook, len(list))
+	result := make([]types.Logbook, 0, len(list))
 	for _, logbook := range list {
 		typeLogbook, er := adapters.LogbookModelToType(logbook)
 		if er != nil {
