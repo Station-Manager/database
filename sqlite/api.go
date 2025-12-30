@@ -85,6 +85,10 @@ func (s *Service) FetchLogbookByID(id int64) (types.Logbook, error) {
 	return s.FetchLogbookByIDWithContext(context.Background(), id)
 }
 
+func (s *Service) FetchAllLogbooks() ([]types.Logbook, error) {
+	return s.FetchAllLogbooksWithContext(context.Background())
+}
+
 /**********************************************************************************************************************
  * Session Methods
  **********************************************************************************************************************/

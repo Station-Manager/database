@@ -122,21 +122,22 @@ func (s *Service) Open() error {
 
 	// Ensure SQLite enforces foreign keys on this connection. Some drivers may ignore DSN params,
 	// so execute the PRAGMA explicitly per-connection. If this fails, close the DB and return error.
-	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = ON"); err != nil {
+	if _, err = db.ExecContext(ctx, "PRAGMA foreign_keys = ON"); err != nil {
 		_ = db.Close()
 		return errors.New(op).Err(err).Msg("failed to enable sqlite foreign_keys PRAGMA")
 	}
 	// Reinforce busy timeout and WAL journal mode explicitly (DSN may not always apply reliably across drivers)
-	if _, err := db.ExecContext(ctx, "PRAGMA busy_timeout=5000"); err != nil {
+	if _, err = db.ExecContext(ctx, "PRAGMA busy_timeout=5000"); err != nil {
 		_ = db.Close()
 		return errors.New(op).Err(err).Msg("failed to set sqlite busy_timeout PRAGMA")
 	}
-	if _, err := db.ExecContext(ctx, "PRAGMA journal_mode=WAL"); err != nil {
+	if _, err = db.ExecContext(ctx, "PRAGMA journal_mode=WAL"); err != nil {
 		_ = db.Close()
 		return errors.New(op).Err(err).Msg("failed to set sqlite journal_mode WAL")
 	}
 
 	s.handle = db
+
 	s.isOpen.Store(true)
 
 	return nil

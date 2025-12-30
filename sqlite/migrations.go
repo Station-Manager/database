@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"embed"
 	stderr "errors"
+
 	"github.com/Station-Manager/database/postgres"
 	"github.com/Station-Manager/errors"
 	"github.com/golang-migrate/migrate/v4"
@@ -31,9 +32,6 @@ func GetMigrationDrivers(handle *sql.DB) (source.Driver, database.Driver, error)
 
 func (s *Service) doMigrations() error {
 	const op errors.Op = "database.Service.doMigrations"
-	if s == nil {
-		return errors.New(op).Msg(errMsgNilService)
-	}
 
 	var srcDriver source.Driver
 	var dbDriver database.Driver
@@ -92,7 +90,7 @@ func (s *Service) doMigrations() error {
 		if s.LoggerService != nil {
 			s.LoggerService.WarnWith().Strs("missing", missing).Msg("applying initial schema via fallback")
 		}
-		if err := postgres.ApplyInitialSchemaSimple(s.handle); err != nil {
+		if err = postgres.ApplyInitialSchemaSimple(s.handle); err != nil {
 			return errors.New(op).Err(err).Msg("fallback initial schema failed")
 		}
 		missing, chkErr = s.missingCoreTables()

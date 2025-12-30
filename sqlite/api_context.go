@@ -576,6 +576,39 @@ func (s *Service) FetchLogbookByIDWithContext(ctx context.Context, id int64) (ty
 	return logbook, nil
 }
 
+func (s *Service) FetchAllLogbooksWithContext(ctx context.Context) ([]types.Logbook, error) {
+	const op errors.Op = "sqlite.Service.FetchAllLogbooksWithContext"
+	if err := checkService(op, s); err != nil {
+		return nil, err
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	list, err := models.Logbooks().All(ctx, h)
+	if err != nil {
+		return nil, errors.New(op).Err(err)
+	}
+
+	fmt.Println(">", list)
+
+	result := make([]types.Logbook, len(list))
+	for _, logbook := range list {
+		typeLogbook, er := adapters.LogbookModelToType(logbook)
+		if er != nil {
+			return nil, errors.New(op).Err(er).Msg("Converting logbook model to type failed.")
+		}
+		result = append(result, typeLogbook)
+	}
+
+	return result, nil
+}
+
 /**********************************************************************************************************************
  * Session Methods
  **********************************************************************************************************************/
