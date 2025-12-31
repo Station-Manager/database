@@ -7,6 +7,7 @@ import (
 	"github.com/Station-Manager/database/sqlite/models"
 	"github.com/Station-Manager/errors"
 	"github.com/Station-Manager/types"
+	"github.com/aarondl/null/v8"
 	"github.com/goccy/go-json"
 )
 
@@ -299,5 +300,15 @@ func CountryTypeToModel(country types.Country) (models.Country, error) {
 		Ccode:      country.Ccode,
 		DXCCPrefix: country.DXCCPrefix,
 		TimeOffset: country.TimeOffset,
+	}, nil
+}
+
+func LogbookTypeToModel(logbook types.Logbook) (models.Logbook, error) {
+	return models.Logbook{
+		ID:          logbook.ID,
+		Name:        logbook.Name,
+		Callsign:    logbook.Callsign,
+		APIKey:      null.StringFrom(logbook.APIKey),
+		Description: null.StringFrom(logbook.Description),
 	}, nil
 }

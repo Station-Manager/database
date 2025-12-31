@@ -89,6 +89,10 @@ func (s *Service) FetchAllLogbooks() ([]types.Logbook, error) {
 	return s.FetchAllLogbooksWithContext(context.Background())
 }
 
+func (s *Service) InsertLogbook(logbook types.Logbook) (int64, error) {
+	return s.InsertLogbookWithContext(context.Background(), logbook)
+}
+
 /**********************************************************************************************************************
  * Session Methods
  **********************************************************************************************************************/

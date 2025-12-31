@@ -607,6 +607,31 @@ func (s *Service) FetchAllLogbooksWithContext(ctx context.Context) ([]types.Logb
 	return result, nil
 }
 
+func (s *Service) InsertLogbookWithContext(ctx context.Context, logbook types.Logbook) (int64, error) {
+	const op errors.Op = "sqlite.Service.InsertLogbookWithContext"
+	if err := checkService(op, s); err != nil {
+		return 0, err
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return 0, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	model, err := adapters.LogbookTypeToModel(logbook)
+	if err != nil {
+		return 0, errors.New(op).Err(err)
+	}
+	if err = model.Insert(ctx, h, boil.Infer()); err != nil {
+		return 0, errors.New(op).Err(err).Msg("Inserting new logbook failed.")
+	}
+
+	return 0, nil
+}
+
 /**********************************************************************************************************************
  * Session Methods
  **********************************************************************************************************************/
