@@ -629,7 +629,7 @@ func (s *Service) InsertLogbookWithContext(ctx context.Context, logbook types.Lo
 		return 0, errors.New(op).Err(err).Msg("Inserting new logbook failed.")
 	}
 
-	return 0, nil
+	return model.ID, nil
 }
 
 /**********************************************************************************************************************
