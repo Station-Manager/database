@@ -27,7 +27,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_logbook_api_key ON logbook (api_key) WHERE 
 -- Seed a default logbook so newly initialized databases have a usable logbook.
 -- Use INSERT OR IGNORE so migrations are idempotent.
 INSERT OR IGNORE INTO logbook (name, callsign, description)
-VALUES ('Default', '7Q5MLV/T', 'Default logbook created by migrations');
+VALUES ('Default', '7Q5MLV/T', 'Default logbook created when the database was first initialized.');
 
 CREATE TABLE IF NOT EXISTS session
 (

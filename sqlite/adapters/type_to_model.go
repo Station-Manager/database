@@ -304,11 +304,16 @@ func CountryTypeToModel(country types.Country) (models.Country, error) {
 }
 
 func LogbookTypeToModel(logbook types.Logbook) (models.Logbook, error) {
+	var apiKey null.String
+	if logbook.APIKey != "" {
+		apiKey = null.StringFrom(logbook.APIKey)
+	}
+
 	return models.Logbook{
 		ID:          logbook.ID,
 		Name:        logbook.Name,
 		Callsign:    logbook.Callsign,
-		APIKey:      null.StringFrom(logbook.APIKey),
+		APIKey:      apiKey,
 		Description: null.StringFrom(logbook.Description),
 	}, nil
 }
