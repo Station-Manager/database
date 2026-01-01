@@ -29,6 +29,10 @@ func (s *Service) FetchQsoSliceByCallsign(callsign string) ([]types.ContactHisto
 	return s.FetchQsoSliceByCallsignWithContext(context.Background(), callsign)
 }
 
+func (s *Service) FetchQsoSliceByLogbookId(id int64) ([]types.Qso, error) {
+	return s.FetchQsoSliceByLogbookIdWithContext(context.Background(), id)
+}
+
 func (s *Service) FetchQsoCountByLogbookId(id int64) (int64, error) {
 	return s.FetchQsoCountByLogbookIdWithContext(context.Background(), id)
 }

@@ -149,6 +149,46 @@ func (s *Service) FetchQsoSliceByCallsignWithContext(ctx context.Context, callsi
 	return history, nil
 }
 
+func (s *Service) FetchQsoSliceByLogbookIdWithContext(ctx context.Context, id int64) ([]types.Qso, error) {
+	const op errors.Op = "sqlite.Service.FetchQsoSliceByLogbookIdWithContext"
+	if err := checkService(op, s); err != nil {
+		return nil, err
+	}
+
+	if id < 1 {
+		return nil, errors.New(op).Msg(errMsgInvalidId)
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	slice, err := models.Qsos(models.QsoWhere.LogbookID.EQ(id)).All(ctx, h)
+	if err != nil {
+		return nil, errors.New(op).Err(err).Msg("Failed to fetch QSO slice.")
+	}
+
+	var typeSlice []types.Qso
+	if slice != nil {
+		typeSlice = make([]types.Qso, 0, len(slice))
+
+		for _, qso := range slice {
+			typeQso, er := adapters.QsoModelToType(qso)
+			if er != nil {
+				s.LoggerService.WarnWith().Int64("qso.id", qso.ID).Err(er).Msg("Failed to adapt QSO for contact history.")
+				continue
+			}
+			typeSlice = append(typeSlice, typeQso)
+		}
+	}
+
+	return typeSlice, nil
+}
+
 func (s *Service) FetchQsoCountByLogbookIdWithContext(ctx context.Context, id int64) (int64, error) {
 	const op errors.Op = "sqlite.Service.FetchQsoCountByLogbookIdWithContext"
 	if err := checkService(op, s); err != nil {
