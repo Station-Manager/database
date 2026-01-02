@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	stderr "errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -109,10 +108,14 @@ func (s *Service) FetchQsoSliceByCallsignWithContext(ctx context.Context, callsi
 	ctx, cancel := s.ensureCtxTimeout(ctx)
 	defer cancel()
 
-	callsign = fmt.Sprintf("%%%s%%", callsign)
+	//	callsign = fmt.Sprintf("%%%s%%", callsign)
 
 	var mods []qm.QueryMod
-	mods = append(mods, models.QsoWhere.Call.LIKE(callsign))
+	mods = append(mods, models.QsoWhere.Call.EQ(callsign))
+	mods = append(mods, qm.Or2(
+		models.QsoWhere.Call.LIKE(callsign+"%"),
+	))
+	//mods = append(mods, models.QsoWhere.Call.EQ(callsign))
 	mods = append(mods, qm.OrderBy(models.QsoColumns.CreatedAt+" DESC"))
 	slice, err := models.Qsos(mods...).All(ctx, h)
 	if err != nil {
