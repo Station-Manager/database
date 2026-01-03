@@ -8,7 +8,7 @@ require (
 	github.com/Station-Manager/enums v0.0.6
 	github.com/Station-Manager/errors v0.0.11
 	github.com/Station-Manager/logging v0.0.12
-	github.com/Station-Manager/types v0.0.70
+	github.com/Station-Manager/types v0.0.71
 	github.com/Station-Manager/utils v0.0.4
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.7

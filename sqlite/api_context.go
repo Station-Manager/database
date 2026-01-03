@@ -977,6 +977,11 @@ func (s *Service) UpdateQsoUploadStatusWithContext(ctx context.Context, id int64
 	uploadModel.LastError = null.NewString(lastError, lastError != "")
 	uploadModel.ModifiedAt = null.TimeFrom(time.Now())
 
+	// Clear last_attempt_at on failure so it can be retried on next poll
+	if uploadModel.Status == "failed" {
+		uploadModel.LastAttemptAt = null.Int64{}
+	}
+
 	_, err = uploadModel.Update(ctx, tx, boil.Infer())
 	if err != nil {
 		_ = tx.Rollback()
