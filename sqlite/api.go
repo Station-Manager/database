@@ -97,6 +97,10 @@ func (s *Service) InsertLogbook(logbook types.Logbook) (int64, error) {
 	return s.InsertLogbookWithContext(context.Background(), logbook)
 }
 
+func (s *Service) DeleteLogbookByID(id int64) error {
+	return s.DeleteLogbookByIDWithContext(context.Background(), id)
+}
+
 /**********************************************************************************************************************
  * Session Methods
  **********************************************************************************************************************/
