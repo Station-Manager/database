@@ -852,9 +852,9 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 	ctx, cancel := s.ensureCtxTimeout(ctx)
 	defer cancel()
 
-	batchLimit := 5
-	if s.DatabaseConfig.QsoForwardingRowLimit > 0 {
-		batchLimit = s.DatabaseConfig.QsoForwardingRowLimit
+	batchLimit := 5 // Default
+	if s.requiredCfgs.QsoForwardingRowLimit > 0 {
+		batchLimit = s.requiredCfgs.QsoForwardingRowLimit
 	}
 
 	now := time.Now()
