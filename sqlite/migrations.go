@@ -24,6 +24,7 @@ func GetMigrationDrivers(handle *sql.DB) (source.Driver, database.Driver, error)
 	}
 	dbDriver, err := sqlite3.WithInstance(handle, &sqlite3.Config{})
 	if err != nil {
+		_ = srcDriver.Close()
 		return nil, nil, errors.New(op).Errorf("sqlite3.WithInstance: %w", err)
 	}
 	return srcDriver, dbDriver, nil
@@ -40,13 +41,12 @@ func (s *Service) doMigrations() error {
 	if err != nil {
 		return errors.New(op).Err(err)
 	}
+	defer func() { _ = srcDriver.Close() }()
 
 	m, err := migrate.NewWithInstance("iofs", srcDriver, s.DatabaseConfig.Driver, dbDriver)
 	if err != nil {
-		_ = srcDriver.Close()
 		return errors.New(op).Errorf("migrate.NewWithInstance: %w", err)
 	}
-	defer func() { _ = srcDriver.Close() }()
 
 	if s.LoggerService != nil {
 		s.LoggerService.InfoWith().Str("driver", s.DatabaseConfig.Driver).Msg("starting migrations")
