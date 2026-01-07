@@ -35,94 +35,16 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 		timeOff = strings.ReplaceAll(timeOff, ":", "")
 	}
 
-	additionalData := struct {
-		// Qso
-		SmQsoUploadDate     string `json:"sm_qso_upload_date,omitempty"`
-		SmQsoUploadStatus   string `json:"sm_qso_upload_status,omitempty"`
-		SmFwrdByEmailDate   string `json:"sm_fwrd_by_email_date,omitempty"`
-		SmFwrdByEmailStatus string `json:"sm_fwrd_by_email_status,omitempty"`
-
-		QrzComUploadDate   string `json:"qrzcom_qso_upload_date,omitempty"`
-		QrzComUploadStatus string `json:"qrzcom_qso_upload_status,omitempty"`
-
-		// QsoDetails
-		AIndex      string `json:"a_index,omitempty"`
-		AntPath     string `json:"ant_path,omitempty"` // ADIF, section II.B.1 - currently, we only use S and L
-		BandRx      string `json:"band_rx,omitempty"`  //in a split frequency QSO, the logging station's receiving band
-		Comment     string `json:"comment,omitempty"`
-		ContestId   string `json:"contest_id,omitempty"`
-		Distance    string `json:"distance,omitempty"` // km
-		FreqRx      string `json:"freq_rx,omitempty"`
-		Submode     string `json:"submode,omitempty"`
-		Notes       string `json:"notes,omitempty"` // information of interest to the logging station's operator
-		QsoDateOff  string `json:"qso_date_off,omitempty"`
-		QsoRandom   string `json:"qso_random,omitempty"`
-		QsoComplete string `json:"qso_complete,omitempty"`
-		RxPwr       string `json:"rx_pwr,omitempty"` // the contacted station's transmitter power in Watts with a value greater than or equal to 0
-		SRX         string `json:"srx,omitempty"`    // contest QSO received serial number with a value greater than or equal to 0
-		STX         string `json:"stx,omitempty"`    // contest QSO transmitted serial number with a value greater than or equal to 0
-		TxPwr       string `json:"tx_pwr,omitempty"` // the logging station's power in Watts with a value greater than or equal to 0
-		// ContactedStation
-		Address      string `json:"address,omitempty"`
-		Age          string `json:"age,omitempty"`
-		Altitude     string `json:"altitude,omitempty"`
-		Cont         string `json:"cont,omitempty"` // the contacted station's Continent
-		ContactedOp  string `json:"contacted_op,omitempty"`
-		CQZ          string `json:"cqz,omitempty"`
-		DXCC         string `json:"dxcc,omitempty"`
-		Email        string `json:"email,omitempty"`
-		EqCall       string `json:"eq_call,omitempty"` // the contacted station's owner's callsign (if different from call)
-		Gridsquare   string `json:"gridsquare,omitempty"`
-		Iota         string `json:"iota,omitempty"`
-		IotaIslandId string `json:"iota_island_id,omitempty"`
-		ITUZ         string `json:"ituz,omitempty"`
-		Lat          string `json:"lat,omitempty"`
-		Lon          string `json:"lon,omitempty"`
-		Name         string `json:"name,omitempty"`
-		QTH          string `json:"qth,omitempty"`
-		Rig          string `json:"rig,omitempty"`
-		Sig          string `json:"sig,omitempty"`      // the name of the contacted station's special activity or interest group
-		SigInfo      string `json:"sig_info,omitempty"` // information associated with the contacted station's activity or interest group
-		Web          string `json:"web,omitempty"`
-		WwffRef      string `json:"wwff_ref,omitempty"`
-		// LoggingStation
-		AntennaAzimuth  string `json:"ant_az,omitempty"` // the bearing from the logging station to the contacted station
-		MyAltitude      string `json:"my_altitude,omitempty"`
-		MyAntenna       string `json:"my_antenna,omitempty"`
-		MyCity          string `json:"my_city,omitempty"`
-		MyCountry       string `json:"my_country,omitempty"`
-		MyCqZone        string `json:"my_cq_zone,omitempty"`
-		MyDXCC          string `json:"my_dxcc,omitempty"`
-		MyGridsquare    string `json:"my_gridsquare,omitempty"`
-		MyIota          string `json:"my_iota,omitempty"`
-		MyIotaIslandID  string `json:"my_iota_island_id,omitempty"`
-		MyITUZone       string `json:"my_itu_zone,omitempty"`
-		MyLat           string `json:"my_lat,omitempty"`
-		MyLon           string `json:"my_lon,omitempty"`
-		MyMorseKeyInfo  string `json:"my_morse_key_info,omitempty"`
-		MyMorseKeyType  string `json:"my_morse_key_type,omitempty"`
-		MyName          string `json:"my_name,omitempty"`
-		MyPostalCode    string `json:"my_postal_code,omitempty"`
-		MyRig           string `json:"my_rig,omitempty"`
-		MySig           string `json:"my_sig,omitempty"`
-		MySigInfo       string `json:"my_sig_info,omitempty"`
-		MyStreet        string `json:"my_street,omitempty"`
-		MyWwffRef       string `json:"my_wwff_ref,omitempty"`
-		Operator        string `json:"operator,omitempty"` // the logging operator's callsign if STATION_CALLSIGN is absent, OPERATOR shall be treated as both the logging station's callsign and the logging operator's callsign
-		OwnerCallsign   string `json:"owner_callsign,omitempty"`
-		StationCallsign string `json:"station_callsign"`
-		// QSL (TBD)
-	}{
-		// Qso
+	additionalData := types.QsoAdditionalData{
+		// Upload status fields
 		SmQsoUploadDate:     qso.SmQsoUploadDate,
 		SmQsoUploadStatus:   qso.SmQsoUploadStatus,
 		SmFwrdByEmailDate:   qso.SmFwrdByEmailDate,
 		SmFwrdByEmailStatus: qso.SmFwrdByEmailStatus,
+		QrzComUploadDate:    qso.QrzComUploadDate,
+		QrzComUploadStatus:  qso.QrzComUploadStatus,
 
-		QrzComUploadDate:   qso.QrzComUploadDate,
-		QrzComUploadStatus: qso.QrzComUploadStatus,
-
-		// QsoDetails
+		// QsoDetails fields
 		AIndex:      qso.QsoDetails.AIndex,
 		AntPath:     qso.QsoDetails.AntPath,
 		BandRx:      qso.QsoDetails.BandRx,
@@ -139,8 +61,9 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 		SRX:         qso.QsoDetails.SRX,
 		STX:         qso.QsoDetails.STX,
 		TxPwr:       qso.QsoDetails.TxPwr,
+		Rig:         qso.QsoDetails.Rig,
 
-		// ContactedStation
+		// ContactedStation fields
 		Address:      qso.ContactedStation.Address,
 		Age:          qso.ContactedStation.Age,
 		Altitude:     qso.ContactedStation.Altitude,
@@ -158,13 +81,12 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 		Lon:          qso.ContactedStation.Lon,
 		Name:         qso.ContactedStation.Name,
 		QTH:          qso.ContactedStation.QTH,
-		Rig:          qso.Rig,
 		Sig:          qso.ContactedStation.Sig,
 		SigInfo:      qso.ContactedStation.SigInfo,
 		Web:          qso.ContactedStation.Web,
 		WwffRef:      qso.ContactedStation.WwffRef,
 
-		// LoggingStation
+		// LoggingStation fields
 		AntennaAzimuth:  qso.LoggingStation.AntennaAzimuth,
 		MyAltitude:      qso.LoggingStation.MyAltitude,
 		MyAntenna:       qso.LoggingStation.MyAntenna,
@@ -190,7 +112,6 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 		Operator:        qso.LoggingStation.Operator,
 		OwnerCallsign:   qso.LoggingStation.OwnerCallsign,
 		StationCallsign: qso.LoggingStation.StationCallsign,
-		// QSL (TBD)
 	}
 
 	jsonData, err := json.Marshal(additionalData)
@@ -223,30 +144,7 @@ func QsoTypeToModel(qso types.Qso) (models.Qso, error) {
 }
 
 func ContactedStationTypeToModel(station types.ContactedStation) (models.ContactedStation, error) {
-	additionalData := struct {
-		Address      string `json:"address,omitempty"`
-		Age          string `json:"age,omitempty"`
-		Altitude     string `json:"altitude,omitempty"`
-		Cont         string `json:"cont,omitempty"` // the contacted station's Continent
-		ContactedOp  string `json:"contacted_op,omitempty"`
-		CQZ          string `json:"cqz,omitempty"`
-		DXCC         string `json:"dxcc,omitempty"`
-		Email        string `json:"email,omitempty"`
-		EqCall       string `json:"eq_call,omitempty"` // the contacted station's owner's callsign (if different from call)
-		Gridsquare   string `json:"gridsquare,omitempty"`
-		Iota         string `json:"iota,omitempty"`
-		IotaIslandId string `json:"iota_island_id,omitempty"`
-		ITUZ         string `json:"ituz,omitempty"`
-		Lat          string `json:"lat,omitempty"`
-		Lon          string `json:"lon,omitempty"`
-		//		Name         string `json:"name,omitempty"`
-		QTH     string `json:"qth,omitempty"`
-		Rig     string `json:"rig,omitempty"`
-		Sig     string `json:"sig,omitempty"`      // the name of the contacted station's special activity or interest group
-		SigInfo string `json:"sig_info,omitempty"` // information associated with the contacted station's activity or interest group
-		Web     string `json:"web,omitempty"`
-		WwffRef string `json:"wwff_ref,omitempty"`
-	}{
+	additionalData := types.ContactedStationAdditionalData{
 		Address:      station.Address,
 		Age:          station.Age,
 		Altitude:     station.Altitude,
@@ -262,13 +160,11 @@ func ContactedStationTypeToModel(station types.ContactedStation) (models.Contact
 		ITUZ:         station.ITUZ,
 		Lat:          station.Lat,
 		Lon:          station.Lon,
-		//		Name:         station.Name,
-		QTH: station.QTH,
-		//		Rig:     station.Rig,
-		Sig:     station.Sig,
-		SigInfo: station.SigInfo,
-		Web:     station.Web,
-		WwffRef: station.WwffRef,
+		QTH:          station.QTH,
+		Sig:          station.Sig,
+		SigInfo:      station.SigInfo,
+		Web:          station.Web,
+		WwffRef:      station.WwffRef,
 	}
 
 	jsonData, err := json.Marshal(additionalData)

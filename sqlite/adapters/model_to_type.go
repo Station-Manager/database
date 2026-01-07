@@ -14,31 +14,8 @@ func ContactedStationModelToType(model *models.ContactedStation) (types.Contacte
 	if model == nil {
 		return types.ContactedStation{}, errors.New(op).Msg(errMsgNilModel)
 	}
-	type additionalData struct {
-		Address      string `json:"address,omitempty"`
-		Age          string `json:"age,omitempty"`
-		Altitude     string `json:"altitude,omitempty"`
-		Cont         string `json:"cont,omitempty"` // the contacted station's Continent
-		ContactedOp  string `json:"contacted_op,omitempty"`
-		CQZ          string `json:"cqz,omitempty"`
-		DXCC         string `json:"dxcc,omitempty"`
-		Email        string `json:"email,omitempty"`
-		EqCall       string `json:"eq_call,omitempty"` // the contacted station's owner's callsign (if different from call)
-		Gridsquare   string `json:"gridsquare,omitempty"`
-		Iota         string `json:"iota,omitempty"`
-		IotaIslandId string `json:"iota_island_id,omitempty"`
-		ITUZ         string `json:"ituz,omitempty"`
-		Lat          string `json:"lat,omitempty"`
-		Lon          string `json:"lon,omitempty"`
-		QTH          string `json:"qth,omitempty"`
-		//		Rig          string `json:"rig,omitempty"`
-		Sig     string `json:"sig,omitempty"`      // the name of the contacted station's special activity or interest group
-		SigInfo string `json:"sig_info,omitempty"` // information associated with the contacted station's activity or interest group
-		Web     string `json:"web,omitempty"`
-		WwffRef string `json:"wwff_ref,omitempty"`
-	}
 
-	data := additionalData{}
+	data := types.ContactedStationAdditionalData{}
 	if err := json.Unmarshal(model.AdditionalData, &data); err != nil {
 		return types.ContactedStation{}, err
 	}
@@ -64,11 +41,10 @@ func ContactedStationModelToType(model *models.ContactedStation) (types.Contacte
 		Lat:          data.Lat,
 		Lon:          data.Lon,
 		QTH:          data.QTH,
-		//		Rig:          data.Rig,
-		Sig:     data.Sig,
-		SigInfo: data.SigInfo,
-		Web:     data.Web,
-		WwffRef: data.WwffRef,
+		Sig:          data.Sig,
+		SigInfo:      data.SigInfo,
+		Web:          data.Web,
+		WwffRef:      data.WwffRef,
 	}, nil
 }
 
