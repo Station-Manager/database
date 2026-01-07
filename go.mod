@@ -9,7 +9,7 @@ require (
 	github.com/Station-Manager/errors v0.0.11
 	github.com/Station-Manager/logging v0.0.12
 	github.com/Station-Manager/types v0.0.74
-	github.com/Station-Manager/utils v0.0.4
+	github.com/Station-Manager/utils v0.0.5
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.7
 	github.com/aarondl/strmangle v0.0.9

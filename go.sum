@@ -16,8 +16,8 @@ github.com/Station-Manager/logging v0.0.12 h1:ETA9Vgydx8XwyjR9DnzSKqek0OqpAwnHOM
 github.com/Station-Manager/logging v0.0.12/go.mod h1:G7PSDZaNs1uPQ98UEXE9B+fujnNgDHWQxo+3XDunm3s=
 github.com/Station-Manager/types v0.0.74 h1:e5sT9S4TjYI+7HJdSk1ORfVIlTOtxWNR3QXzcdZQd+Y=
 github.com/Station-Manager/types v0.0.74/go.mod h1:G3VmTr0CRvWzM47yOTlNyPmIw83qGLdHtmXo7aFylLY=
-github.com/Station-Manager/utils v0.0.4 h1:yc0U5uE+lnV8LGoibihFf/H8x9IQ666fcsvYv5onUS4=
-github.com/Station-Manager/utils v0.0.4/go.mod h1:EnFoj5YpCZntfBjfSiVaLuh21wQStGoHGcFMJBWorsI=
+github.com/Station-Manager/utils v0.0.5 h1:zrKXZlG03ApJXbJ1ui+PVj0j48izD4edhZtXmqFcwaU=
+github.com/Station-Manager/utils v0.0.5/go.mod h1:EnFoj5YpCZntfBjfSiVaLuh21wQStGoHGcFMJBWorsI=
 github.com/aarondl/inflect v0.0.2 h1:XvH8K5g1wKS921tMmDOUsZ3zS1Eo8WwK5RHC0IGGT2s=
 github.com/aarondl/inflect v0.0.2/go.mod h1:zjmCfdXHUDQ9jFOV6SeHknpo0Au6rQhV8GchS4Vzv/0=
 github.com/aarondl/null/v8 v8.1.3 h1:ZJcvvj34BkXAguqU7xzDqEmzG86cSBgM8HYxcqeK0+8=
