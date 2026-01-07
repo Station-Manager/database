@@ -217,7 +217,7 @@ func (s *Service) FetchQsoCountByLogbookIdWithContext(ctx context.Context, id in
 }
 
 func (s *Service) UpdateQsoWithContext(ctx context.Context, qso types.Qso) error {
-	const op errors.Op = "sqlite.Service.FetchQsoCountByLogbookIdWithContext"
+	const op errors.Op = "sqlite.Service.UpdateQsoWithContext"
 	if err := checkService(op, s); err != nil {
 		return err
 	}

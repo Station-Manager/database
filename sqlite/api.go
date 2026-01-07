@@ -118,7 +118,7 @@ func (s *Service) GenerateSession() (int64, error) {
  **********************************************************************************************************************/
 
 func (s *Service) IsContestDuplicateByLogbookID(id int64, callsign, band string) (bool, error) {
-	return s.IsContestDuplicatByLogbookIDWithContext(context.Background(), id, callsign, band)
+	return s.IsContestDuplicateByLogbookIDWithContext(context.Background(), id, callsign, band)
 }
 
 /**********************************************************************************************************************
