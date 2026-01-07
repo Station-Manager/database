@@ -22,7 +22,6 @@ const (
 )
 
 const (
-	PostgresDriver = "postgres"
-	SqliteDriver   = "sqlite"
-	emptyString    = ""
+	SqliteDriver = "sqlite"
+	emptyString  = ""
 )

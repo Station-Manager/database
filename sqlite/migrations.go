@@ -5,7 +5,6 @@ import (
 	"embed"
 	stderr "errors"
 
-	"github.com/Station-Manager/database/postgres"
 	"github.com/Station-Manager/errors"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database"
@@ -18,7 +17,7 @@ import (
 var migrationFiles embed.FS
 
 func GetMigrationDrivers(handle *sql.DB) (source.Driver, database.Driver, error) {
-	const op errors.Op = "database.sqlite.sourceDriver"
+	const op errors.Op = "sqlite.GetMigrationDrivers"
 	srcDriver, err := iofs.New(migrationFiles, "migrations")
 	if err != nil {
 		return nil, nil, errors.New(op).Errorf("iofs.New: %w", err)
@@ -31,20 +30,13 @@ func GetMigrationDrivers(handle *sql.DB) (source.Driver, database.Driver, error)
 }
 
 func (s *Service) doMigrations() error {
-	const op errors.Op = "database.Service.doMigrations"
+	const op errors.Op = "sqlite.Service.doMigrations"
 
-	var srcDriver source.Driver
-	var dbDriver database.Driver
-	var err error
-
-	switch s.DatabaseConfig.Driver {
-	case PostgresDriver:
-		srcDriver, dbDriver, err = postgres.GetMigrationDrivers(s.handle)
-	case SqliteDriver:
-		srcDriver, dbDriver, err = GetMigrationDrivers(s.handle)
-	default:
-		return errors.New(op).Msg("Driver not supported.")
+	if s.DatabaseConfig.Driver != SqliteDriver {
+		return errors.New(op).Errorf("Unsupported database driver: %s (expected %q)", s.DatabaseConfig.Driver, SqliteDriver)
 	}
+
+	srcDriver, dbDriver, err := GetMigrationDrivers(s.handle)
 	if err != nil {
 		return errors.New(op).Err(err)
 	}
@@ -85,26 +77,5 @@ func (s *Service) doMigrations() error {
 		return nil
 	}
 
-	// Fallback: apply the initial schema directly if core tables are missing.
-	if s.DatabaseConfig.Driver == PostgresDriver {
-		if s.LoggerService != nil {
-			s.LoggerService.WarnWith().Strs("missing", missing).Msg("applying initial schema via fallback")
-		}
-		if err = postgres.ApplyInitialSchemaSimple(s.handle); err != nil {
-			return errors.New(op).Err(err).Msg("fallback initial schema failed")
-		}
-		missing, chkErr = s.missingCoreTables()
-		if chkErr != nil {
-			return errors.New(op).Err(chkErr).Msg("schema verification failed (post-fallback)")
-		}
-		if len(missing) > 0 {
-			return errors.New(op).Errorf("schema still missing after fallback: %v", missing)
-		}
-		if s.LoggerService != nil {
-			s.LoggerService.InfoWith().Msg("schema created via fallback")
-		}
-		return nil
-	}
-
-	return errors.New(op).Errorf("schema missing after migrations and no fallback for driver %s: %v", s.DatabaseConfig.Driver, missing)
+	return errors.New(op).Errorf("schema missing after migrations: %v", missing)
 }

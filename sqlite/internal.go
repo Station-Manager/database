@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -27,69 +26,51 @@ func (s *Service) getOpenHandle(op errors.Op) (*sql.DB, error) {
 	return h, nil
 }
 
-// getDsn returns the DSN for the database identified in the config.
+// getDsn returns the DSN for the SQLite database identified in the config.
 func (s *Service) getDsn() (string, error) {
-	const op errors.Op = "database.Service.getDsn"
+	const op errors.Op = "sqlite.Service.getDsn"
 
-	switch s.DatabaseConfig.Driver {
-	case PostgresDriver:
-		userInfo := url.UserPassword(s.DatabaseConfig.User, s.DatabaseConfig.Password)
-		q := url.Values{}
-		if s.DatabaseConfig.SSLMode != emptyString {
-			q.Set("sslmode", s.DatabaseConfig.SSLMode)
-		}
-		hostPort := net.JoinHostPort(s.DatabaseConfig.Host, fmt.Sprintf("%d", s.DatabaseConfig.Port))
-		u := &url.URL{
-			Scheme:   "postgres",
-			User:     userInfo,
-			Host:     hostPort,
-			Path:     "/" + s.DatabaseConfig.Database,
-			RawQuery: q.Encode(),
-		}
-		return u.String(), nil
-
-	case SqliteDriver:
-		path := s.DatabaseConfig.Path
-		if path == emptyString {
-			return emptyString, errors.New(op).Msg(errMsgEmptyPath)
-		}
-
-		s.LoggerService.InfoWith().Str("path", path).Msg("Using sqlite database file")
-
-		// Merge defaults if not provided
-		opts := map[string]string{}
-		for k, v := range s.DatabaseConfig.Options {
-			opts[k] = v
-		}
-		// Set safe defaults only if not present
-		if _, ok := opts["_busy_timeout"]; !ok {
-			opts["_busy_timeout"] = "5000"
-		}
-		if _, ok := opts["_journal_mode"]; !ok {
-			opts["_journal_mode"] = "WAL"
-		}
-		if _, ok := opts["_foreign_keys"]; !ok {
-			opts["_foreign_keys"] = "on"
-		}
-
-		if len(opts) == 0 {
-			return fmt.Sprintf("file:%s", path), nil
-		}
-		// Stabilize key order for determinism
-		keys := make([]string, 0, len(opts))
-		for k := range opts {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		q := url.Values{}
-		for _, k := range keys {
-			q.Set(k, opts[k])
-		}
-		return fmt.Sprintf("file:%s?%s", path, q.Encode()), nil
-
-	default:
-		return emptyString, errors.New(op).Errorf("Unsupported database driver: %s (expected %q or %q)", s.DatabaseConfig.Driver, PostgresDriver, SqliteDriver)
+	if s.DatabaseConfig.Driver != SqliteDriver {
+		return emptyString, errors.New(op).Errorf("Unsupported database driver: %s (expected %q)", s.DatabaseConfig.Driver, SqliteDriver)
 	}
+
+	path := s.DatabaseConfig.Path
+	if path == emptyString {
+		return emptyString, errors.New(op).Msg(errMsgEmptyPath)
+	}
+
+	s.LoggerService.InfoWith().Str("path", path).Msg("Using sqlite database file")
+
+	// Merge defaults if not provided
+	opts := map[string]string{}
+	for k, v := range s.DatabaseConfig.Options {
+		opts[k] = v
+	}
+	// Set safe defaults only if not present
+	if _, ok := opts["_busy_timeout"]; !ok {
+		opts["_busy_timeout"] = "5000"
+	}
+	if _, ok := opts["_journal_mode"]; !ok {
+		opts["_journal_mode"] = "WAL"
+	}
+	if _, ok := opts["_foreign_keys"]; !ok {
+		opts["_foreign_keys"] = "on"
+	}
+
+	if len(opts) == 0 {
+		return fmt.Sprintf("file:%s", path), nil
+	}
+	// Stabilize key order for determinism
+	keys := make([]string, 0, len(opts))
+	for k := range opts {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	q := url.Values{}
+	for _, k := range keys {
+		q.Set(k, opts[k])
+	}
+	return fmt.Sprintf("file:%s?%s", path, q.Encode()), nil
 }
 
 // ensureCtxTimeout ensures that the context has an associated timeout.
@@ -132,7 +113,7 @@ func (s *Service) withDefaultTimeout(ctx context.Context) (context.Context, cont
 
 // checkDatabaseDir checks if the database directory exists, and if not, creates it.
 func (s *Service) checkDatabaseDir(dbFilePath string) error {
-	const op errors.Op = "database.Service.checkDatabaseDir"
+	const op errors.Op = "sqlite.Service.checkDatabaseDir"
 
 	if len(dbFilePath) == 0 {
 		return errors.New(op).Msg(errMsgEmptyPath)
@@ -157,7 +138,7 @@ func (s *Service) checkDatabaseDir(dbFilePath string) error {
 
 // missingCoreTables checks the existence of required core tables and returns any missing names.
 func (s *Service) missingCoreTables() ([]string, error) {
-	const op errors.Op = "database.Service.missingCoreTables"
+	const op errors.Op = "sqlite.Service.missingCoreTables"
 	if s == nil {
 		return nil, errors.New(op).Msg(errMsgNilService)
 	}
@@ -165,88 +146,36 @@ func (s *Service) missingCoreTables() ([]string, error) {
 		return nil, errors.New(op).Msg(errMsgNotOpen)
 	}
 
-	var required []string
-	switch s.DatabaseConfig.Driver {
-	case PostgresDriver:
-		required = []string{"logbook", "api_keys", "qso"}
-	case SqliteDriver:
-		// Client-side schema: no api_keys table (full key stored on logbook)
-		required = []string{"logbook", "qso"}
-	default:
+	if s.DatabaseConfig.Driver != SqliteDriver {
 		return nil, errors.New(op).Errorf("Unsupported database driver: %s", s.DatabaseConfig.Driver)
 	}
 
-	missing := make([]string, 0, len(required))
+	// Client-side schema: no api_keys table (full key stored on logbook)
+	required := []string{"logbook", "qso"}
 
-	switch s.DatabaseConfig.Driver {
-	case PostgresDriver:
-		rows, err := s.handle.Query(`SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema()`)
-		if err != nil {
-			return nil, errors.New(op).Errorf("information_schema.tables query: %w", err)
+	rows, err := s.handle.Query(`SELECT name FROM sqlite_master WHERE type='table'`)
+	if err != nil {
+		return nil, errors.New(op).Errorf("sqlite_master query: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	existing := map[string]struct{}{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, errors.New(op).Errorf("sqlite_master scan: %w", err)
 		}
-		defer func() { _ = rows.Close() }()
-		existing := map[string]struct{}{}
-		for rows.Next() {
-			var name string
-			if err := rows.Scan(&name); err != nil {
-				return nil, errors.New(op).Errorf("tables scan: %w", err)
-			}
-			existing[name] = struct{}{}
-		}
-		for _, r := range required {
-			if _, ok := existing[r]; !ok {
-				missing = append(missing, r)
-			}
-		}
-	case SqliteDriver:
-		rows, err := s.handle.Query(`SELECT name FROM sqlite_master WHERE type='table'`)
-		if err != nil {
-			return nil, errors.New(op).Errorf("sqlite_master query: %w", err)
-		}
-		defer func() { _ = rows.Close() }()
-		existing := map[string]struct{}{}
-		for rows.Next() {
-			var name string
-			if err := rows.Scan(&name); err != nil {
-				return nil, errors.New(op).Errorf("sqlite_master scan: %w", err)
-			}
-			existing[name] = struct{}{}
-		}
-		for _, r := range required {
-			if _, ok := existing[r]; !ok {
-				missing = append(missing, r)
-			}
+		existing[name] = struct{}{}
+	}
+
+	missing := make([]string, 0, len(required))
+	for _, r := range required {
+		if _, ok := existing[r]; !ok {
+			missing = append(missing, r)
 		}
 	}
 	return missing, nil
 }
-
-// logPostgresActivity logs a short snapshot of active Postgres queries and waits.
-// It uses a short background timeout, so it's safe to call from a deadline-failed path.
-//func (s *Service) logPostgresActivity() {
-//	if s == nil || s.DatabaseConfig == nil || s.DatabaseConfig.Driver != PostgresDriver || s.handle == nil {
-//		return
-//	}
-//	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-//	defer cancel()
-//	//noinspection SqlNoDataSourceInspection,SqlResolve
-//	rows, err := s.handle.QueryContext(ctx, `SELECT pid, usename, state, wait_event_type, wait_event, CURRENT_TIMESTAMP - query_start AS duration, query FROM pg_stat_activity WHERE state <> 'idle' ORDER BY duration DESC LIMIT 10`)
-//	if err != nil {
-//		// Internal diagnostic only (error not returned to caller)
-//		s.LoggerService.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity query error")
-//		return
-//	}
-//	defer func() { _ = rows.Close() }()
-//	for rows.Next() {
-//		var pid int
-//		var usename, state, waitType, waitEvent, duration, query string
-//		if err = rows.Scan(&pid, &usename, &state, &waitType, &waitEvent, &duration, &query); err != nil {
-//			s.LoggerService.DebugWith().Str("component", "db").Str("sub", "activity").Err(err).Msg("pg_stat_activity row scan error")
-//			continue
-//		}
-//		s.LoggerService.DebugWith().Str("component", "db").Str("sub", "activity").Int("pid", pid).Str("user", usename).Str("state", state).Str("wait_type", waitType).Str("wait_event", waitEvent).Str("duration", duration).Str("query", query).Msg("active query")
-//	}
-//}
 
 // isTransientPingError returns true if the error message indicates a transient condition worth a short retry.
 func isTransientPingError(err error) bool {
