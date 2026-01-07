@@ -204,7 +204,7 @@ func (s *Service) Ping() error {
 			return errors.New(op).Err(err).Msg(errMsgPingFailed)
 		}
 		// Small backoff before retrying transient failure
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(pingRetryBackoff)
 	}
 
 	return errors.New(op).Err(lastErr).Msg(errMsgPingFailed)

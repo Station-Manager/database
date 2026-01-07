@@ -12,8 +12,5 @@ func checkService(op errors.Op, s *Service) error {
 		return errors.New(op).Msg(errMsgNotInitialized)
 	}
 
-	//if !s.isOpen.Load() {
-	//	return errors.New(op).Msg(errMsgNotOpen)
-	//}
 	return nil
 }

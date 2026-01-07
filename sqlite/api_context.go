@@ -691,16 +691,6 @@ func (s *Service) DeleteLogbookByIDWithContext(ctx context.Context, id int64) er
 	ctx, cancel := s.ensureCtxTimeout(ctx)
 	defer cancel()
 
-	//tx, err := h.BeginTx(ctx, nil)
-	//if err != nil {
-	//	return errors.New(op).Err(err).Msg("Failed to begin transaction")
-	//}
-	//defer func() {
-	//	if err != nil {
-	//		_ = tx.Rollback()
-	//	}
-	//}()
-
 	logbook, err := models.FindLogbook(ctx, h, id)
 	if err != nil {
 		if stderr.Is(err, sql.ErrNoRows) {
@@ -709,25 +699,9 @@ func (s *Service) DeleteLogbookByIDWithContext(ctx context.Context, id int64) er
 		return errors.New(op).Err(err)
 	}
 
-	//qsoSlice, err := models.Qsos(models.QsoWhere.LogbookID.EQ(logbook.ID)).All(ctx, tx)
-	//if err != nil {
-	//	return errors.New(op).Err(err).Msg("Failed to fetch QSO slice.")
-	//}
-	//
-	//for _, qso := range qsoSlice {
-	//	qso.LogbookID = 1 // Assign to the default logbook
-	//	if _, err = qso.Update(ctx, tx, boil.Infer()); err != nil {
-	//		return errors.New(op).Err(err).Msg("Failed to update QSO.")
-	//	}
-	//}
-
 	if _, err = logbook.Delete(ctx, h, false); err != nil {
 		return errors.New(op).Err(err).Msg("Failed to delete logbook.")
 	}
-
-	//if err = tx.Commit(); err != nil {
-	//	return errors.New(op).Err(err).Msg("Failed to commit transaction.")
-	//}
 
 	return nil
 }

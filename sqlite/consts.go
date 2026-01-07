@@ -1,5 +1,7 @@
 package sqlite
 
+import "time"
+
 const (
 	errMsgNotInitialized = "Database service is not initialized."
 	errMsgNilService     = "Database service is nil."
@@ -24,4 +26,8 @@ const (
 const (
 	SqliteDriver = "sqlite"
 	emptyString  = ""
+
+	// pingRetryBackoff is the delay between ping retry attempts for transient errors.
+	// Kept short since SQLite is local and busy_timeout PRAGMA handles most wait scenarios.
+	pingRetryBackoff = 25 * time.Millisecond
 )
