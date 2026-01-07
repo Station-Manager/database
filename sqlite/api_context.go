@@ -826,13 +826,13 @@ func (s *Service) FetchPendingUploadsWithContext(ctx context.Context) ([]types.Q
 	ctx, cancel := s.ensureCtxTimeout(ctx)
 	defer cancel()
 
-	batchLimit := 5 // Default
+	batchLimit := defaultUploadBatchLimit
 	if s.requiredCfgs.QsoForwardingRowLimit > 0 {
 		batchLimit = s.requiredCfgs.QsoForwardingRowLimit
 	}
 
 	now := time.Now()
-	cutoff := now.Add(-5 * time.Minute).Unix()
+	cutoff := now.Add(-uploadRetryCooldown).Unix()
 
 	// Reserve a batch and capture their IDs
 	updateAndReturn := `

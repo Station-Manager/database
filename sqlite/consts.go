@@ -30,4 +30,12 @@ const (
 	// pingRetryBackoff is the delay between ping retry attempts for transient errors.
 	// Kept short since SQLite is local and busy_timeout PRAGMA handles most wait scenarios.
 	pingRetryBackoff = 25 * time.Millisecond
+
+	// uploadRetryCooldown is the minimum time that must pass before a failed upload
+	// can be retried. This prevents rapid retry loops for persistently failing uploads.
+	uploadRetryCooldown = 5 * time.Minute
+
+	// defaultUploadBatchLimit is the default number of pending uploads to process per batch
+	// when QsoForwardingRowLimit is not configured.
+	defaultUploadBatchLimit = 5
 )
