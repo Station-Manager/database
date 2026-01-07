@@ -794,7 +794,7 @@ func (s *Service) GenerateSessionWithContext(ctx context.Context) (int64, error)
  * Contest Related Methods
  **********************************************************************************************************************/
 
-func (s *Service) IsContestDuplicatByLogbookIDWithContext(ctx context.Context, id int64, callsign, band string) (bool, error) {
+func (s *Service) IsContestDuplicateByLogbookIDWithContext(ctx context.Context, id int64, callsign, band string) (bool, error) {
 	const op errors.Op = "sqlite.Service.IsContestDuplicatByLogbookIDWithContext"
 	if err := checkService(op, s); err != nil {
 		return false, err
