@@ -21,7 +21,7 @@ func (s *Service) UpdateQso(qso types.Qso) error {
 	return s.UpdateQsoWithContext(context.Background(), qso)
 }
 
-func (s *Service) FetchQsoSliceBySessionID(id int64) ([]types.Qso, error) {
+func (s *Service) FetchQsoSliceBySessionID(id int64) (types.QsoSlice, error) {
 	return s.FetchQsoSliceBySessionIDWithContext(context.Background(), id)
 }
 
@@ -29,7 +29,7 @@ func (s *Service) FetchQsoSliceByCallsign(callsign string) ([]types.ContactHisto
 	return s.FetchQsoSliceByCallsignWithContext(context.Background(), callsign)
 }
 
-func (s *Service) FetchQsoSliceByLogbookId(id int64) ([]types.Qso, error) {
+func (s *Service) FetchQsoSliceByLogbookId(id int64) (types.QsoSlice, error) {
 	return s.FetchQsoSliceByLogbookIdWithContext(context.Background(), id)
 }
 
@@ -43,6 +43,10 @@ func (s *Service) InsertQsoUpload(id int64, action action.Action, service upload
 
 func (s *Service) FetchQsoById(id int64) (types.Qso, error) {
 	return s.FetchQsoByIdWithContext(context.Background(), id)
+}
+
+func (s *Service) FetchQsoSlicePaging(logbookId int64, pageNum, pageSize int) (types.QsoSlice, error) {
+	return s.FetchQsoSlicePagingWithContext(context.Background(), logbookId, pageNum, pageSize)
 }
 
 /**********************************************************************************************************************

@@ -50,7 +50,7 @@ func (s *Service) InsertQsoWithContext(ctx context.Context, qso types.Qso) (int6
 	return model.ID, nil
 }
 
-func (s *Service) FetchQsoSliceBySessionIDWithContext(ctx context.Context, id int64) ([]types.Qso, error) {
+func (s *Service) FetchQsoSliceBySessionIDWithContext(ctx context.Context, id int64) (types.QsoSlice, error) {
 	const op errors.Op = "sqlite.Service.FetchQsoSliceBySessionIDWithContext"
 	if err := checkService(op, s); err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func (s *Service) FetchQsoSliceByCallsignWithContext(ctx context.Context, callsi
 	return history, nil
 }
 
-func (s *Service) FetchQsoSliceByLogbookIdWithContext(ctx context.Context, id int64) ([]types.Qso, error) {
+func (s *Service) FetchQsoSliceByLogbookIdWithContext(ctx context.Context, id int64) (types.QsoSlice, error) {
 	const op errors.Op = "sqlite.Service.FetchQsoSliceByLogbookIdWithContext"
 	if err := checkService(op, s); err != nil {
 		return nil, err
@@ -248,7 +248,7 @@ func (s *Service) UpdateQsoWithContext(ctx context.Context, qso types.Qso) error
 	return nil
 }
 
-func (s *Service) FetchQsoSliceNotForwardedWithContext(ctx context.Context) ([]types.Qso, error) {
+func (s *Service) FetchQsoSliceNotForwardedWithContext(ctx context.Context) (types.QsoSlice, error) {
 	const op errors.Op = "sqlite.Service.FetchQsoSliceNotForwardedWithContext"
 	if err := checkService(op, s); err != nil {
 		return nil, err
@@ -354,6 +354,59 @@ func (s *Service) FetchQsoByIdWithContext(ctx context.Context, id int64) (types.
 	}
 
 	return qso, nil
+}
+
+func (s *Service) FetchQsoSlicePagingWithContext(ctx context.Context, logbookId int64, pageNum, pageSize int) (types.QsoSlice, error) {
+	const op errors.Op = "sqlite.Service.FetchQsoByCallsignWithContext"
+	if err := checkService(op, s); err != nil {
+		return nil, err
+	}
+
+	if logbookId < 1 {
+		return nil, errors.New(op).Msg(errMsgInvalidId)
+	}
+	if pageNum < 1 {
+		return nil, errors.New(op).Msg("Invalid page number. Must be greater than 0.")
+	}
+	if pageSize < 1 {
+		return nil, errors.New(op).Msg("Invalid page size. Must be greater than 0.")
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	offset := (pageNum - 1) * pageSize
+
+	var mods []qm.QueryMod
+	mods = append(mods, models.QsoWhere.LogbookID.EQ(logbookId))
+	mods = append(mods, qm.Limit(pageSize))
+	mods = append(mods, qm.Offset(offset))
+
+	slice, err := models.Qsos(mods...).All(ctx, h)
+	if err != nil {
+		return nil, errors.New(op).Err(err)
+	}
+
+	var typeSlice []types.Qso
+	if slice != nil {
+		typeSlice = make([]types.Qso, 0, len(slice))
+
+		for _, qso := range slice {
+			typeQso, er := adapters.QsoModelToType(qso)
+			if er != nil {
+				s.LoggerService.WarnWith().Int64("qso.id", qso.ID).Err(er).Msg("Failed to adapt QSO for contact history.")
+				continue
+			}
+			typeSlice = append(typeSlice, typeQso)
+		}
+	}
+
+	return typeSlice, nil
 }
 
 /**********************************************************************************************************************
