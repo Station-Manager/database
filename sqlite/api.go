@@ -45,8 +45,8 @@ func (s *Service) FetchQsoById(id int64) (types.Qso, error) {
 	return s.FetchQsoByIdWithContext(context.Background(), id)
 }
 
-func (s *Service) FetchQsoSlicePaging(logbookId int64, pageNum, pageSize int) (types.QsoSlice, error) {
-	return s.FetchQsoSlicePagingWithContext(context.Background(), logbookId, pageNum, pageSize)
+func (s *Service) FetchQsoSlicePaging(logbookId int64, pageNum, pageSize int, ordering Ordering) (types.QsoSlice, error) {
+	return s.FetchQsoSlicePagingWithContext(context.Background(), logbookId, pageNum, pageSize, ordering)
 }
 
 /**********************************************************************************************************************
