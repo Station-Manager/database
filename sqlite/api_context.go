@@ -384,7 +384,7 @@ func (s *Service) FetchQsoSlicePagingWithContext(ctx context.Context, logbookId 
 
 	var mods []qm.QueryMod
 	mods = append(mods, models.QsoWhere.LogbookID.EQ(logbookId))
-	mods = append(mods, qm.OrderBy(models.QsoColumns.ID, ordering.String()))
+	mods = append(mods, qm.OrderBy(models.QsoColumns.ID+" "+ordering.String()))
 	mods = append(mods, qm.Limit(pageSize))
 	mods = append(mods, qm.Offset(offset))
 
