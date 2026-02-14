@@ -1,15 +1,15 @@
 module github.com/Station-Manager/database
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/Station-Manager/adapters v0.0.11
-	github.com/Station-Manager/config v0.0.39
-	github.com/Station-Manager/enums v0.0.6
+	github.com/Station-Manager/config v0.0.40
+	github.com/Station-Manager/enums v0.0.8
 	github.com/Station-Manager/errors v0.0.11
-	github.com/Station-Manager/logging v0.0.12
-	github.com/Station-Manager/types v0.0.77
-	github.com/Station-Manager/utils v0.0.5
+	github.com/Station-Manager/logging v0.0.13
+	github.com/Station-Manager/types v0.0.78
+	github.com/Station-Manager/utils v0.0.6
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.7
 	github.com/aarondl/strmangle v0.0.9
@@ -17,9 +17,9 @@ require (
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/goccy/go-json v0.10.5
 	github.com/golang-migrate/migrate/v4 v4.19.1
-	github.com/lib/pq v1.11.1
+	github.com/lib/pq v1.11.2
 	github.com/stretchr/testify v1.11.1
-	modernc.org/sqlite v1.44.3
+	modernc.org/sqlite v1.45.0
 )
 
 require (
@@ -37,7 +37,7 @@ require (
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-sqlite3 v1.14.33 // indirect
+	github.com/mattn/go-sqlite3 v1.14.34 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
@@ -45,11 +45,11 @@ require (
 	github.com/spf13/cast v1.10.0 // indirect
 	go.bug.st/serial v1.6.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	golang.org/x/crypto v0.47.0 // indirect
-	golang.org/x/exp v0.0.0-20260112195511-716be5621a96 // indirect
-	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/text v0.33.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/exp v0.0.0-20260212183809-81e46e3db34a // indirect
+	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
