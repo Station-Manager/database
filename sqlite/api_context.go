@@ -356,7 +356,7 @@ func (s *Service) FetchQsoByIdWithContext(ctx context.Context, id int64) (types.
 	return qso, nil
 }
 
-func (s *Service) FetchQsoSlicePagingWithContext(ctx context.Context, logbookId int64, pageNum, pageSize int, ordering Ordering) (types.QsoSlice, error) {
+func (s *Service) FetchQsoSlicePagingWithContext(ctx context.Context, logbookId, pageNum, pageSize int64, ordering Ordering) (types.QsoSlice, error) {
 	const op errors.Op = "sqlite.Service.FetchQsoByCallsignWithContext"
 	if err := checkService(op, s); err != nil {
 		return nil, err
@@ -385,8 +385,8 @@ func (s *Service) FetchQsoSlicePagingWithContext(ctx context.Context, logbookId 
 	var mods []qm.QueryMod
 	mods = append(mods, models.QsoWhere.LogbookID.EQ(logbookId))
 	mods = append(mods, qm.OrderBy(models.QsoColumns.ID+" "+ordering.String()))
-	mods = append(mods, qm.Limit(pageSize))
-	mods = append(mods, qm.Offset(offset))
+	mods = append(mods, qm.Limit(int(pageSize)))
+	mods = append(mods, qm.Offset(int(offset)))
 
 	slice, err := models.Qsos(mods...).All(ctx, h)
 	if err != nil {
