@@ -4,11 +4,11 @@ go 1.25.0
 
 require (
 	github.com/Station-Manager/adapters v0.0.11
-	github.com/Station-Manager/config v0.0.41
+	github.com/Station-Manager/config v0.0.42
 	github.com/Station-Manager/enums v0.0.8
 	github.com/Station-Manager/errors v0.0.11
 	github.com/Station-Manager/logging v0.0.13
-	github.com/Station-Manager/types v0.0.79
+	github.com/Station-Manager/types v0.0.80
 	github.com/Station-Manager/utils v0.0.6
 	github.com/aarondl/null/v8 v8.1.3
 	github.com/aarondl/sqlboiler/v4 v4.19.7
@@ -46,14 +46,14 @@ require (
 	go.bug.st/serial v1.6.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
-	golang.org/x/exp v0.0.0-20260218203240-3dfff04db8fa // indirect
-	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/tools v0.42.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.68.0 // indirect
+	modernc.org/libc v1.69.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 )

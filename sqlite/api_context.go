@@ -760,6 +760,33 @@ func (s *Service) DeleteLogbookByIDWithContext(ctx context.Context, id int64) er
 	return nil
 }
 
+func (s *Service) CheckDefaultLogbookExistsWithContext(ctx context.Context) (bool, error) {
+	const op errors.Op = "sqlite.Service.CheckDefaultLogbookExistsWithContext"
+	if err := checkService(op, s); err != nil {
+		return false, err
+	}
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return false, err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	model, err := models.Logbooks(models.LogbookWhere.Name.EQ("Default")).One(ctx, h)
+	if err != nil {
+		if stderr.Is(err, sql.ErrNoRows) {
+			return false, errors.ErrNotFound
+		}
+		return false, errors.New(op).Err(err)
+	}
+	if model == nil {
+		return false, errors.New(op).Msg("Default logbook not found")
+	}
+	return true, nil
+}
+
 /**********************************************************************************************************************
  * Session Methods
  **********************************************************************************************************************/

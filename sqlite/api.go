@@ -105,6 +105,10 @@ func (s *Service) DeleteLogbookByID(id int64) error {
 	return s.DeleteLogbookByIDWithContext(context.Background(), id)
 }
 
+func (s *Service) CheckDefaultLogbookExists() (bool, error) {
+	return s.CheckDefaultLogbookExistsWithContext(context.Background())
+}
+
 /**********************************************************************************************************************
  * Session Methods
  **********************************************************************************************************************/
