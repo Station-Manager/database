@@ -787,6 +787,39 @@ func (s *Service) CheckDefaultLogbookExistsWithContext(ctx context.Context) (boo
 	return true, nil
 }
 
+func (s *Service) UpsertLogbookWithContext(ctx context.Context, logbook types.Logbook) error {
+	const op errors.Op = "sqlite.Service.UpsertLogbookWithContext"
+	if err := checkService(op, s); err != nil {
+		return err
+	}
+
+	if logbook.ID < 1 {
+		return errors.New(op).Msg("Logbook ID must be greater than 0")
+	}
+	//TODO: Other validation
+
+	h, err := s.getOpenHandle(op)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := s.ensureCtxTimeout(ctx)
+	defer cancel()
+
+	model := models.Logbook{
+		ID:          logbook.ID,
+		Name:        logbook.Name,
+		Callsign:    logbook.Callsign,
+		Description: null.StringFrom(logbook.Description),
+	}
+
+	if err = model.Upsert(ctx, h, false, nil, boil.Infer(), boil.Infer()); err != nil {
+		return errors.New(op).Err(err).Msg("Upserting logbook failed.")
+	}
+
+	return nil
+}
+
 /**********************************************************************************************************************
  * Session Methods
  **********************************************************************************************************************/

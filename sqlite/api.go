@@ -109,6 +109,10 @@ func (s *Service) CheckDefaultLogbookExists() (bool, error) {
 	return s.CheckDefaultLogbookExistsWithContext(context.Background())
 }
 
+func (s *Service) UpsertLogbook(logbook types.Logbook) error {
+	return s.UpsertLogbookWithContext(context.Background(), logbook)
+}
+
 /**********************************************************************************************************************
  * Session Methods
  **********************************************************************************************************************/
